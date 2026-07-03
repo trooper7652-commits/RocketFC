@@ -1,0 +1,19 @@
+# Build artifacts
+__pycache__/
+tools/replay/replay
+tools/replay/replay.exe
+build/
+*.o
+
+# Generated test data (regenerate with: python tools/synth_flight.py)
+tools/replay/cases/
+
+# Flight logs copied off the SD card for analysis
+FLIGHTS/
+*_plots.png
+
+# Editor / OS noise
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini
