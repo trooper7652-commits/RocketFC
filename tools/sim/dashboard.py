@@ -25,6 +25,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Circle
 
 import core
+# flight3d's module level is stdlib + logfile only -- pygame and PyOpenGL are
+# imported inside FlightView, so a machine without them can still run the
+# dashboard and only fails when the 3D window is actually opened.
+import flight3d
 import logfile
 import reflight as reflight_mod
 import run as run_mod
@@ -82,35 +86,12 @@ STATE_COLORS = {
     "TOUCHDOWN": "#2d6a4f", "ABORT": "#d00000",
 }
 
+STAGE_STRIP_H = 20
 
-def dead_reckon_xy(rows, dt_key="t"):
-    """Double-integrate world-frame horizontal accel from a REAL log's
-    quat_est + logged body-frame accel, since a real log has no ground-truth
-    position. Drifts (unbounded double integration of noisy accel) -- this
-    is clearly a display aid, not a measurement, and is labeled as such
-    wherever it's drawn."""
-    x = y = vx = vy = 0.0
-    xs, ys = [], []
-    prev_t = None
-    for r in rows:
-        t = r[dt_key]
-        dt = (t - prev_t) if prev_t is not None else 0.0
-        prev_t = t
-        qw, qx, qy, qz = r.get("quat_est", (1.0, 0.0, 0.0, 0.0))
-        # body -> world rotation (Hamilton, matches src/core/quat.h)
-        ax, ay, az = r["ax"], r["ay"], r["az"]
-        # rotate (ax,ay,az) by q
-        tx = 2 * (qy * az - qz * ay)
-        ty = 2 * (qz * ax - qx * az)
-        tz = 2 * (qx * ay - qy * ax)
-        wxr = ax + qw * tx + (qy * tz - qz * ty)
-        wyr = ay + qw * ty + (qz * tx - qx * tz)
-        vx += wxr * dt
-        vy += wyr * dt
-        x += vx * dt
-        y += vy * dt
-        xs.append(x); ys.append(y)
-    return xs, ys
+
+# dead_reckon_xy now lives in logfile.py -- it is log-domain reconstruction,
+# and flight3d.py needs the same answer for the same log.
+dead_reckon_xy = logfile.dead_reckon_xy
 
 
 class Dashboard:
@@ -127,6 +108,10 @@ class Dashboard:
         self.playing = False
         self.play_speed = 1.0
         self.show_dead_reckon = tk.BooleanVar(value=False)
+        self.view3d = None          # flight3d.FlightView while the window is open
+        self._pump_job = None       # the after() id driving it
+        self._stage_bands = []      # canvas item ids, rebuilt per flight
+        self._stage_playhead = None
         self._build_ui()
 
     # ------------------------------------------------------------------ UI
@@ -146,6 +131,7 @@ class Dashboard:
         ttk.Button(top, text="Open log...", command=self.on_open_log).pack(side=tk.LEFT)
         ttk.Button(top, text="Reflight with panel settings",
                   command=self.on_reflight).pack(side=tk.LEFT, padx=6)
+        ttk.Button(top, text="3D view", command=self.on_open_3d).pack(side=tk.LEFT)
         ttk.Checkbutton(top, text="Downrange (dead-reckoned for logs)",
                        variable=self.show_dead_reckon,
                        command=self.redraw).pack(side=tk.LEFT, padx=10)
@@ -204,21 +190,37 @@ class Dashboard:
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # -- bottom: scrubber --
+        # -- bottom: scrubber + stage strip --
+        self.summary_label = ttk.Label(self.root, text="", padding=4,
+                                       anchor="w")
+        self.summary_label.pack(side=tk.BOTTOM, fill=tk.X)
+
         bottom = ttk.Frame(self.root, padding=4)
         bottom.pack(side=tk.BOTTOM, fill=tk.X)
         self.play_btn = ttk.Button(bottom, text="Play", command=self.toggle_play,
                                    width=6)
         self.play_btn.pack(side=tk.LEFT)
+
+        track = ttk.Frame(bottom)
+        track.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=6)
         self.scrub_var = tk.DoubleVar(value=0.0)
-        self.scrub = ttk.Scale(bottom, from_=0, to=1, variable=self.scrub_var,
+        self.scrub = ttk.Scale(track, from_=0, to=1, variable=self.scrub_var,
                                command=lambda v: self.redraw())
-        self.scrub.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=6)
+        self.scrub.pack(side=tk.TOP, fill=tk.X)
+        # The stage strip sits directly under the slider on the same x-extent,
+        # so a band lines up with the slider position that reaches it. It is
+        # also click/drag-seekable, which makes the labelled strip itself a
+        # transport control rather than just a legend.
+        self.stage_canvas = tk.Canvas(track, height=STAGE_STRIP_H,
+                                      highlightthickness=0, bd=0,
+                                      background="#1e2126")
+        self.stage_canvas.pack(side=tk.TOP, fill=tk.X)
+        self.stage_canvas.bind("<Configure>", lambda e: self._draw_stage_strip())
+        self.stage_canvas.bind("<Button-1>", self._on_stage_click)
+        self.stage_canvas.bind("<B1-Motion>", self._on_stage_click)
+
         self.time_label = ttk.Label(bottom, text="t = 0.00 s", width=14)
         self.time_label.pack(side=tk.LEFT)
-        self.summary_label = ttk.Label(self.root, text="", padding=4,
-                                       anchor="w")
-        self.summary_label.pack(side=tk.BOTTOM, fill=tk.X)
 
     def _add_field(self, parent, label, attr):
         row = ttk.Frame(parent)
@@ -355,6 +357,17 @@ class Dashboard:
         self.scrub.configure(to=max(self.t_max, 0.001))
         self.scrub_var.set(0.0)
         self._build_summary_text()
+        self._draw_stage_strip()
+        # An open 3D window is showing the PREVIOUS flight; re-point it at the
+        # new one rather than leaving it silently stale.
+        if self.view3d is not None and not self.view3d.closed:
+            try:
+                self.view3d.track = flight3d.Track(
+                    self.rows, self.events, is_log=self.is_log,
+                    dead_reckon=self.show_dead_reckon.get(),
+                    label=("flight log" if self.is_log else "simulated flight"))
+            except Exception:
+                pass
         self.redraw()
 
     def _build_summary_text(self):
@@ -370,6 +383,125 @@ class Dashboard:
         else:
             self.summary_label.config(text="Flight log: {} rows, {} events".format(
                 len(self.rows), len(self.events)))
+
+    # ------------------------------------------------------- stage strip
+    def _stages(self):
+        """Contiguous runs of the same state, as (t0, t1, name)."""
+        if not self.rows:
+            return []
+        out = []
+        start = self.rows[0]["t"]
+        cur = self.rows[0]["state"]
+        for r in self.rows[1:]:
+            if r["state"] != cur:
+                out.append((start, r["t"], cur))
+                start, cur = r["t"], r["state"]
+        out.append((start, self.rows[-1]["t"], cur))
+        return out
+
+    def _draw_stage_strip(self):
+        c = self.stage_canvas
+        c.delete("all")
+        self._stage_playhead = None
+        if not self.rows:
+            return
+        w = max(c.winfo_width(), 1)
+        h = STAGE_STRIP_H
+        t_max = max(getattr(self, "t_max", 0.0), 1e-6)
+
+        for t0, t1, name in self._stages():
+            x0 = w * (t0 / t_max)
+            x1 = max(x0 + 1, w * (t1 / t_max))
+            c.create_rectangle(x0, 0, x1, h, fill=STATE_COLORS.get(name, "#888"),
+                               width=0)
+            # Abbreviate, then drop entirely rather than let a one-tick band
+            # like APOGEE smear its name across its neighbours.
+            label = flight3d.STAGE_ABBREV.get(name, name)
+            if (x1 - x0) > len(label) * 7 + 6:
+                c.create_text((x0 + x1) / 2, h / 2, text=label,
+                              fill="#14161a", font=("TkDefaultFont", 7))
+
+        for ev in self.events:
+            ex = w * (ev["t"] / t_max)
+            c.create_line(ex, 0, ex, 4, fill="#ffffff")
+
+        px = w * (self.scrub_var.get() / t_max)
+        self._stage_playhead = c.create_line(px, 0, px, h, fill="#ffffff",
+                                             width=2)
+
+    def _move_stage_playhead(self):
+        if self._stage_playhead is None or not self.rows:
+            return
+        c = self.stage_canvas
+        w = max(c.winfo_width(), 1)
+        t_max = max(getattr(self, "t_max", 0.0), 1e-6)
+        px = w * (self.scrub_var.get() / t_max)
+        c.coords(self._stage_playhead, px, 0, px, STAGE_STRIP_H)
+
+    def _on_stage_click(self, event):
+        if not self.rows:
+            return
+        w = max(self.stage_canvas.winfo_width(), 1)
+        t_max = max(getattr(self, "t_max", 0.0), 1e-6)
+        self.scrub_var.set(max(0.0, min(1.0, event.x / w)) * t_max)
+        self.redraw()
+
+    # ------------------------------------------------------------ 3D view
+    def on_open_3d(self):
+        if not self.rows:
+            messagebox.showinfo("3D view", "Run a flight or open a log first.")
+            return
+        if self.view3d is not None and not self.view3d.closed:
+            return  # already open
+        try:
+            track = flight3d.Track(
+                self.rows, self.events, is_log=self.is_log,
+                dead_reckon=self.show_dead_reckon.get(),
+                label=("flight log" if self.is_log else "simulated flight"))
+            self.view3d = flight3d.FlightView(
+                track, vehicle_length_m=self.vcfg.length_m)
+        except Exception as e:
+            self.view3d = None
+            messagebox.showerror(
+                "3D view unavailable",
+                "{}\n\nThe 3D window needs pygame and PyOpenGL:\n"
+                "    pip install pygame PyOpenGL".format(e))
+            return
+        self._pump_3d()
+
+    def _pump_3d(self):
+        """Drive the 3D window from Tk's event loop.
+
+        Runs whether or not playback is going, so the view stays orbitable
+        while paused. Both windows read and write the same scrub_var, which
+        is what keeps them in sync without any IPC.
+        """
+        self._pump_job = None
+        view = self.view3d
+        if view is None or view.closed:
+            self.view3d = None
+            return
+        try:
+            ev = view.pump()
+            if ev["closed"]:
+                self.view3d = None
+                return
+            if ev["toggle_play"]:
+                self.toggle_play()
+            if ev["seek"] is not None:
+                self.scrub_var.set(ev["seek"])
+                self.redraw()
+            view.render(self.scrub_var.get())
+        except Exception:
+            # A dead GL context should close the window, not take the
+            # dashboard down with it.
+            try:
+                view.close()
+            except Exception:
+                pass
+            self.view3d = None
+            return
+        self._pump_job = self.root.after(33, self._pump_3d)
 
     def toggle_play(self):
         self.playing = not self.playing
@@ -393,6 +525,7 @@ class Dashboard:
             return
         t_now = self.scrub_var.get()
         self.time_label.config(text="t = {:.2f} s".format(t_now))
+        self._move_stage_playhead()
         rows = self.rows
         times = [r["t"] for r in rows]
 

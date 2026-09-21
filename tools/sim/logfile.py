@@ -153,3 +153,37 @@ def write_log(path, sim_result, flight_number=999):
             ]) + "\n")
 
     return path
+
+
+def dead_reckon_xy(rows, dt_key="t"):
+    """Double-integrate world-frame horizontal accel from a REAL log's
+    quat_est + logged body-frame accel, since a real log has no ground-truth
+    position. Drifts (unbounded double integration of noisy accel) -- this
+    is clearly a display aid, not a measurement, and is labeled as such
+    wherever it's drawn.
+
+    Lives here rather than in a viewer because it is log-domain
+    reconstruction, and both viewers (dashboard.py's 2D panel and
+    flight3d.py's 3D view) need the same answer for the same log.
+    """
+    x = y = vx = vy = 0.0
+    xs, ys = [], []
+    prev_t = None
+    for r in rows:
+        t = r[dt_key]
+        dt = (t - prev_t) if prev_t is not None else 0.0
+        prev_t = t
+        qw, qx, qy, qz = r.get("quat_est", (1.0, 0.0, 0.0, 0.0))
+        # body -> world rotation (Hamilton, matches src/core/quat.h)
+        ax, ay, az = r["ax"], r["ay"], r["az"]
+        tx = 2 * (qy * az - qz * ay)
+        ty = 2 * (qz * ax - qx * az)
+        tz = 2 * (qx * ay - qy * ax)
+        wxr = ax + qw * tx + (qy * tz - qz * ty)
+        wyr = ay + qw * ty + (qz * tx - qx * tz)
+        vx += wxr * dt
+        vy += wyr * dt
+        x += vx * dt
+        y += vy * dt
+        xs.append(x); ys.append(y)
+    return xs, ys
