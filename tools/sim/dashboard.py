@@ -15,6 +15,7 @@ import json
 import math
 import os
 import sys
+import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -87,6 +88,15 @@ STATE_COLORS = {
 
 STAGE_STRIP_H = 20
 
+# Points per plotted series, for display only (see Dashboard._decimate).
+PLOT_POINTS = 1500
+
+# Frame-rate target for the 3D window. The renderer can go far faster, but
+# past display refresh it is just heat -- and it shares a process with Tk.
+TARGET_3D_FPS = 60.0
+# How early a poll may be and still count as "on time" -- see _pump_3d.
+FRAME_GATE_TOLERANCE = 0.005
+
 
 # dead_reckon_xy now lives in logfile.py -- it is log-domain reconstruction,
 # and flight3d.py needs the same answer for the same log.
@@ -111,6 +121,12 @@ class Dashboard:
         self._pump_job = None       # the after() id driving it
         self._stage_bands = []      # canvas item ids, rebuilt per flight
         self._stage_playhead = None
+        self._cursors = []          # (axes, animated vline) pairs
+        self._backgrounds = None    # cached blit backgrounds, one per axes
+        self._last_full_draw = 0.0  # throttle for the non-blit fallback
+        self._last_3d_frame = None  # for real-time playback pacing
+        self._cursor_due = 0.0      # next time the 2D cursors may update
+        self._render_due = 0.0      # next time the 3D view may render
         self._build_ui()
 
     # ------------------------------------------------------------------ UI
@@ -190,6 +206,7 @@ class Dashboard:
         self.ax_state = self.fig.add_subplot(gs[2, :])
         self.fig.tight_layout()
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
+        self.canvas.mpl_connect("draw_event", self._on_mpl_draw)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         # -- bottom: scrubber + stage strip --
@@ -360,6 +377,7 @@ class Dashboard:
         self.scrub_var.set(0.0)
         self._build_summary_text()
         self._draw_stage_strip()
+        self._plot_flight()
         # An open 3D window is showing the PREVIOUS flight; re-point it at the
         # new one rather than leaving it silently stale.
         if self.view3d is not None and not self.view3d.closed:
@@ -502,10 +520,41 @@ class Dashboard:
                 return
             if ev["toggle_play"]:
                 self.toggle_play()
+
+            now = time.perf_counter()
+            dt = now - (self._last_3d_frame or now)
+            self._last_3d_frame = now
+
             if ev["seek"] is not None:
                 self.scrub_var.set(ev["seek"])
-                self.redraw()
-            view.render(self.scrub_var.get())
+                self._cursor_due = 0.0      # a seek should show immediately
+            elif self.playing:
+                # The render loop paces playback: real elapsed time, so speed
+                # is independent of however fast this machine draws.
+                t = self.scrub_var.get() + dt * self.play_speed
+                self.scrub_var.set(0.0 if t > self.t_max else t)
+
+            self.time_label.config(
+                text="t = {:.2f} s".format(self.scrub_var.get()))
+            # The 2D cursors are cheap now (~4 ms blitted) but still pointless
+            # above ~30 Hz.
+            if now >= self._cursor_due:
+                self._cursor_due = now + (1.0 / 30.0)
+                self._move_stage_playhead()
+                self._update_cursor()
+
+            # Render gated on ELAPSED TIME, not on the after() interval: Tk's
+            # timer granularity on Windows is ~10-15 ms, so asking for
+            # after(16) actually delivered ~43 FPS. Poll often, draw at 60.
+            #
+            # The tolerance matters: with polls landing on a ~10-15 ms grid, a
+            # strict "16.67 ms must have elapsed" test rejects the poll at
+            # 15 ms and waits for the one at 25 ms, aliasing 60 FPS down to
+            # ~49. Accepting a poll that is a few ms early costs nothing and
+            # lands much closer to the target.
+            if now + FRAME_GATE_TOLERANCE >= self._render_due:
+                self._render_due = now + (1.0 / TARGET_3D_FPS)
+                view.render(self.scrub_var.get())
         except Exception:
             # A dead GL context should close the window, not take the
             # dashboard down with it.
@@ -515,11 +564,10 @@ class Dashboard:
                 pass
             self.view3d = None
             return
-        # 8 ms rather than 33: the render costs ~3 ms, so this leaves Tk plenty
-        # of room while lifting the old hard 30 FPS ceiling. Deliberately not
-        # zero -- this shares a process with the dashboard's own event loop,
-        # and starving it to chase a number nobody can see is not a win.
-        self._pump_job = self.root.after(8, self._pump_3d)
+        # Poll at ~200 Hz so mouse input stays responsive and the 60 FPS
+        # render gate above can actually be hit; the callback is nearly
+        # free on the polls where nothing is due.
+        self._pump_job = self.root.after(5, self._pump_3d)
 
     def toggle_play(self):
         self.playing = not self.playing
@@ -528,69 +576,97 @@ class Dashboard:
             self._tick()
 
     def _tick(self):
+        """Playback clock, used only when the 3D window is NOT open.
+
+        With the 3D window open, _pump_3d advances time instead, so playback
+        is paced by the render loop and the two timers don't both drive the
+        clock (which made playback speed depend on which one won).
+        """
         if not self.playing:
             return
-        t = self.scrub_var.get() + 0.05 * self.play_speed
+        if self.view3d is None or self.view3d.closed:
+            self._advance(0.05 * self.play_speed)
+        self.root.after(50, self._tick)
+
+    def _advance(self, dt):
+        t = self.scrub_var.get() + dt
         if t > self.t_max:
             t = 0.0
         self.scrub_var.set(t)
         self.redraw()
-        self.root.after(50, self._tick)
 
     # -------------------------------------------------------------- draw
     def redraw(self):
+        """Cheap per-frame update: move the cursors, nothing else.
+
+        This used to re-plot every series from scratch (~140 ms, measured),
+        which saturated Tk's event loop and left the 3D window ~12 frames a
+        second. The traces don't change while scrubbing -- only the playhead
+        does -- so plotting now happens once per flight in _plot_flight() and
+        this just moves four vertical lines.
+        """
         if not self.rows:
             return
-        t_now = self.scrub_var.get()
-        self.time_label.config(text="t = {:.2f} s".format(t_now))
+        self.time_label.config(text="t = {:.2f} s".format(self.scrub_var.get()))
         self._move_stage_playhead()
+        self._update_cursor()
+
+    def _decimate(self, seq, n=PLOT_POINTS):
+        """Every k-th element, for DISPLAY only.
+
+        ~6600 samples x 11 series is a lot for matplotlib to rasterise, and at
+        this figure size it cannot resolve more than a couple of thousand
+        points anyway. self.rows stays full resolution -- this only thins what
+        gets handed to plot(). Same idea as flight3d.Track's trail decimation.
+        """
+        if len(seq) <= n:
+            return seq
+        step = len(seq) // n + 1
+        out = seq[::step]
+        if out[-1] is not seq[-1]:
+            out = out + [seq[-1]]
+        return out
+
+    def _plot_flight(self):
+        """Draw everything that doesn't move. Once per loaded flight."""
+        if not self.rows:
+            return
         rows = self.rows
-        times = [r["t"] for r in rows]
+        d = self._decimate
+        times = d([r["t"] for r in rows])
 
         for ax in (self.ax_pid, self.ax_alt, self.ax_tilt, self.ax_state):
             ax.clear()
 
         # -- altitude --
-        kf = [r["kf_alt"] for r in rows]
-        self.ax_alt.plot(times, kf, label="KF alt", color="#1f77b4")
+        self.ax_alt.plot(times, d([r["kf_alt"] for r in rows]), label="KF alt",
+                         color="#1f77b4")
         if not self.is_log:
-            truth = [r["h_true"] for r in rows]
-            self.ax_alt.plot(times, truth, label="truth", color="#999999",
-                             linestyle="--", alpha=0.7)
-        self.ax_alt.axvline(t_now, color="k", alpha=0.4)
+            self.ax_alt.plot(times, d([r["h_true"] for r in rows]),
+                             label="truth", color="#999999", linestyle="--",
+                             alpha=0.7)
         self.ax_alt.set_ylabel("altitude (m)")
         self.ax_alt.legend(loc="upper right", fontsize=8)
 
         # -- tilt + gimbal --
-        tilt = [r["tilt_deg"] for r in rows]
-        self.ax_tilt.plot(times, tilt, label="tilt (deg)", color="#d62728")
+        self.ax_tilt.plot(times, d([r["tilt_deg"] for r in rows]),
+                          label="tilt (deg)", color="#d62728")
         if not self.is_log:
-            gx = [math.degrees(r["gimbal_x_cmd"]) for r in rows]
-            gy = [math.degrees(r["gimbal_y_cmd"]) for r in rows]
+            gx = d([math.degrees(r["gimbal_x_cmd"]) for r in rows])
+            gy = d([math.degrees(r["gimbal_y_cmd"]) for r in rows])
         else:
-            gx = [r["gimbal_x_deg"] for r in rows]
-            gy = [r["gimbal_y_deg"] for r in rows]
+            gx = d([r["gimbal_x_deg"] for r in rows])
+            gy = d([r["gimbal_y_deg"] for r in rows])
         self.ax_tilt.plot(times, gx, label="gimbal X (deg)", alpha=0.7)
         self.ax_tilt.plot(times, gy, label="gimbal Y (deg)", alpha=0.7)
-        self.ax_tilt.axvline(t_now, color="k", alpha=0.4)
         self.ax_tilt.legend(loc="upper right", fontsize=8, ncol=3)
         self.ax_tilt.set_ylabel("deg")
 
         # -- state timeline --
-        prev_state = rows[0]["state"]
-        seg_start = times[0]
-        for i in range(1, len(rows)):
-            st = rows[i]["state"]
-            if st != prev_state:
-                self.ax_state.axvspan(seg_start, rows[i]["t"],
-                                      color=STATE_COLORS.get(prev_state, "#ddd"))
-                seg_start = rows[i]["t"]
-                prev_state = st
-        self.ax_state.axvspan(seg_start, times[-1],
-                              color=STATE_COLORS.get(prev_state, "#ddd"))
+        for t0, t1, name in self._stages():
+            self.ax_state.axvspan(t0, t1, color=STATE_COLORS.get(name, "#ddd"))
         for ev in self.events:
             self.ax_state.axvline(ev["t"], color="k", alpha=0.5, linestyle="--")
-        self.ax_state.axvline(t_now, color="k", alpha=0.8)
         self.ax_state.set_yticks([])
         self.ax_state.set_xlabel("t (s)")
 
@@ -603,15 +679,66 @@ class Dashboard:
                 ("d_x", "#d62728", "-", "D"),
                 ("p_y", "#1f77b4", "--", None), ("i_y", "#2ca02c", "--", None),
                 ("d_y", "#d62728", "--", None)):
-            self.ax_pid.plot(times, [r[key] for r in rows], style, color=color,
-                             alpha=0.8, linewidth=1.0, label=label)
-        self.ax_pid.axvline(t_now, color="k", alpha=0.4)
+            self.ax_pid.plot(times, d([r[key] for r in rows]), style,
+                             color=color, alpha=0.8, linewidth=1.0, label=label)
         self.ax_pid.set_ylabel("PID terms (rad)")
         self.ax_pid.set_title("solid = X axis, dashed = Y", fontsize=8)
         self.ax_pid.legend(loc="upper left", fontsize=7, ncol=3)
 
-        self.fig.tight_layout()
+        # The moving cursors, created once and thereafter only repositioned.
+        # animated=True keeps them out of the cached background.
+        t0 = self.rows[0]["t"]
+        self._cursors = [
+            (ax, ax.axvline(t0, color="k", alpha=alpha, animated=True))
+            for ax, alpha in ((self.ax_pid, 0.4), (self.ax_alt, 0.4),
+                              (self.ax_tilt, 0.4), (self.ax_state, 0.8))
+        ]
+
+        self.fig.tight_layout()   # once per flight, not once per frame (~31 ms)
+        self._backgrounds = None
         self.canvas.draw_idle()
+
+    def _on_mpl_draw(self, _event):
+        """Re-cache the blit backgrounds after any full canvas draw.
+
+        Covers the first paint, window resizes and anything else matplotlib
+        redraws for its own reasons -- the classic way blitting breaks is
+        caching a background once and never noticing the canvas changed
+        underneath it.
+        """
+        try:
+            self._backgrounds = [self.canvas.copy_from_bbox(ax.bbox)
+                                 for ax, _line in self._cursors]
+        except Exception:
+            self._backgrounds = None
+
+    def _update_cursor(self):
+        """Move the four time cursors. ~1-3 ms via blitting, vs ~81 ms for a
+        full canvas.draw()."""
+        if not self._cursors:
+            return
+        t_now = self.scrub_var.get()
+        for _ax, line in self._cursors:
+            line.set_xdata([t_now, t_now])
+
+        if self._backgrounds and len(self._backgrounds) == len(self._cursors):
+            try:
+                for (ax, line), bg in zip(self._cursors, self._backgrounds):
+                    self.canvas.restore_region(bg)
+                    ax.draw_artist(line)
+                    self.canvas.blit(ax.bbox)
+                return
+            except Exception:
+                # Backend declined to blit -- fall through to the slow path
+                # rather than silently stop moving the cursor.
+                self._backgrounds = None
+
+        # Fallback: correctness without blitting, throttled so a backend that
+        # can't blit degrades to a slow cursor rather than a frozen dashboard.
+        now = time.perf_counter()
+        if now - self._last_full_draw >= 0.1:
+            self._last_full_draw = now
+            self.canvas.draw_idle()
 
 
 def main():
