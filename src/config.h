@@ -61,12 +61,22 @@ constexpr bool REQUIRE_ARM_SWITCH = false;  // set true once the switch is wired
 // IMU mounting: body = R_SB * sensor. Body frame: +Z = long axis toward the
 // NOSE, X/Y lateral aligned with the gimbal axes. Edit this row-major 3x3 to
 // match how the BMI088 breakout sits in the vehicle (entries are -1/0/+1 for
-// axis-aligned mounting). Default: sensor axes == body axes.
+// axis-aligned mounting).
+//
+// Measured on the bench 2026-08-16 with SensorServoBenchTest: standing the
+// vehicle nose up put gravity on sensor -X, i.e. the breakout's -X axis points
+// out the nose. This matrix maps that onto body +Z and completes a right-handed
+// frame (determinant +1).
+//
+// Gravity only fixes the LONG axis. The lateral assignment below -- sensor +Y
+// to body +X, sensor -Z to body +Y -- is the right-handed completion, and which
+// of those is the servo A gimbal axis still has to be confirmed by the gimbal
+// direction test. If A and B come out swapped, exchange the first two rows.
 // ---------------------------------------------------------------------------
 constexpr float IMU_R_SB[9] = {
-  1, 0, 0,
-  0, 1, 0,
-  0, 0, 1,
+   0,  1,  0,
+   0,  0, -1,
+  -1,  0,  0,
 };
 
 // ---------------------------------------------------------------------------
@@ -164,7 +174,7 @@ constexpr float CONT_DIVIDER_RATIO  = 1.0f;    // sense_v = adc_v * ratio (set p
 // ---------------------------------------------------------------------------
 // Battery
 // ---------------------------------------------------------------------------
-constexpr float VBAT_DIVIDER = 4.03f;  // e.g. 100k:33k -> Vbat = Vadc * 4.03
+constexpr float VBAT_DIVIDER = 6.0f;   // [MEASURE] 10k:2k -> Vbat = Vadc * 6.0
 constexpr float VBAT_MIN     = 7.0f;   // refuse to arm below this (2S LiPo)
 
 // ---------------------------------------------------------------------------

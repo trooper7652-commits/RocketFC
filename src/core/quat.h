@@ -57,6 +57,7 @@ struct Quat {
   Vec3 rotateInv(const Vec3& v) const { return conj().rotate(v); }
 
   // First-order integration of body angular rate (rad/s) over dt.
+  //Jacobian
   void integrate(const Vec3& omegaBody, float dt) {
     const Quat wq{0, omegaBody.x, omegaBody.y, omegaBody.z};
     const Quat qd = (*this) * wq;  // q̇ = ½ q ⊗ ω

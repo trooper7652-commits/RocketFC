@@ -2,6 +2,8 @@
 __pycache__/
 tools/replay/replay
 tools/replay/replay.exe
+tools/replay/main.exe
+src/core/*.exe
 build/
 *.o
 
@@ -12,8 +14,15 @@ tools/replay/cases/
 FLIGHTS/
 *_plots.png
 
+# ThrustStand captured runs
+ThrustStand/runs/
+
 # Editor / OS noise
 .vscode/
 *.swp
 Thumbs.db
 desktop.ini
+
+# tools/sim build cache and compiled bridge
+tools/sim/build/
+*.dll
