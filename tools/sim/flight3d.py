@@ -56,8 +56,48 @@ STAGE_ABBREV = {
     "DESCENT": "DESC", "APOGEE": "APO",
 }
 
+# Same palette in GL's 0..1 floats, derived rather than hand-maintained as a
+# second table that could drift out of step with the one above.
+STATE_COLORS_F = {k: (r / 255.0, g / 255.0, b / 255.0)
+                  for k, (r, g, b) in STATE_COLORS.items()}
+_TRAIL_FALLBACK_F = (0.35, 0.85, 0.55)
+
+# Roughly how many vertices the trail is decimated to. See Track's trail
+# construction for why this matters so much in immediate-mode GL.
+TRAIL_POINTS = 400
+
+# The overlay is rebuilt at most this often while only the sample index is
+# moving; camera moves and resizes still rebuild immediately so pinned labels
+# never lag the geometry they point at.
+OVERLAY_HZ = 30.0
+
 # States where the motor is burning, for the flame.
 THRUSTING = ("BOOST", "LANDING_BURN")
+
+
+def config_gimbal_limit_deg(default=5.0):
+    """cfg::GIMBAL_MAX_RAD in degrees, for the crosshair's full scale.
+
+    Read straight out of src/config.h rather than by building and loading the
+    DLL, so running this viewer standalone on a log stays instant. The
+    dashboard passes the value from the config snapshot it has already read,
+    which is the authoritative one for a swept build; this is the fallback.
+    Same approach as SensorServoBenchTest/viz/rocket_viz.py::gimbal_limit_deg.
+    """
+    import re
+    path = os.path.join(os.path.dirname(SIM_DIR), "..", "src", "config.h")
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+        m = re.search(r"GIMBAL_MAX_RAD\s*=\s*([0-9.]+)f?\s*\*\s*DEG2RAD", text)
+        if m:
+            return float(m.group(1))
+        m = re.search(r"GIMBAL_MAX_RAD\s*=\s*([0-9.]+)f?", text)
+        if m:
+            return math.degrees(float(m.group(1)))
+    except OSError:
+        pass
+    return default
 
 
 class Track:
@@ -70,7 +110,7 @@ class Track:
     """
 
     def __init__(self, rows, events=None, is_log=False, dead_reckon=False,
-                 label=""):
+                 label="", landing_speed=None):
         self.is_log = is_log
         self.label = label
         self.events = list(events or [])
@@ -81,6 +121,12 @@ class Track:
         self.tilt = []
         self.vel = []
         self.state = []
+        # The flight computer's OWN estimate, for the ghost. Only meaningful
+        # for a sim run, where there is also a truth to compare it against --
+        # a real log contains nothing but the estimate.
+        self.est_alt = []
+        self.est_quat = []
+        self.has_estimate = not is_log
 
         if not rows:
             raise ValueError("no rows to render")
@@ -110,12 +156,33 @@ class Track:
                 self.gimbal.append((math.degrees(r.get("gimbal_x_act", 0.0)),
                                     math.degrees(r.get("gimbal_y_act", 0.0))))
                 self.vel.append(r.get("v_true", 0.0))
+                self.est_alt.append(r.get("kf_alt", 0.0))
+                self.est_quat.append(r.get("quat_est", (1.0, 0.0, 0.0, 0.0)))
             self.tilt.append(r.get("tilt_deg", 0.0))
             self.state.append(r.get("state", ""))
 
         self.t_max = self.t[-1]
         self.max_alt = max(p[2] for p in self.pos)
         self.stages = self._stages()
+        # Decimated trail. A 13 s flight is ~6600 samples, and drawing that
+        # many vertices through PyOpenGL's immediate mode costs more than the
+        # entire rest of the frame -- every glVertex3f is a Python call. A few
+        # hundred points is visually identical for a smooth trajectory.
+        # Stage boundaries are force-included so a colour change never lands
+        # on the wrong side of a decimated segment.
+        stride = max(1, len(self.t) // TRAIL_POINTS)
+        keep = set(range(0, len(self.t), stride))
+        keep.add(len(self.t) - 1)
+        for k in range(1, len(self.state)):
+            if self.state[k] != self.state[k - 1]:
+                keep.add(k - 1)
+                keep.add(k)
+        self.trail_idx = sorted(keep)
+        self.trail_pos = [self.pos[k] for k in self.trail_idx]
+        self.trail_col = [STATE_COLORS_F.get(self.state[k], _TRAIL_FALLBACK_F)
+                          for k in self.trail_idx]
+        self.landing_speed = (landing_speed if landing_speed is not None
+                              else self._landing_speed())
 
     def _stages(self):
         """Contiguous runs of the same state, as (t_start, t_end, name)."""
@@ -129,6 +196,29 @@ class Track:
                 cur = self.state[i]
         out.append((start, self.t[-1], cur))
         return out
+
+    def _landing_speed(self):
+        """|vertical velocity| at the last sample still meaningfully above the
+        ground -- i.e. how hard it arrived.
+
+        Returns None, not 0.0, for a flight that never lands (a mid-air abort,
+        a truncated log): "we don't know" and "it touched down perfectly" are
+        very different answers and must not render the same.
+
+        run.simulate() computes this authoritatively from the plant's own
+        touchdown detection; the dashboard passes that in and this derivation
+        is only the fallback for a bare log.
+        """
+        # Close to contact: the vehicle decelerates hard in the last few
+        # centimetres, so sampling too high reads faster than it landed.
+        GROUND = 0.05
+        apogee_i = max(range(len(self.pos)), key=lambda i: self.pos[i][2])
+        for i in range(len(self.pos) - 1, apogee_i, -1):
+            if self.pos[i][2] > GROUND:
+                # Found the last airborne sample; if nothing after it is on the
+                # ground, the flight simply ends mid-air.
+                return abs(self.vel[i]) if i < len(self.pos) - 1 else None
+        return None
 
     def index_at(self, t):
         i = bisect.bisect_left(self.t, t)
@@ -167,7 +257,8 @@ class FlightView:
     """
 
     def __init__(self, track, vehicle_length_m=1.2, size=(1100, 720),
-                 exaggeration=DEFAULT_EXAGGERATION, title=None):
+                 exaggeration=DEFAULT_EXAGGERATION, title=None,
+                 gimbal_limit_deg=None):
         import pygame
         from OpenGL.GL import glViewport
 
@@ -185,10 +276,16 @@ class FlightView:
         self.playing = False
         self.show_grid = True
         self.show_trail = True
+        self.show_ghost = track.has_estimate
         self.follow = True
+        self.gimbal_limit_deg = (gimbal_limit_deg if gimbal_limit_deg
+                                 else config_gimbal_limit_deg())
         self._dragging = False
         self._scrubbing = False
         self._t = 0.0
+        self._fps = 0.0
+        self._frames = 0
+        self._fps_t0 = None
 
         # Metres per model unit, times the declared exaggeration.
         self.model_scale = (vehicle_length_m / MODEL_LENGTH_UNITS) * exaggeration
@@ -220,7 +317,17 @@ class FlightView:
         self._font_b = pygame.font.SysFont("consolas,couriernew,monospace", 15,
                                            bold=True)
         self._font_s = pygame.font.SysFont("consolas,couriernew,monospace", 12)
+        # Overlay caching. Rebuilding this surface and pushing a full-window
+        # RGBA texture is by far the most expensive thing per frame (~6.7 ms
+        # measured at 1100x720), and text does not need 60 Hz -- so the
+        # surface is rebuilt only when something material changed, and the
+        # cached texture is simply re-drawn on the frames in between. Same
+        # reasoning as the bench HUD's module docstring.
         self._overlay = None
+        self._tex_size = None       # size the texture is currently allocated at
+        self._overlay_key = None    # camera/size/toggles: rebuild immediately
+        self._overlay_soft = None   # sample index/fps: rebuild at OVERLAY_HZ
+        self._overlay_t0 = 0.0
         from OpenGL.GL import glGenTextures
         self._tex = glGenTextures(1)
         self._viewport = glViewport  # kept for resize
@@ -284,6 +391,11 @@ class FlightView:
                     self.show_grid = not self.show_grid
                 elif ev.key == pygame.K_t:
                     self.show_trail = not self.show_trail
+                elif ev.key == pygame.K_h:
+                    # Inert for a log: there is no truth to compare the
+                    # estimate against, so there is no ghost to show.
+                    if self.track.has_estimate:
+                        self.show_ghost = not self.show_ghost
                 elif ev.key == pygame.K_SPACE:
                     out["toggle_play"] = True
         return out
@@ -360,7 +472,13 @@ class FlightView:
             trk.max_alt, step=self._ruler_step(), at=(self._ruler_x(), 0.0),
             tick_len=max(0.6, trk.max_alt * 0.02))
         if self.show_trail:
-            scene_mod.draw_trail(trk.pos[:i + 1])
+            # Prefix of the decimated trail up to the current sample, plus the
+            # vehicle's exact current position so the trail always meets it.
+            k = bisect.bisect_right(trk.trail_idx, i)
+            scene_mod.draw_trail(trk.trail_pos[:k] + [pos],
+                                 colors=trk.trail_col[:k] + [
+                                     STATE_COLORS_F.get(trk.state[i],
+                                                        _TRAIL_FALLBACK_F)])
         scene_mod.draw_dropline(pos)
 
         glPushMatrix()
@@ -373,9 +491,52 @@ class FlightView:
             self._draw_flame(gx, gy)
         glPopMatrix()
 
-        labels = [(scene_mod.project(p), txt) for p, txt in ruler_labels]
+        if self.show_ghost and trk.has_estimate:
+            self._draw_ghost(i, pos)
+
+        # One batched projection for every ruler label, rather than three GL
+        # state readbacks apiece.
+        pts = [p for p, _txt in ruler_labels]
+        screen = scene_mod.project_many(pts)
+        labels = [(s, txt) for s, (_p, txt) in zip(screen, ruler_labels)]
         self._draw_overlay(i, labels)
         self._pygame.display.flip()
+        self._tick_fps()
+
+    def _draw_ghost(self, i, true_pos):
+        """The flight computer's own belief, drawn translucent beside the truth.
+
+        Positioned at the TRUE x/y and the ESTIMATED altitude, because the
+        altitude KF is vertical-only -- the flight computer has no horizontal
+        estimate at all. Offsetting the ghost sideways would draw an opinion
+        the firmware does not actually hold.
+        """
+        from OpenGL.GL import (glPushMatrix, glPopMatrix, glMultMatrixf,
+                               glTranslatef, glScalef, glDepthMask)
+        trk = self.track
+        glPushMatrix()
+        glTranslatef(true_pos[0], true_pos[1], trk.est_alt[i])
+        glMultMatrixf(self._qm.gl_matrix(trk.est_quat[i]))
+        glScalef(self.model_scale, self.model_scale, self.model_scale)
+        # Translucent without writing depth, so the solid vehicle stays
+        # visible through it from any angle.
+        glDepthMask(False)
+        self.rocket.draw_ghost()
+        glDepthMask(True)
+        glPopMatrix()
+
+    def _tick_fps(self):
+        import time
+        now = time.perf_counter()
+        if self._fps_t0 is None:
+            self._fps_t0 = now
+            return
+        self._frames += 1
+        dt = now - self._fps_t0
+        if dt >= 0.5:
+            self._fps = self._frames / dt
+            self._frames = 0
+            self._fps_t0 = now
 
     def _ruler_x(self):
         """How far to the side of the flight path the altitude ruler stands."""
@@ -423,22 +584,60 @@ class FlightView:
 
     # -- 2D overlay -------------------------------------------------------
     def _draw_overlay(self, i, ruler_labels):
+        """Rebuild the overlay only when it would actually look different,
+        then draw the cached texture.
+
+        Rebuilding the surface and pushing a full-window RGBA texture was
+        measured at ~6.7 ms -- more than the entire rest of the frame. Text
+        does not need 60 Hz, so it is rebuilt on a change of sample, camera
+        pose, size or toggle (plus a ~25 Hz floor so the clock keeps moving)
+        and merely re-drawn in between.
+        """
+        import time
+        w, h = self.size
+        cam = self.camera
+        # Split deliberately: anything that moves the 3D geometry the labels
+        # are pinned to must rebuild NOW or the labels visibly lag it, while
+        # the readouts merely counting up can wait for the next slot.
+        hard = (w, h, round(cam.az, 4), round(cam.el, 4), round(cam.dist, 3),
+                round(cam.target[0], 3), round(cam.target[1], 3),
+                round(cam.target[2], 3), self.follow, self.show_ghost,
+                self.show_grid, self.show_trail)
+        soft = (i, round(self._fps, 0))
+        now = time.perf_counter()
+        due = (now - self._overlay_t0) >= (1.0 / OVERLAY_HZ)
+        if (self._overlay is None or hard != self._overlay_key or
+                (soft != self._overlay_soft and due)):
+            self._rebuild_overlay(i, ruler_labels)
+            self._overlay_key = hard
+            self._overlay_soft = soft
+            self._overlay_t0 = now
+            self._upload_overlay()
+        self._blit_overlay()
+
+    def _rebuild_overlay(self, i, ruler_labels):
         pygame = self._pygame
         w, h = self.size
         if self._overlay is None or self._overlay.get_size() != (w, h):
             self._overlay = pygame.Surface((w, h), pygame.SRCALPHA, 32)
+            self._tex_size = None   # force a fresh allocation at the new size
         s = self._overlay
         s.fill((0, 0, 0, 0))
         trk = self.track
 
         # -- readouts panel --
         state = trk.state[i]
+        land = ("{:6.2f} m/s".format(trk.landing_speed)
+                if trk.landing_speed is not None else "    -- ")
         lines = [
             ("t", "{:6.2f} s".format(self._t)),
             ("alt", "{:6.1f} m".format(trk.pos[i][2])),
             ("vert v", "{:6.1f} m/s".format(trk.vel[i])),
             ("tilt", "{:6.1f} deg".format(trk.tilt[i])),
-            ("gimbal", "{:+.1f} / {:+.1f} deg".format(*trk.gimbal[i])),
+            ("landing v", land),
+            # "--" until half a second of frames have actually been timed;
+            # printing 0 before then reads as "it is running at zero FPS".
+            ("fps", "{:6.0f}".format(self._fps) if self._fps > 0 else "    -- "),
         ]
         pw, ph = 216, 28 + len(lines) * 19 + 24
         pygame.draw.rect(s, (16, 18, 22, 210), (12, 12, pw, ph), border_radius=6)
@@ -456,9 +655,15 @@ class FlightView:
             note += "  downrange dead-reckoned"
         s.blit(self._font_s.render(note, True, (140, 148, 162)), (24, y + 2))
 
+        # -- gimbal crosshair, top right --
+        self._draw_gimbal_panel(s, i)
+
         # -- keys --
-        keys = "drag orbit | wheel zoom | F {} | space play | G grid | T trail | Esc".format(
+        keys = "drag orbit | wheel zoom | F {} | space play | G grid | T trail".format(
             "whole flight" if self.follow else "follow")
+        if trk.has_estimate:
+            keys += " | H ghost"
+        keys += " | Esc"
         s.blit(self._font_s.render(keys, True, (128, 136, 150)), (14, h - 62))
 
         # -- altitude ruler labels, projected from 3D --
@@ -470,6 +675,50 @@ class FlightView:
 
         self._draw_timeline(s, i)
         self._blit_overlay()
+
+    def _draw_gimbal_panel(self, s, i):
+        """Gimbal deflection crosshair, ported from the bench tool's
+        hud.py::_panel_gimbal: a square whose edge is the gimbal limit, with a
+        dot at the current (Y, X) deflection.
+
+        NOTE the full-alpha colours throughout. pygame.draw REPLACES alpha
+        rather than blending it, so mixing alphas here punches see-through
+        bands into the panel that read as separate boxes instead of one
+        square with a cross. This is a correctness constraint, not a style.
+        """
+        pygame = self._pygame
+        w, _h = self.size
+        gx, gy = self.track.gimbal[i]
+        lim = max(1e-3, self.gimbal_limit_deg)
+
+        cross = 108
+        pw = 190
+        ph = 30 + cross + 44
+        px0 = w - pw - 12
+        py0 = 12
+        pygame.draw.rect(s, (16, 18, 22, 210), (px0, py0, pw, ph), border_radius=6)
+        pygame.draw.rect(s, (60, 66, 78, 255), (px0, py0, pw, ph), 1,
+                         border_radius=6)
+        s.blit(self._font_b.render("GIMBAL", True, (196, 204, 218)),
+               (px0 + 12, py0 + 8))
+
+        cx, cy = px0 + pw // 2, py0 + 30 + cross // 2
+        r = cross // 2
+        pygame.draw.rect(s, (12, 13, 16, 255), (cx - r, cy - r, cross, cross))
+        pygame.draw.line(s, (52, 57, 66, 255), (cx - r, cy), (cx + r, cy))
+        pygame.draw.line(s, (52, 57, 66, 255), (cx, cy - r), (cx, cy + r))
+        pygame.draw.rect(s, (58, 63, 72, 255), (cx - r, cy - r, cross, cross),
+                         width=1)
+
+        dx = cx + int(max(-1.0, min(1.0, gy / lim)) * r)
+        dy = cy - int(max(-1.0, min(1.0, gx / lim)) * r)
+        pygame.draw.line(s, (120, 180, 255, 255), (cx, cy), (dx, dy), 2)
+        pygame.draw.circle(s, (120, 180, 255, 255), (dx, dy), 5)
+
+        s.blit(self._font.render("X {:+5.2f}  Y {:+5.2f}".format(gx, gy), True,
+                                 (226, 230, 238)), (px0 + 12, cy + r + 6))
+        s.blit(self._font_s.render("full scale +/-{:.1f} deg".format(lim), True,
+                                   (146, 154, 166)), (px0 + 12, cy + r + 26))
 
     def _draw_timeline(self, s, i):
         """The stage bar: one coloured, labelled band per flight phase."""
@@ -499,19 +748,44 @@ class FlightView:
         px = x + int(tw * (self._t / t_max))
         pygame.draw.line(s, (255, 255, 255), (px, y - 8), (px, y + th + 8), 2)
 
+    def _upload_overlay(self):
+        """Push the rebuilt surface into the texture.
+
+        Allocated once per size with glTexImage2D, then updated in place with
+        glTexSubImage2D -- reallocating a 1100x720 RGBA texture every frame
+        was a measurable part of the old frame cost, and only happens on a
+        resize now. Called only when the surface was actually rebuilt.
+        """
+        from OpenGL.GL import (glBindTexture, glTexParameteri, glTexImage2D,
+                               glTexSubImage2D, GL_TEXTURE_2D,
+                               GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                               GL_NEAREST, GL_RGBA, GL_UNSIGNED_BYTE)
+        w, h = self.size
+        # tobytes(), not the deprecated tostring().
+        data = self._pygame.image.tobytes(self._overlay, "RGBA", False)
+        glBindTexture(GL_TEXTURE_2D, self._tex)
+        if self._tex_size != (w, h):
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+                         GL_UNSIGNED_BYTE, data)
+            self._tex_size = (w, h)
+        else:
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA,
+                            GL_UNSIGNED_BYTE, data)
+
     def _blit_overlay(self):
-        """Upload the overlay surface as a texture and draw it over the scene,
-        same approach as the bench tool's HUD."""
+        """Draw the cached overlay texture over the scene. Cheap: no surface
+        work and no upload, just one textured quad."""
         from OpenGL.GL import (glMatrixMode, glPushMatrix, glPopMatrix,
                                glLoadIdentity, glOrtho, glDisable, glEnable,
-                               glBindTexture, glTexParameteri, glTexImage2D,
-                               glColor4f, glBegin, glEnd, glTexCoord2f,
-                               glVertex2f, GL_PROJECTION, GL_MODELVIEW,
-                               GL_DEPTH_TEST, GL_LIGHTING, GL_TEXTURE_2D,
-                               GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                               GL_NEAREST, GL_RGBA, GL_UNSIGNED_BYTE, GL_QUADS)
+                               glBindTexture, glColor4f, glBegin, glEnd,
+                               glTexCoord2f, glVertex2f, GL_PROJECTION,
+                               GL_MODELVIEW, GL_DEPTH_TEST, GL_LIGHTING,
+                               GL_TEXTURE_2D, GL_QUADS)
         w, h = self.size
-        data = self._pygame.image.tostring(self._overlay, "RGBA", False)
+        if self._tex_size is None:
+            return  # nothing uploaded yet
 
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
@@ -525,10 +799,6 @@ class FlightView:
         glDisable(GL_LIGHTING)
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, self._tex)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, data)
         glColor4f(1, 1, 1, 1)
         glBegin(GL_QUADS)
         glTexCoord2f(0, 0); glVertex2f(0, 0)
@@ -567,6 +837,8 @@ def main():
                     help="draw the vehicle this many times oversize so it "
                          "stays visible against the altitude scale")
     ap.add_argument("--speed", type=float, default=1.0, help="playback speed")
+    ap.add_argument("--fps", type=int, default=120,
+                    help="frame rate cap (default 120; 0 = uncapped)")
     args = ap.parse_args()
 
     track = track_from_log(args.log, dead_reckon=args.dead_reckon)
@@ -586,7 +858,7 @@ def main():
         if ev["seek"] is not None:
             t = ev["seek"]
             view.playing = False
-        dt = clock.tick(60) / 1000.0
+        dt = clock.tick(args.fps) / 1000.0
         if view.playing:
             t += dt * args.speed
             if t > track.t_max:

@@ -233,17 +233,37 @@ def project(point):
 
     Returns coordinates with the origin at the TOP-left, matching pygame,
     whereas OpenGL's window origin is bottom-left -- hence the flip.
+
+    Projecting MANY points? Use project_many(): this reads three pieces of GL
+    state per call, and glGetDoublev is a pipeline sync point.
     """
+    return project_many([point])[0]
+
+
+def project_many(points):
+    """
+    project(), but reading the matrices ONCE for the whole list.
+
+    The altitude ruler alone hangs ~11 labels off the scene; doing that
+    through project() cost 33 glGet* readbacks every frame, each one a
+    potential stall waiting for the pipeline to drain. Same answers, three
+    readbacks total.
+    """
+    if not points:
+        return []
     model = glGetDoublev(GL_MODELVIEW_MATRIX)
     proj = glGetDoublev(GL_PROJECTION_MATRIX)
     view = glGetIntegerv(GL_VIEWPORT)
-    try:
-        x, y, z = gluProject(point[0], point[1], point[2], model, proj, view)
-    except Exception:
-        return None
-    if not (0.0 <= z <= 1.0):
-        return None
-    return (x, view[3] - y)
+    h = view[3]
+    out = []
+    for p in points:
+        try:
+            x, y, z = gluProject(p[0], p[1], p[2], model, proj, view)
+        except Exception:
+            out.append(None)
+            continue
+        out.append((x, h - y) if 0.0 <= z <= 1.0 else None)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -283,16 +303,28 @@ def draw_altitude_ruler(max_alt, step=10.0, at=(0.0, 0.0), tick_len=1.2):
     return [((x + tick_len * 1.25, y, h), "{:g} m".format(h)) for h in ticks]
 
 
-def draw_trail(points, color=C_TRAIL, width=2.0):
-    """Where the vehicle has already been, as a line strip in world space."""
+def draw_trail(points, color=C_TRAIL, width=2.0, colors=None):
+    """Where the vehicle has already been, as a line strip in world space.
+
+    `colors`, if given, is a per-point (r, g, b) list in 0..1 -- the flight
+    viewer passes the flight-stage colour of each sample so the path itself
+    shows where boost ended and the landing burn began. Colour is emitted per
+    vertex inside one strip, so a stage change blends over a single segment
+    rather than needing a separate draw call per run.
+    """
     if len(points) < 2:
         return
     glDisable(GL_LIGHTING)
-    glColor3f(*color)
     glLineWidth(width)
     glBegin(GL_LINE_STRIP)
-    for p in points:
-        glVertex3f(p[0], p[1], p[2])
+    if colors:
+        for p, c in zip(points, colors):
+            glColor3f(c[0], c[1], c[2])
+            glVertex3f(p[0], p[1], p[2])
+    else:
+        glColor3f(*color)
+        for p in points:
+            glVertex3f(p[0], p[1], p[2])
     glEnd()
     glLineWidth(1.0)
     glEnable(GL_LIGHTING)

@@ -22,7 +22,6 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Circle
 
 import core
 # flight3d's module level is stdlib + logfile only -- pygame and PyOpenGL are
@@ -132,7 +131,7 @@ class Dashboard:
         ttk.Button(top, text="Reflight with panel settings",
                   command=self.on_reflight).pack(side=tk.LEFT, padx=6)
         ttk.Button(top, text="3D view", command=self.on_open_3d).pack(side=tk.LEFT)
-        ttk.Checkbutton(top, text="Downrange (dead-reckoned for logs)",
+        ttk.Checkbutton(top, text="3D: dead-reckon a log's downrange",
                        variable=self.show_dead_reckon,
                        command=self.redraw).pack(side=tk.LEFT, padx=10)
         self.status = ttk.Label(top, text="Ready")
@@ -182,7 +181,10 @@ class Dashboard:
         self.fig = plt.Figure(figsize=(10, 7.5))
         gs = self.fig.add_gridspec(3, 2, height_ratios=[2, 1, 1],
                                    width_ratios=[1, 1.4])
-        self.ax_traj = self.fig.add_subplot(gs[0, 0])
+        # The trajectory used to live here; the 3D view shows it far better,
+        # so the slot went to the PID terms -- recorded every tick and written
+        # to the log, but until now plotted only by tools/plot_flight.py.
+        self.ax_pid = self.fig.add_subplot(gs[0, 0])
         self.ax_alt = self.fig.add_subplot(gs[0, 1])
         self.ax_tilt = self.fig.add_subplot(gs[1, :])
         self.ax_state = self.fig.add_subplot(gs[2, :])
@@ -362,10 +364,8 @@ class Dashboard:
         # new one rather than leaving it silently stale.
         if self.view3d is not None and not self.view3d.closed:
             try:
-                self.view3d.track = flight3d.Track(
-                    self.rows, self.events, is_log=self.is_log,
-                    dead_reckon=self.show_dead_reckon.get(),
-                    label=("flight log" if self.is_log else "simulated flight"))
+                self.view3d.track = self._make_track()
+                self.view3d.show_ghost = self.view3d.track.has_estimate
             except Exception:
                 pass
         self.redraw()
@@ -447,6 +447,22 @@ class Dashboard:
         self.redraw()
 
     # ------------------------------------------------------------ 3D view
+    def _make_track(self):
+        """Build the 3D view's Track from whatever is currently loaded.
+
+        For a sim run the landing speed comes from run.simulate()'s own
+        summary, which is derived from the plant's touchdown detection and is
+        authoritative; Track's fallback derivation is only for bare logs.
+        """
+        landing = None
+        if self.result and not self.is_log:
+            landing = self.result["summary"].get("touchdown_speed_mps")
+        return flight3d.Track(
+            self.rows, self.events, is_log=self.is_log,
+            dead_reckon=self.show_dead_reckon.get(),
+            label=("flight log" if self.is_log else "simulated flight"),
+            landing_speed=landing)
+
     def on_open_3d(self):
         if not self.rows:
             messagebox.showinfo("3D view", "Run a flight or open a log first.")
@@ -454,12 +470,10 @@ class Dashboard:
         if self.view3d is not None and not self.view3d.closed:
             return  # already open
         try:
-            track = flight3d.Track(
-                self.rows, self.events, is_log=self.is_log,
-                dead_reckon=self.show_dead_reckon.get(),
-                label=("flight log" if self.is_log else "simulated flight"))
+            snap = core.FlightCore.config_snapshot(core.default_dll())
             self.view3d = flight3d.FlightView(
-                track, vehicle_length_m=self.vcfg.length_m)
+                self._make_track(), vehicle_length_m=self.vcfg.length_m,
+                gimbal_limit_deg=math.degrees(snap["gimbalMaxRad"]))
         except Exception as e:
             self.view3d = None
             messagebox.showerror(
@@ -501,7 +515,11 @@ class Dashboard:
                 pass
             self.view3d = None
             return
-        self._pump_job = self.root.after(33, self._pump_3d)
+        # 8 ms rather than 33: the render costs ~3 ms, so this leaves Tk plenty
+        # of room while lifting the old hard 30 FPS ceiling. Deliberately not
+        # zero -- this shares a process with the dashboard's own event loop,
+        # and starving it to chase a number nobody can see is not a win.
+        self._pump_job = self.root.after(8, self._pump_3d)
 
     def toggle_play(self):
         self.playing = not self.playing
@@ -529,7 +547,7 @@ class Dashboard:
         rows = self.rows
         times = [r["t"] for r in rows]
 
-        for ax in (self.ax_traj, self.ax_alt, self.ax_tilt, self.ax_state):
+        for ax in (self.ax_pid, self.ax_alt, self.ax_tilt, self.ax_state):
             ax.clear()
 
         # -- altitude --
@@ -576,32 +594,21 @@ class Dashboard:
         self.ax_state.set_yticks([])
         self.ax_state.set_xlabel("t (s)")
 
-        # -- trajectory / vehicle view --
-        if not self.is_log:
-            xs = [r["x_true"] for r in rows]
-            zs = [r["h_true"] for r in rows]
-            label = "true downrange"
-        elif self.show_dead_reckon.get():
-            xs, _ = dead_reckon_xy(rows)
-            zs = [r["kf_alt"] for r in rows]
-            label = "dead-reckoned (drifts, m within seconds)"
-        else:
-            xs = [0.0] * len(rows)
-            zs = [r["kf_alt"] for r in rows]
-            label = "altitude only (honest)"
-        self.ax_traj.plot(xs, zs, color="#2ca02c", alpha=0.8)
-        # current position marker + tilt-oriented rocket icon
-        idx = min(range(len(times)), key=lambda i: abs(times[i] - t_now))
-        cx, cz = xs[idx], zs[idx]
-        ang = math.radians(tilt[idx])
-        L = max(zs) * 0.06 + 0.5 if zs else 1.0
-        dx, dz = L * math.sin(ang), L * math.cos(ang)
-        self.ax_traj.plot([cx - dx, cx + dx], [cz - dz, cz + dz], color="#333",
-                          linewidth=3)
-        self.ax_traj.add_patch(Circle((cx + dx, cz + dz), L * 0.15, color="#d62728"))
-        self.ax_traj.set_title(label, fontsize=8)
-        self.ax_traj.set_xlabel("downrange (m)")
-        self.ax_traj.set_ylabel("altitude (m)")
+        # -- PID terms --
+        # Both axes' P/I/D contributions in gimbal radians. X solid, Y dashed,
+        # matching colours per term, so the pair can be compared without six
+        # separate legend lookups.
+        for key, color, style, label in (
+                ("p_x", "#1f77b4", "-", "P"), ("i_x", "#2ca02c", "-", "I"),
+                ("d_x", "#d62728", "-", "D"),
+                ("p_y", "#1f77b4", "--", None), ("i_y", "#2ca02c", "--", None),
+                ("d_y", "#d62728", "--", None)):
+            self.ax_pid.plot(times, [r[key] for r in rows], style, color=color,
+                             alpha=0.8, linewidth=1.0, label=label)
+        self.ax_pid.axvline(t_now, color="k", alpha=0.4)
+        self.ax_pid.set_ylabel("PID terms (rad)")
+        self.ax_pid.set_title("solid = X axis, dashed = Y", fontsize=8)
+        self.ax_pid.legend(loc="upper left", fontsize=7, ncol=3)
 
         self.fig.tight_layout()
         self.canvas.draw_idle()
