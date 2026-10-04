@@ -19,7 +19,6 @@ enum Fault : uint8_t {
   FAULT_BARO = 2,        // 2 beeps
   FAULT_SD = 3,          // 3 beeps
   FAULT_VBAT = 4,        // 4 beeps
-  FAULT_CONT_CHUTE = 5,  // 5 beeps
   FAULT_CONT_LAND = 6,   // 6 beeps
 };
 

@@ -86,6 +86,11 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
     touchdown_speed = None
     abort_reason = None
     abort_t = None
+    chute_releases = 0
+    chute_detected_t = None
+    chute_unconfirmed = False
+    legs_on_t = None
+    legs_off_t = None
 
     t = 0.0
     i = 0
@@ -150,8 +155,21 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
                     # in tools/synth_flight.py) -- omitting it here would fire
                     # the motor too early relative to what the table assumed.
                     pl.ignite_landing(t + vcfg.ignition_delay_s)
-                elif ev["code"] == core.FlightEvent.FIRE_CHUTE:
-                    pl.deploy_chute(t)
+                elif ev["code"] == core.FlightEvent.CHUTE_RELEASE:
+                    # Spring latch: the first chute_stuck_releases releases
+                    # stick, so the canopy only appears once the flight
+                    # computer's re-cycles get past them.
+                    chute_releases += 1
+                    if chute_releases > vcfg.chute_stuck_releases:
+                        pl.deploy_chute(t)
+                elif ev["code"] == core.FlightEvent.CHUTE_DETECTED:
+                    chute_detected_t = t
+                elif ev["code"] == core.FlightEvent.CHUTE_UNCONFIRMED:
+                    chute_unconfirmed = True
+                elif ev["code"] == core.FlightEvent.LEGS_BURN_ON:
+                    legs_on_t = t
+                elif ev["code"] == core.FlightEvent.LEGS_BURN_OFF:
+                    legs_off_t = t
                 elif ev["code"] == core.FlightEvent.ABORT_DET:
                     abort_reason = core.AbortReason(int(ev["value"]))
                     abort_t = t
@@ -193,7 +211,10 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
                     "ax": ax, "ay": ay, "az": az, "gx": gx, "gy": gy, "gz": gz,
                     "baro_new": baro_new,
                     "baro_alt": baro_alt, "baro_pa": last_baro_pa,
-                    "fire_chute": out["fire_chute"], "fire_landing": out["fire_landing"],
+                    "chute_release": out["chute_release"],
+                    "chute_detected": out["chute_detected"],
+                    "fire_landing": out["fire_landing"],
+                    "legs_burn": out["legs_burn"],
                 })
 
             t += dt
@@ -203,6 +224,16 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
     finally:
         fc.close()
 
+    # Legs are out once the nichrome has cut the band and they've swung down
+    # (vehicle.py's legs_cut_s + legs_swing_s); margin = how long before
+    # ground contact that was. Negative = the legs were still stowed.
+    legs_out_t = None
+    legs_margin_s = None
+    if legs_on_t is not None:
+        legs_out_t = legs_on_t + vcfg.legs_cut_s + vcfg.legs_swing_s
+        if pl.state.touchdown_t is not None:
+            legs_margin_s = pl.state.touchdown_t - legs_out_t
+
     summary = {
         "apogee_t": pl.state.apogee_t, "apogee_h": pl.state.apogee_h,
         "touchdown_t": pl.state.touchdown_t,
@@ -210,6 +241,11 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
         "max_tilt_deg": max_tilt, "max_kf_alt_err_m": max_kf_err,
         "abort_reason": abort_reason.name if abort_reason else None,
         "abort_t": abort_t,
+        "chute_releases": chute_releases,
+        "chute_detected_t": chute_detected_t,
+        "chute_unconfirmed": chute_unconfirmed,
+        "legs_on_t": legs_on_t, "legs_off_t": legs_off_t,
+        "legs_out_t": legs_out_t, "legs_margin_s": legs_margin_s,
         "final_state": rows[-1]["state"] if rows else None,
         "sim_time_s": t,
     }

@@ -27,7 +27,7 @@ constexpr float G0      = 9.80665f;   // standard gravity, m/s^2
 // ---------------------------------------------------------------------------
 enum class FlightMode : uint8_t {
   CHUTE_TEST   = 0,  // TVC ascent, parachute at apogee. Fly this first.
-  FULL_LANDING = 1,  // TVC ascent, F15 landing burn; chute reserved for aborts.
+  FULL_LANDING = 1,  // TVC ascent, F15 landing burn; spring chute reserved for aborts.
 };
 constexpr FlightMode DEFAULT_MODE = FlightMode::CHUTE_TEST;
 
@@ -45,10 +45,11 @@ constexpr float FAST_DT  = 1.0f / FAST_HZ;
 // ---------------------------------------------------------------------------
 constexpr int PIN_SERVO_A      = 2;   // gimbal servo producing torque about body +X
 constexpr int PIN_SERVO_B      = 3;   // gimbal servo producing torque about body +Y
-constexpr int PIN_PYRO_CHUTE   = 6;   // MOSFET gate, parachute e-match
+constexpr int PIN_PYRO_LEGS    = 6;   // MOSFET gate, landing-leg release nichrome
 constexpr int PIN_PYRO_LAND    = 7;   // MOSFET gate, F15 landing-motor e-match
-constexpr int PIN_CONT_CHUTE   = 14;  // A0 — continuity sense divider, chute channel
+constexpr int PIN_CONT_LEGS    = 14;  // A0 — continuity sense divider, legs nichrome
 constexpr int PIN_CONT_LAND    = 15;  // A1 — continuity sense divider, landing channel
+constexpr int PIN_SERVO_CHUTE  = 23;  // parachute spring-latch release servo
 constexpr int PIN_VBAT         = 16;  // A2 — battery voltage divider
 constexpr int PIN_BUZZER       = 8;
 constexpr int PIN_ARM_SWITCH   = 9;   // physical arm enable, INPUT_PULLUP, LOW = enabled
@@ -165,10 +166,39 @@ constexpr bool  ABORT_FIRES_CHUTE_ALWAYS = true; // fire chute on abort even if 
 constexpr float KF_UNHEALTHY_ABORT_MS = 500.0f;
 
 // ---------------------------------------------------------------------------
-// Pyro channels
+// Parachute release servo. The chute is pushed out by a spring; this servo
+// holds the latch. FlightStateMachine decides WHEN (apogee in CHUTE_TEST, any
+// abort in either mode); ChuteDeploy (src/core/chute_deploy.h) then confirms
+// the canopy opened from the accelerometer and re-cycles the latch if not.
+// Find LOCK/RELEASE with the CLI `chute us <n>` jog, then set them here.
 // ---------------------------------------------------------------------------
-constexpr float PYRO_FIRE_MS        = 1200.0f; // gate-high duration
-constexpr float CONT_THRESHOLD_V    = 0.4f;    // sense voltage above this = e-match present
+constexpr float CHUTE_LOCK_US         = 1000.0f; // [MEASURE] latch holding the spring
+constexpr float CHUTE_RELEASE_US      = 2000.0f; // [MEASURE] latch fully open
+constexpr float CHUTE_CONFIRM_MS      = 1500.0f; // no chute seen this long after a release -> re-cycle
+constexpr float CHUTE_RECYCLE_LOCK_MS = 400.0f;  // [MEASURE] dwell back at LOCK (servo travel time)
+constexpr int   CHUTE_MAX_RELEASES    = 4;       // first release + 3 re-cycles, then hold RELEASE
+// Detection: |specific force| must rise this far above its value at release
+// (freefall ~0 g, under canopy ~1 g plus an opening spike) and hold. Relative
+// to the release baseline because drag on a fast, tumbling post-abort rocket
+// can already read ~0.5 g.
+constexpr float CHUTE_DETECT_RISE_G   = 0.4f;
+constexpr float CHUTE_DETECT_MS       = 100.0f;
+
+// ---------------------------------------------------------------------------
+// Landing-leg release (FULL_LANDING only). A nichrome wire burns through the
+// rubber band holding the legs. On LEGS_DELAY_MS after the landing-motor fire
+// command (once ignition is confirmed), off when touchdown is detected.
+// LEGS_BURN_MAX_MS is an independent actuator-level cutoff in case touchdown
+// never comes (LANDING_BURN_MAX_MS forces it, so this should never trip).
+// ---------------------------------------------------------------------------
+constexpr float LEGS_DELAY_MS    = 1000.0f;
+constexpr float LEGS_BURN_MAX_MS = 6000.0f;
+
+// ---------------------------------------------------------------------------
+// Pyro channels (F15 landing-motor e-match + leg-release nichrome)
+// ---------------------------------------------------------------------------
+constexpr float PYRO_FIRE_MS        = 1200.0f; // landing e-match gate-high duration
+constexpr float CONT_THRESHOLD_V    = 0.4f;    // sense voltage above this = e-match/wire present
 constexpr float CONT_DIVIDER_RATIO  = 1.0f;    // sense_v = adc_v * ratio (set per your divider)
 
 // ---------------------------------------------------------------------------

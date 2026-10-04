@@ -1,7 +1,8 @@
 #pragma once
 //
 // Flight state machine. Pure logic (no hardware): consumes estimator outputs
-// and health flags, produces state + one-shot pyro commands + TVC enables.
+// and health flags, produces state + one-shot pyro commands + TVC enables +
+// the parachute servo position (via ChuteDeploy) + the landing-leg release.
 //
 // Every transition is debounced (condition must persist) and the critical ones
 // have redundant backup criteria (timers, altitude-drop) so a single bad
@@ -12,13 +13,22 @@
 // are NOT taken during LANDING_BURN — at that point active TVC is the least
 // bad option, so the burn rides out (logged for post-flight review).
 //
+// Once the chute is released, ChuteDeploy keeps watching for the canopy and
+// re-cycles the spring latch if it doesn't appear (see chute_deploy.h).
+//
+// Landing legs (FULL_LANDING only): a nichrome wire burns the band holding
+// them. It comes on LEGS_DELAY_MS after the landing-motor fire command, but
+// only into a confirmed burn -- a dud aborts to the chute with the legs
+// stowed -- and stays on until touchdown is detected.
+//
 #include <cmath>
 
 #include "../config.h"
 #include "burn_table.h"
+#include "chute_deploy.h"
 
 enum class FlightState : uint8_t {
-  IDLE = 0,       // disarmed on the bench/pad, pyros inhibited
+  IDLE = 0,       // disarmed on the bench/pad, pyro + chute release inhibited
   ARMED,          // pre-launch: calibrated, zeroed, launch detection live
   BOOST,          // launch / powered ascent — TVC active
   COAST,          // unpowered ascent — servos centered
@@ -27,7 +37,7 @@ enum class FlightState : uint8_t {
   LANDING_BURN,   // F15 lit — TVC active
   DESCENT_CHUTE,  // under parachute (nominal in CHUTE_TEST, or post-abort)
   TOUCHDOWN,      // landed, everything safed — terminal
-  ABORT,          // transient: inhibits landing motor, manages chute
+  ABORT,          // transient: inhibits landing motor, releases chute
 };
 
 enum class AbortReason : uint8_t {
@@ -40,8 +50,13 @@ enum class AbortReason : uint8_t {
 };
 
 enum class FlightEvent : uint8_t {
-  NONE = 0, ARM, DISARM, LAUNCH, BURNOUT, APOGEE_DET, FIRE_CHUTE,
+  NONE = 0, ARM, DISARM, LAUNCH, BURNOUT, APOGEE_DET,
+  CHUTE_RELEASE,       // every release of the latch, including re-cycles
   FIRE_LANDING, IGNITION_CONFIRMED, LANDING_BURNOUT, TOUCHDOWN_DET, ABORT_DET,
+  CHUTE_DETECTED,      // accelerometer saw the canopy
+  CHUTE_UNCONFIRMED,   // out of re-cycles, canopy never seen; latch held open
+  LEGS_BURN_ON,        // leg-release nichrome energized
+  LEGS_BURN_OFF,       // ...and switched off at touchdown
 };
 
 struct FsmInput {
@@ -54,7 +69,6 @@ struct FsmInput {
   float accelLongG = 1;  // body +Z specific force, g (pad ≈ +1)
   float accelNormG = 1;  // |specific force|, g (freefall ≈ 0)
   bool imuHealthy = true;
-  bool contChute = true;
   bool contLanding = true;
 };
 
@@ -62,8 +76,10 @@ struct FsmOutput {
   FlightState state = FlightState::IDLE;
   bool tvcActive = false;
   bool useLandingGains = false;
-  bool fireChute = false;    // one-shot pulse: actuator runs its own fire timer
-  bool fireLanding = false;  // one-shot pulse
+  bool chuteRelease = false;   // LEVEL: chute latch servo should be at RELEASE now
+  bool chuteDetected = false;  // canopy confirmed by the accelerometer
+  bool fireLanding = false;    // one-shot pulse: actuator runs its own fire timer
+  bool legsBurn = false;       // LEVEL: leg-release nichrome should be on now
   bool inFlight = false;
   bool logFast = false;
   AbortReason abortReason = AbortReason::NONE;
@@ -96,6 +112,7 @@ class FlightStateMachine {
   void update(const FsmInput& in, FsmOutput& out) {
     out = FsmOutput{};
     trackMaxAlt(in);
+    stepChute(in);
 
     switch (state_) {
       case FlightState::IDLE:
@@ -109,7 +126,7 @@ class FlightStateMachine {
         updateCoast(in, out);
         break;
       case FlightState::APOGEE:
-        updateApogee(in, out);
+        updateApogee(in);
         break;
       case FlightState::DESCENT:
         updateDescent(in, out);
@@ -121,12 +138,16 @@ class FlightStateMachine {
         updateDescentChute(in, out);
         break;
       case FlightState::ABORT:
-        updateAbort(in, out);
+        updateAbort(in);
         break;
       case FlightState::TOUCHDOWN:
-        break;  // terminal
+        chute_.stop();  // on the ground: hold the latch open, stop re-cycling
+        break;          // terminal
     }
 
+    out.chuteRelease = chute_.servoRelease();
+    out.chuteDetected = chute_.detected();
+    out.legsBurn = legsOn_ && state_ == FlightState::LANDING_BURN;
     out.state = state_;
     out.abortReason = abortReason_;
     out.inFlight = state_ >= FlightState::BOOST &&
@@ -170,12 +191,16 @@ class FlightStateMachine {
       case FlightEvent::LAUNCH: return "LAUNCH";
       case FlightEvent::BURNOUT: return "BURNOUT";
       case FlightEvent::APOGEE_DET: return "APOGEE";
-      case FlightEvent::FIRE_CHUTE: return "FIRE_CHUTE";
+      case FlightEvent::CHUTE_RELEASE: return "CHUTE_RELEASE";
       case FlightEvent::FIRE_LANDING: return "FIRE_LANDING";
       case FlightEvent::IGNITION_CONFIRMED: return "IGNITION_CONFIRMED";
       case FlightEvent::LANDING_BURNOUT: return "LANDING_BURNOUT";
       case FlightEvent::TOUCHDOWN_DET: return "TOUCHDOWN";
       case FlightEvent::ABORT_DET: return "ABORT";
+      case FlightEvent::CHUTE_DETECTED: return "CHUTE_DETECTED";
+      case FlightEvent::CHUTE_UNCONFIRMED: return "CHUTE_UNCONFIRMED";
+      case FlightEvent::LEGS_BURN_ON: return "LEGS_BURN_ON";
+      case FlightEvent::LEGS_BURN_OFF: return "LEGS_BURN_OFF";
     }
     return "?";
   }
@@ -243,11 +268,21 @@ class FlightStateMachine {
     (void)out;
   }
 
-  void fireChuteOnce(const FsmInput& in, FsmOutput& out) {
-    if (chuteFired_) return;
-    chuteFired_ = true;
-    out.fireChute = true;
-    pushEvent(in.ms, FlightEvent::FIRE_CHUTE, in.kfAlt);
+  void fireChuteOnce(const FsmInput& in) {
+    if (chute_.start(in.ms))
+      pushEvent(in.ms, FlightEvent::CHUTE_RELEASE, in.kfAlt);
+  }
+
+  // Runs every tick in every state: keeps the detection baseline fresh before
+  // deployment, then confirms the canopy / re-cycles the latch after it.
+  void stepChute(const FsmInput& in) {
+    const ChuteDeploy::Tick t =
+        chute_.update(in.ms, in.dtMs, in.accelNormG, in.kfAlt);
+    if (t.released) pushEvent(in.ms, FlightEvent::CHUTE_RELEASE, in.kfAlt);
+    if (t.detected) pushEvent(in.ms, FlightEvent::CHUTE_DETECTED, in.kfAlt);
+    if (t.unconfirmed)
+      pushEvent(in.ms, FlightEvent::CHUTE_UNCONFIRMED,
+                (float)chute_.releases());
   }
 
   // --- per-state handlers ---
@@ -289,9 +324,9 @@ class FlightStateMachine {
     }
   }
 
-  void updateApogee(const FsmInput& in, FsmOutput& out) {
+  void updateApogee(const FsmInput& in) {
     if (mode_ == cfg::FlightMode::CHUTE_TEST) {
-      fireChuteOnce(in, out);
+      fireChuteOnce(in);
       enter(FlightState::DESCENT_CHUTE, in.ms);
     } else {
       enter(FlightState::DESCENT, in.ms);
@@ -348,6 +383,14 @@ class FlightStateMachine {
       pushEvent(in.ms, FlightEvent::LANDING_BURNOUT, in.kfAlt);
     }
 
+    // Leg release: LEGS_DELAY_MS after the fire command (= state entry), and
+    // only into a confirmed burn. A late confirm fires at the confirm.
+    if (ignitionConfirmed_ && !legsOn_ &&
+        sinceEntry(in) >= cfg::LEGS_DELAY_MS) {
+      legsOn_ = true;
+      pushEvent(in.ms, FlightEvent::LEGS_BURN_ON, in.kfAlt);
+    }
+
     const bool touchdown =
         dbA_.check(in.kfAlt < cfg::TOUCHDOWN_ALT_M &&
                        std::fabs(in.kfVel) < cfg::TOUCHDOWN_VEL_MS,
@@ -355,6 +398,10 @@ class FlightStateMachine {
         sinceEntry(in) > cfg::LANDING_BURN_MAX_MS;
     if (touchdown) {
       pushEvent(in.ms, FlightEvent::TOUCHDOWN_DET, in.kfAlt);
+      if (legsOn_) {
+        legsOn_ = false;
+        pushEvent(in.ms, FlightEvent::LEGS_BURN_OFF, in.kfAlt);
+      }
       enter(FlightState::TOUCHDOWN, in.ms);
       out.tvcActive = false;
     }
@@ -370,7 +417,7 @@ class FlightStateMachine {
     (void)out;
   }
 
-  void updateAbort(const FsmInput& in, FsmOutput& out) {
+  void updateAbort(const FsmInput& in) {
     // Landing motor is inhibited for good (we never leave via DESCENT).
     if (abortedFromBoost_) {
       // Wait for the ascent motor to die before opening a chute into thrust.
@@ -380,7 +427,7 @@ class FlightStateMachine {
           (in.ms - launchMs_) > cfg::BOOST_MAX_MS;
       if (!motorDead) return;
     }
-    if (cfg::ABORT_FIRES_CHUTE_ALWAYS && !chuteFired_) fireChuteOnce(in, out);
+    if (cfg::ABORT_FIRES_CHUTE_ALWAYS) fireChuteOnce(in);
     enter(FlightState::DESCENT_CHUTE, in.ms);
   }
 
@@ -389,9 +436,10 @@ class FlightStateMachine {
   AbortReason abortReason_ = AbortReason::NONE;
   uint32_t entryMs_ = 0, launchMs_ = 0, landFireMs_ = 0;
   float maxAlt_ = 0;
-  bool chuteFired_ = false, ignitionConfirmed_ = false;
+  bool ignitionConfirmed_ = false, legsOn_ = false;
   bool landingBurnoutSeen_ = false, abortedFromBoost_ = false;
   Debounce dbA_, dbB_, dbTilt_, dbKf_, dbKfHealth_;
+  ChuteDeploy chute_;
 
   static constexpr int kMaxEvents = 16;
   Event events_[kMaxEvents];

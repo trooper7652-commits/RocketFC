@@ -5,9 +5,9 @@
 // One CSV per flight: FLIGHTS/flight_NNN.csv, opened when the vehicle ARMs
 // (counter persisted in EEPROM by ConfigStore), closed at TOUCHDOWN or
 // disarm. 100 Hz data rows plus immediate event rows (state transitions,
-// pyro fires, aborts) in the same file — the `evt` column is empty on data
-// rows. Writes are buffered by the filesystem; we flush every LOG_FLUSH_MS
-// so a hard crash loses at most half a second.
+// pyro fires, chute releases, aborts) in the same file — the `evt` column is
+// empty on data rows. Writes are buffered by the filesystem; we flush every
+// LOG_FLUSH_MS so a hard crash loses at most half a second.
 //
 // Logging failures never affect flight logic — the vehicle flies, log or no.
 //
@@ -28,8 +28,8 @@ struct LogFrame {
   float pX = 0, iX = 0, dX = 0, pY = 0, iY = 0, dY = 0;  // PID terms, rad
   float gimXDeg = 0, gimYDeg = 0;
   float usA = 1500, usB = 1500;
-  uint8_t pyroFlags = 0;               // bit0 chute gate, bit1 land gate
-  uint8_t cont = 0;                    // bit0 chute continuity, bit1 land
+  uint8_t pyroFlags = 0;  // bit0 chute latch at RELEASE, bit1 land gate, bit2 legs nichrome
+  uint8_t cont = 0;       // bit0 chute canopy detected, bit1 land, bit2 legs continuity
   float vbat = 0;
   uint32_t loopMaxUs = 0;              // worst fast-loop period since last row
 };

@@ -47,6 +47,8 @@ FIELD_SPECS = [
         ("Gimbal pivot from nose (m)", "gimbal_pivot_from_nose_m"),
         ("CP from nose (m)", "cp_from_nose_m"),
         ("Diameter (m)", "diameter_m"),
+        ("Legs: band cut (s)", "legs_cut_s"),
+        ("Legs: swing down (s)", "legs_swing_s"),
     ]),
     ("Aero / disturbance", [
         ("CdA descent (m^2)", "cda_m2"),
@@ -63,6 +65,9 @@ FIELD_SPECS = [
     ("Environment", [
         ("Wind (m/s)", "wind_mps"),
         ("Gust (m/s)", "gust_mps"),
+    ]),
+    ("Failure injection", [
+        ("Stuck chute releases", "chute_stuck_releases"),
     ]),
 ]
 
@@ -263,9 +268,12 @@ class Dashboard:
     def _read_vcfg(self):
         for attr, var in self.field_vars.items():
             try:
-                setattr(self.vcfg, attr, float(var.get()))
+                val = float(var.get())
             except ValueError:
-                pass
+                continue
+            if isinstance(getattr(self.vcfg, attr), int):
+                val = int(round(val))  # counts, e.g. chute_stuck_releases
+            setattr(self.vcfg, attr, val)
         return self.vcfg
 
     def _firmware_overrides(self):
@@ -391,13 +399,26 @@ class Dashboard:
     def _build_summary_text(self):
         if self.result and not self.is_log:
             s = self.result["summary"]
+            chute = "not released"
+            if s.get("chute_releases"):
+                chute = "{} release{}, {}".format(
+                    s["chute_releases"], "" if s["chute_releases"] == 1 else "s",
+                    "canopy @ {:.1f}s".format(s["chute_detected_t"])
+                    if s["chute_detected_t"] is not None
+                    else "UNCONFIRMED" if s["chute_unconfirmed"] else "unseen")
+            legs = ""
+            if s.get("legs_margin_s") is not None:
+                m = s["legs_margin_s"]
+                legs = (" | legs out {:.1f}s before contact".format(m) if m >= 0
+                        else " | LEGS LATE by {:.1f}s".format(-m))
             self.summary_label.config(
                 text="apogee {:.1f} m @ {:.1f}s | touchdown {:.2f} m/s @ {} | "
-                     "max tilt {:.1f} deg | abort {}".format(
+                     "max tilt {:.1f} deg | abort {} | chute {}{}".format(
                          s["apogee_h"] or 0, s["apogee_t"] or 0,
                          s["touchdown_speed_mps"] or float("nan"),
                          "{:.1f}s".format(s["touchdown_t"]) if s["touchdown_t"] else "n/a",
-                         s["max_tilt_deg"], s["abort_reason"] or "none"))
+                         s["max_tilt_deg"], s["abort_reason"] or "none", chute,
+                         legs))
         else:
             self.summary_label.config(text="Flight log: {} rows, {} events".format(
                 len(self.rows), len(self.events)))

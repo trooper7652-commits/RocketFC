@@ -7,6 +7,10 @@
 //   - the state sequence matches the scenario expectation
 //   - the landing-motor fire command lands inside the physics-derived window
 //   - aborts happen exactly when they should (and never when they shouldn't)
+//   - the parachute is released when (and only when) it should be, the canopy
+//     is confirmed, and a stuck latch gets re-cycled
+//   - the leg-release nichrome burns from fire + LEGS_DELAY_MS to touchdown on
+//     a good landing burn, and never otherwise
 //   - the Kalman altitude tracks truth within bounds
 //
 // Build:  g++ -O2 -std=c++17 -Wall -o replay main.cpp   (see Makefile)
@@ -17,6 +21,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -87,6 +92,35 @@ static int failures = 0;
       ++failures;                                 \
     }                                             \
   } while (0)
+
+// ---------------------------------------------------------------------------
+// Drives ChuteDeploy alone at 500 Hz with a scripted |specific force| (g) and
+// altitude (m, default well clear of the ground) as functions of seconds
+// since release. Release happens at t = 0 after 1 s of pre-release history.
+// ---------------------------------------------------------------------------
+struct ChuteRun {
+  int releases = 0;
+  bool detected = false, unconfirmed = false, everLockedAfter = false;
+  bool endReleased = false;
+};
+static ChuteRun runChute(
+    const std::function<float(float)>& accelG, float seconds,
+    const std::function<float(float)>& altM = [](float) { return 100.0f; }) {
+  ChuteDeploy cd;
+  ChuteRun r;
+  const float dtMs = 2.0f;
+  uint32_t ms = 10000;
+  for (float t = -1.0f; t < seconds; t += dtMs / 1000.0f, ms += 2) {
+    if (t >= 0.0f && !cd.started()) cd.start(ms);
+    cd.update(ms, dtMs, accelG(t), altM(t));
+    if (cd.started() && !cd.servoRelease()) r.everLockedAfter = true;
+  }
+  r.releases = cd.releases();
+  r.detected = cd.detected();
+  r.unconfirmed = cd.unconfirmed();
+  r.endReleased = cd.servoRelease();
+  return r;
+}
 
 // ---------------------------------------------------------------------------
 // Unit checks on the math the vehicle's life depends on.
@@ -169,6 +203,62 @@ static void unitChecks() {
     CHECK(std::fabs(kf.altitude() - hBefore) < 1.0f,
           "KF gates a 40 m baro glitch");
   }
+
+  // Parachute deploy supervisor
+  {
+    // Clean deploy: freefall, canopy opens 0.3 s after release (2.5 g
+    // spike, then 1 g under canopy).
+    const ChuteRun a = runChute(
+        [](float t) { return t < 0.3f ? 0.02f : t < 0.5f ? 2.5f : 1.0f; },
+        6.0f);
+    CHECK(a.detected && a.releases == 1 && !a.everLockedAfter && a.endReleased,
+          "chute: clean deploy -> detected on the 1st release, never re-locked "
+          "(releases=%d)", a.releases);
+
+    // Stuck latch, never comes free: every re-cycle is used, latch ends open.
+    const ChuteRun b = runChute([](float) { return 0.02f; }, 20.0f);
+    CHECK(!b.detected && b.unconfirmed &&
+              b.releases == cfg::CHUTE_MAX_RELEASES && b.everLockedAfter &&
+              b.endReleased,
+          "chute: stuck latch -> %d releases (want %d), unconfirmed, held open",
+          b.releases, cfg::CHUTE_MAX_RELEASES);
+
+    // Latch frees on the first re-cycle: canopy shortly after release #2.
+    const float t2 = (cfg::CHUTE_CONFIRM_MS + cfg::CHUTE_RECYCLE_LOCK_MS) /
+                         1000.0f + 0.3f;
+    const ChuteRun c = runChute(
+        [t2](float t) { return t < t2 ? 0.02f : 1.0f; }, 10.0f);
+    CHECK(c.detected && c.releases == 2 && c.endReleased,
+          "chute: frees on the 1st re-cycle -> detected, releases=%d (want 2)",
+          c.releases);
+
+    // Post-abort drag build-up (0.3 g rising 0.12 g/s toward 1 g at terminal
+    // velocity, never a canopy) must NOT be mistaken for one -- the baseline
+    // is re-taken at each release.
+    const ChuteRun d = runChute(
+        [](float t) { return std::fmin(1.0f, 0.3f + 0.12f * (t > 0 ? t : 0)); },
+        15.0f);
+    CHECK(!d.detected && d.unconfirmed,
+          "chute: slow drag build-up is not a canopy (releases=%d)",
+          d.releases);
+
+    // Opening while the servo is swung back to LOCK: straight back to RELEASE.
+    const float tl = cfg::CHUTE_CONFIRM_MS / 1000.0f + 0.1f;
+    const ChuteRun e = runChute(
+        [tl](float t) { return t < tl ? 0.02f : 1.0f; }, 6.0f);
+    CHECK(e.detected && e.releases == 1 && e.endReleased,
+          "chute: canopy during the LOCK dwell -> back to RELEASE (releases=%d)",
+          e.releases);
+
+    // Latch never frees and the rocket hits the ground at 2.5 s: the impact
+    // jolt (then 1 g lying on the ground) must NOT be logged as a canopy.
+    const ChuteRun f = runChute(
+        [](float t) { return t < 2.5f ? 0.02f : t < 2.6f ? 30.0f : 1.0f; },
+        6.0f, [](float t) { return t < 2.5f ? 30.0f - 12.0f * t : 0.0f; });
+    CHECK(!f.detected,
+          "chute: ground impact is not mistaken for a canopy (releases=%d)",
+          f.releases);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -238,6 +328,8 @@ static void runCase(const std::string& path) {
   const double maxKfErr = metaNum(meta, "max_kf_alt_err", 3.0);
   const std::string expectAbort = metaStr(meta, "expect_abort");
   const auto expectStates = metaStrArr(meta, "expect_states");
+  const int expectReleases = (int)metaNum(meta, "expect_chute_releases", 1);
+  const bool expectDetect = metaStr(meta, "expect_chute_detected") != "false";
   double fw0 = 0, fw1 = 0;
   const bool hasFireWindow = metaPair(meta, "fire_window", fw0, fw1);
 
@@ -275,6 +367,10 @@ static void runCase(const std::string& path) {
 
   std::vector<std::string> seq{"IDLE"};
   double fireT = -1, abortT = -1, tdT = -1, launchT = -1;
+  double chuteT = -1, chuteDetT = -1;
+  int chuteReleases = 0;
+  double legsOnT = -1, legsOffT = -1;
+  bool legsEver = false, legsGap = false;
   AbortReason abortReason = AbortReason::NONE;
   float maxErr = 0;
   bool armed = false;
@@ -312,7 +408,16 @@ static void runCase(const std::string& path) {
         abortReason = (AbortReason)(uint8_t)ev.value;
       }
       if (ev.code == FlightEvent::TOUCHDOWN_DET && tdT < 0) tdT = row.t;
+      if (ev.code == FlightEvent::CHUTE_RELEASE) {
+        if (chuteT < 0) chuteT = row.t;
+        ++chuteReleases;
+      }
+      if (ev.code == FlightEvent::CHUTE_DETECTED) chuteDetT = row.t;
+      if (ev.code == FlightEvent::LEGS_BURN_ON) legsOnT = row.t;
+      if (ev.code == FlightEvent::LEGS_BURN_OFF) legsOffT = row.t;
     }
+    legsEver |= co.legsBurn;
+    if (legsOnT > 0 && legsOffT < 0 && !co.legsBurn) legsGap = true;
 
     if (launchT > 0 && tdT < 0) {
       const float err = std::fabs(co.kfAlt - row.hTrue);
@@ -340,6 +445,36 @@ static void runCase(const std::string& path) {
   else
     CHECK(abortT < 0, "no abort (got %s at %.2f s)", abortName(abortReason),
           abortT);
+
+  bool wantChute = false;
+  for (const auto& s : expectStates) wantChute |= s == "DESCENT_CHUTE";
+  if (wantChute) {
+    CHECK(chuteReleases == expectReleases && (chuteDetT > 0) == expectDetect &&
+              co.chuteRelease,
+          "chute released at %.2f s, %d release%s (want %d), canopy %s at "
+          "%.2f s (want %s), latch held open",
+          chuteT, chuteReleases, chuteReleases == 1 ? "" : "s", expectReleases,
+          chuteDetT > 0 ? "confirmed" : "NOT confirmed", chuteDetT,
+          expectDetect ? "confirmed" : "not confirmed");
+  } else {
+    CHECK(chuteReleases == 0 && !co.chuteRelease,
+          "chute never released (got %d release%s)", chuteReleases,
+          chuteReleases == 1 ? "" : "s");
+  }
+
+  // Legs: only on a real landing burn (fire command and no abort).
+  const bool wantLegs = hasFireWindow && abortT < 0;
+  if (wantLegs) {
+    const double delay = cfg::LEGS_DELAY_MS / 1000.0;
+    CHECK(legsOnT >= fireT + delay - 0.001 && legsOnT <= fireT + delay + 0.1 &&
+              legsOffT == tdT && !legsGap && !co.legsBurn,
+          "legs nichrome on at %.2f s (fire + %.2f s), off at %.2f s "
+          "(touchdown %.2f s), continuous, off at the end",
+          legsOnT, legsOnT - fireT, legsOffT, tdT);
+  } else {
+    CHECK(legsOnT < 0 && !legsEver, "legs never fired (on at %.2f s)",
+          legsOnT);
+  }
 
   CHECK(tdT > 0 && tdT < tdTrue + 8.0,
         "touchdown detected at %.2f s (true contact %.2f s)", tdT, tdTrue);

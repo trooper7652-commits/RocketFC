@@ -65,6 +65,8 @@ def run_case(dll, path):
     expect_abort = meta.get("expect_abort")
     expect_states = meta.get("expect_states", [])
     fire_window = meta.get("fire_window")
+    expect_releases = meta.get("expect_chute_releases", 1)
+    expect_detect = meta.get("expect_chute_detected", True)
 
     print("\n== case {} ({} rows, mode {}) ==".format(scenario, len(rows), mode))
 
@@ -106,6 +108,14 @@ def run_case(dll, path):
         abort_reason = core.AbortReason.NONE
         max_err = 0.0
         armed = False
+        chute_t = -1.0
+        chute_det_t = -1.0
+        chute_releases = 0
+        legs_on_t = -1.0
+        legs_off_t = -1.0
+        legs_ever = False
+        legs_gap = False
+        out = None
 
         for row in rows:
             (t, ax, ay, az, gx, gy, gz, baro_new_raw, p_pa, h_true, v_true,
@@ -140,6 +150,19 @@ def run_case(dll, path):
                     abort_reason = core.AbortReason(int(ev["value"]))
                 elif ev["code"] == core.FlightEvent.TOUCHDOWN_DET and td_t < 0:
                     td_t = t
+                elif ev["code"] == core.FlightEvent.CHUTE_RELEASE:
+                    if chute_t < 0:
+                        chute_t = t
+                    chute_releases += 1
+                elif ev["code"] == core.FlightEvent.CHUTE_DETECTED:
+                    chute_det_t = t
+                elif ev["code"] == core.FlightEvent.LEGS_BURN_ON:
+                    legs_on_t = t
+                elif ev["code"] == core.FlightEvent.LEGS_BURN_OFF:
+                    legs_off_t = t
+            legs_ever |= out["legs_burn"]
+            if legs_on_t > 0 and legs_off_t < 0 and not out["legs_burn"]:
+                legs_gap = True
 
             if launch_t > 0 and td_t < 0:
                 err = abs(out["kf_alt"] - h_true)
@@ -164,6 +187,34 @@ def run_case(dll, path):
         check(abort_t < 0, "no abort (got {} at {:.2f} s)".format(
             abort_reason.name, abort_t))
 
+    latch_open = bool(out and out["chute_release"])
+    if "DESCENT_CHUTE" in expect_states:
+        check(chute_releases == expect_releases and
+              (chute_det_t > 0) == expect_detect and latch_open,
+              "chute released at {:.2f} s, {} release{} (want {}), canopy {} at "
+              "{:.2f} s (want {}), latch held open".format(
+                  chute_t, chute_releases, "" if chute_releases == 1 else "s",
+                  expect_releases,
+                  "confirmed" if chute_det_t > 0 else "NOT confirmed",
+                  chute_det_t,
+                  "confirmed" if expect_detect else "not confirmed"))
+    else:
+        check(chute_releases == 0 and not latch_open,
+              "chute never released (got {} release{})".format(
+                  chute_releases, "" if chute_releases == 1 else "s"))
+
+    # Legs: only on a real landing burn (fire command and no abort).
+    if fire_window and abort_t < 0:
+        delay = core.FlightCore.config_snapshot(dll)["legsDelayMs"] / 1000.0
+        check(fire_t + delay - 0.001 <= legs_on_t <= fire_t + delay + 0.1 and
+              legs_off_t == td_t and not legs_gap and not out["legs_burn"],
+              "legs nichrome on at {:.2f} s (fire + {:.2f} s), off at {:.2f} s "
+              "(touchdown {:.2f} s), continuous, off at the end".format(
+                  legs_on_t, legs_on_t - fire_t, legs_off_t, td_t))
+    else:
+        check(legs_on_t < 0 and not legs_ever,
+              "legs never fired (on at {:.2f} s)".format(legs_on_t))
+
     check(td_t > 0 and td_t < td_true + 8.0,
           "touchdown detected at {:.2f} s (true contact {:.2f} s)".format(
               td_t, td_true))
@@ -174,6 +225,9 @@ def run_case(dll, path):
     return {
         "scenario": scenario, "seq": seq, "fire_t": fire_t, "abort_t": abort_t,
         "abort_reason": abort_reason.name, "td_t": td_t, "max_err": max_err,
+        "chute_t": chute_t, "chute_releases": chute_releases,
+        "chute_det_t": chute_det_t, "legs_on_t": legs_on_t,
+        "legs_off_t": legs_off_t,
     }
 
 

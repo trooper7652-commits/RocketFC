@@ -16,6 +16,7 @@ Scenarios (all written to tools/replay/cases/):
   dud_igniter    FULL_LANDING, fire command but the motor never lights
   high_tilt      CHUTE_TEST, tilt runs away during boost -> abort
   baro_glitch    CHUTE_TEST, barometer spikes the KF must reject
+  stuck_chute    CHUTE_TEST, latch sticks: canopy only after one re-cycle
 
 Pure stdlib:  python tools/synth_flight.py
 """
@@ -136,6 +137,10 @@ def simulate(scenario):
     dud = scenario.get("dud", False)
     tilt_runaway = scenario.get("tilt_runaway", False)
     glitch = scenario.get("baro_glitch", False)
+    # Canopy opens this long after true apogee in chute mode. The default is a
+    # clean first release; stuck_chute pushes it past the first confirm window
+    # + one re-cycle, as if the latch only came free on the second release.
+    chute_delay = scenario.get("chute_delay_s", 0.6)
 
     def tilt_deg_fn(t):
         if t < PAD_S:
@@ -215,7 +220,7 @@ def simulate(scenario):
                 land_fire_cmd_t = t
                 if not dud:
                     land_thrust_t0 = t + IGN_DELAY
-            if mode == "chute" and chute_open_t is None and t > apogee_t + 0.6:
+            if mode == "chute" and chute_open_t is None and t > apogee_t + chute_delay:
                 chute_open_t = t
             if dud and land_fire_cmd_t is not None and chute_open_t is None \
                     and t > land_fire_cmd_t + IGN_DELAY + 0.7 + 0.4:
@@ -288,6 +293,9 @@ SCENARIOS = {
                           "DESCENT", "LANDING_BURN", "ABORT", "DESCENT_CHUTE",
                           "TOUCHDOWN"],
         "max_kf_alt_err": 3.0, "expect_abort": "DUD_IGNITER",
+        # The scripted canopy opens ~0.05 s before ground contact: too low to
+        # ever show on the accelerometer, and the impact must not count.
+        "expect_chute_detected": False,
     },
     "high_tilt": {
         "mode": "chute", "tilt_runaway": True,
@@ -300,6 +308,13 @@ SCENARIOS = {
         "expect_states": ["IDLE", "ARMED", "BOOST", "COAST", "APOGEE",
                           "DESCENT_CHUTE", "TOUCHDOWN"],
         "max_kf_alt_err": 5.0, "expect_abort": None,
+    },
+    "stuck_chute": {
+        "mode": "chute", "chute_delay_s": 2.6,
+        "expect_states": ["IDLE", "ARMED", "BOOST", "COAST", "APOGEE",
+                          "DESCENT_CHUTE", "TOUCHDOWN"],
+        "max_kf_alt_err": 3.0, "expect_abort": None,
+        "expect_chute_releases": 2,
     },
 }
 
@@ -314,6 +329,8 @@ def main():
             "arm_t": ARM_T,
             "expect_states": sc["expect_states"],
             "expect_abort": sc["expect_abort"],
+            "expect_chute_releases": sc.get("expect_chute_releases", 1),
+            "expect_chute_detected": sc.get("expect_chute_detected", True),
             "max_kf_alt_err": sc["max_kf_alt_err"],
             "boost_end_t": None,
             "fire_window": ([truth["land_fire_cmd_t"] - 0.5,

@@ -33,7 +33,6 @@ struct CInput {
   int32_t baroNew;       // bool
   float baroAlt;         // m AGL
   int32_t imuHealthy;    // bool
-  int32_t contChute;     // bool
   int32_t contLanding;   // bool
 };
 
@@ -43,7 +42,10 @@ struct COutput {
   int32_t abortReason;   // AbortReason
   int32_t tvcActive;     // bool
   float gimbalX, gimbalY; // rad
-  int32_t fireChute, fireLanding; // bool, one-shot pulses
+  int32_t chuteRelease;  // bool, LEVEL: chute latch servo at RELEASE now
+  int32_t chuteDetected; // bool, canopy confirmed by the accelerometer
+  int32_t fireLanding;   // bool, one-shot pulse
+  int32_t legsBurn;      // bool, LEVEL: leg-release nichrome on now
   float kfAlt, kfVel, kfBias, innovation;
   float tiltDeg;
   float quat[4];          // w, x, y, z
@@ -88,6 +90,7 @@ struct CConfigSnapshot {
   int32_t kfGateForceAccept;
   float baroRFallbackM2;
   float g0, fastDt;
+  float legsDelayMs;
 };
 
 void rfc_config_snapshot(CConfigSnapshot* out) {
@@ -149,6 +152,7 @@ void rfc_config_snapshot(CConfigSnapshot* out) {
   out->baroRFallbackM2 = cfg::BARO_R_FALLBACK_M2;
   out->g0 = cfg::G0;
   out->fastDt = cfg::FAST_DT;
+  out->legsDelayMs = cfg::LEGS_DELAY_MS;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +215,6 @@ void rfc_step(void* h, const CInput* in, COutput* out) {
   ci.baroNew = in->baroNew != 0;
   ci.baroAlt = in->baroAlt;
   ci.imuHealthy = in->imuHealthy != 0;
-  ci.contChute = in->contChute != 0;
   ci.contLanding = in->contLanding != 0;
 
   CoreOutput co;
@@ -223,8 +226,10 @@ void rfc_step(void* h, const CInput* in, COutput* out) {
   out->tvcActive = co.tvcActive ? 1 : 0;
   out->gimbalX = co.gimbalX;
   out->gimbalY = co.gimbalY;
-  out->fireChute = co.fireChute ? 1 : 0;
+  out->chuteRelease = co.chuteRelease ? 1 : 0;
+  out->chuteDetected = co.chuteDetected ? 1 : 0;
   out->fireLanding = co.fireLanding ? 1 : 0;
+  out->legsBurn = co.legsBurn ? 1 : 0;
   out->kfAlt = co.kfAlt;
   out->kfVel = co.kfVel;
   out->kfBias = co.kfBias;

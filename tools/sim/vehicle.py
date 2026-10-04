@@ -77,6 +77,20 @@ class VehicleConfig:
     cda_chute_m2: float = 0.45         # [ESTIMATE] drag Cd*A under canopy (m^2)
                                        #   (~0.45 -> ~5.5 m/s terminal at this mass)
     chute_inflation_s: float = 0.4     # canopy inflation ramp time (s)
+    # Failure injection: how many spring-latch releases fail before the chute
+    # actually comes out (0 = the first release works). Exercises the flight
+    # computer's accelerometer-confirmed re-cycle (src/core/chute_deploy.h).
+    chute_stuck_releases: int = 0
+
+    # ---- Landing legs ------------------------------------------------------
+    # The flight computer powers a nichrome wire from fire + LEGS_DELAY_MS
+    # until touchdown; the legs are out once the wire has burned through the
+    # rubber band and they have swung down. The sim doesn't change the
+    # physics for this -- it reports how long before ground contact the legs
+    # were out (run.py's legs_margin_s; negative = too late).
+    legs_cut_s: float = 1.5            # [MEASURE] nichrome on -> band parts (s);
+                                       #   time it on the bench: `pyrotest legs`
+    legs_swing_s: float = 0.3          # [ESTIMATE] band parts -> legs fully down (s)
     # Destabilizing/restoring aero torque coefficient: torque = dynamic
     # pressure * reference area * (cp_from_nose_m - cg_from_nose_m) * angle of
     # attack (small-angle). [ESTIMATE] -- this is a coarse model; treat sim

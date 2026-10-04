@@ -21,7 +21,6 @@ struct CoreInput {
   bool baroNew = false;
   float baroAlt = 0;         // m AGL (referenced to pad)
   bool imuHealthy = true;
-  bool contChute = true;
   bool contLanding = true;
 };
 
@@ -30,7 +29,10 @@ struct CoreOutput {
   AbortReason abortReason = AbortReason::NONE;
   bool tvcActive = false;
   float gimbalX = 0, gimbalY = 0;  // rad
-  bool fireChute = false, fireLanding = false;  // one-shot pulses
+  bool chuteRelease = false;   // LEVEL: chute latch servo at RELEASE now
+  bool chuteDetected = false;  // canopy confirmed by the accelerometer
+  bool fireLanding = false;    // one-shot pulse
+  bool legsBurn = false;       // LEVEL: leg-release nichrome on now
   float kfAlt = 0, kfVel = 0, kfBias = 0, innovation = 0;
   float tiltDeg = 0;
   Quat attitude;
@@ -95,7 +97,6 @@ class FlightCore {
     fi.accelLongG = in.accel.z / cfg::G0;
     fi.accelNormG = in.accel.norm() / cfg::G0;
     fi.imuHealthy = in.imuHealthy;
-    fi.contChute = in.contChute;
     fi.contLanding = in.contLanding;
     FsmOutput fo;
     fsm_.update(fi, fo);
@@ -117,8 +118,10 @@ class FlightCore {
     out.tvcActive = fo.tvcActive;
     out.gimbalX = fo.tvcActive ? ctl_.gimbalX() : 0.0f;
     out.gimbalY = fo.tvcActive ? ctl_.gimbalY() : 0.0f;
-    out.fireChute = fo.fireChute;
+    out.chuteRelease = fo.chuteRelease;
+    out.chuteDetected = fo.chuteDetected;
     out.fireLanding = fo.fireLanding;
+    out.legsBurn = fo.legsBurn;
     out.kfAlt = kf_.altitude();
     out.kfVel = kf_.velocity();
     out.kfBias = kf_.bias();

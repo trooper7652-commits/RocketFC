@@ -5,7 +5,8 @@
 //
 // Long procedures (cal / zero / arm) are only REQUESTED here — the main
 // sketch runs them as non-blocking sequences. Dangerous commands are gated:
-// pyrotest needs a two-step typed confirmation and only works disarmed.
+// everything that moves hardware only works disarmed, pyrotest needs a
+// two-step typed confirmation, and `stop` kills every pyro output at once.
 //
 #include <Arduino.h>
 
@@ -29,7 +30,7 @@ struct CliContext {
   bool streamOn = false;
   uint8_t faultCode = 0;
   float vbatCached = 0;
-  bool contChuteCached = false, contLandCached = false;
+  bool contLandCached = false, contLegsCached = false;
   void (*wdogFeed)() = nullptr;
 };
 
@@ -40,8 +41,9 @@ class Cli {
   bool servoTestActive() const { return servoTestActive_; }
 
   void poll(uint32_t ms) {
-    if (pendingTest_ != 0 && (int32_t)(ms - pendingExpireMs_) > 0) {
-      pendingTest_ = 0;
+    if (pendingTest_ != PendingTest::NONE &&
+        (int32_t)(ms - pendingExpireMs_) > 0) {
+      pendingTest_ = PendingTest::NONE;
       Serial.println("pyrotest confirmation window expired.");
     }
     while (Serial.available()) {
@@ -128,22 +130,49 @@ class Cli {
     } else if (!strcmp(cmd, "servotest")) {
       if (!isIdle()) { requireIdle("servotest"); return; }
       servoTest();
+    } else if (!strcmp(cmd, "chute")) {
+      if (!isIdle()) { requireIdle("chute"); return; }
+      chuteCmd(a1, a2);
     } else if (!strcmp(cmd, "pyrotest")) {
       if (!isIdle()) { requireIdle("pyrotest"); return; }
-      const int ch = a1 ? atoi(a1) : 0;
-      if (ch != 1 && ch != 2) { Serial.println("usage: pyrotest 1|2  (1=chute 2=landing)"); return; }
-      pendingTest_ = ch;
+      if (a1 && (!strcmp(a1, "land") || !strcmp(a1, "2"))) {
+        pendingTest_ = PendingTest::LAND;
+        Serial.printf(
+            "!! WARNING: this WILL energize the LANDING pyro channel for %.0f ms.\n"
+            "!! Remove the e-match / motor first. Type `confirm` within 10 s.\n",
+            cfg::PYRO_FIRE_MS);
+      } else if (a1 && !strcmp(a1, "legs")) {
+        pendingTest_ = PendingTest::LEGS;
+        Serial.printf(
+            "!! WARNING: this WILL power the LEGS nichrome for %.0f ms (its\n"
+            "!! longest in-flight burn). It glows hot and the legs drop -- keep\n"
+            "!! clear. Type `confirm` within 10 s; `stop` cuts it early.\n",
+            legsTestMs());
+      } else {
+        // `pyrotest 1` used to be the chute e-match: never guess a channel.
+        Serial.println("usage: pyrotest land|legs  (the chute is a servo: "
+                       "see `chute`)");
+        return;
+      }
       pendingExpireMs_ = ms + 10000;
-      Serial.printf(
-          "!! WARNING: this WILL energize pyro channel %d (%s) for %.0f ms.\n"
-          "!! Remove all e-matches / motors first. Type `confirm %d` within 10 s.\n",
-          ch, ch == 1 ? "CHUTE" : "LANDING", cfg::PYRO_FIRE_MS, ch);
     } else if (!strcmp(cmd, "confirm")) {
-      const int ch = a1 ? atoi(a1) : 0;
-      if (pendingTest_ == 0 || ch != pendingTest_) { Serial.println("nothing pending."); return; }
-      pendingTest_ = 0;
-      ctx_.act.testFire(ch - 1, ms);
-      Serial.printf("pyro channel %d FIRED (test).\n", ch);
+      const PendingTest t = pendingTest_;
+      pendingTest_ = PendingTest::NONE;
+      if (t == PendingTest::LAND) {
+        ctx_.act.testFire(ms);
+        Serial.println("landing pyro channel FIRED (test).");
+      } else if (t == PendingTest::LEGS) {
+        ctx_.act.testLegs(ms, (uint32_t)legsTestMs());
+        Serial.println("legs nichrome ON (test) -- time how long until the "
+                       "band parts. `stop` cuts it.");
+      } else {
+        Serial.println("nothing pending.");
+      }
+    } else if (!strcmp(cmd, "stop")) {
+      if (!isIdle()) { requireIdle("stop"); return; }
+      ctx_.act.allPyrosOff();
+      pendingTest_ = PendingTest::NONE;
+      Serial.println("all pyro outputs OFF.");
     } else {
       Serial.printf("unknown command '%s' — type `help`\n", cmd);
     }
@@ -155,6 +184,57 @@ class Cli {
     Serial.printf("mode = %s (saved). Arm beeps: %d.\n",
                   m == cfg::FlightMode::CHUTE_TEST ? "CHUTE_TEST" : "FULL_LANDING",
                   m == cfg::FlightMode::CHUTE_TEST ? 2 : 3);
+  }
+
+  static const char* chutePosName(Actuators::ChutePos p) {
+    switch (p) {
+      case Actuators::ChutePos::LOCK: return "LOCKED";
+      case Actuators::ChutePos::RELEASE: return "RELEASED";
+      case Actuators::ChutePos::JOG: return "JOG (not locked)";
+    }
+    return "?";
+  }
+
+  void chuteCmd(const char* sub, const char* arg) {
+    Actuators& act = ctx_.act;
+    if (sub && !strcmp(sub, "lock")) {
+      act.chuteLock();
+      Serial.printf("chute latch LOCKED (%.0f us).\n", act.chuteUs());
+    } else if (sub && !strcmp(sub, "open")) {
+      act.chuteRelease();
+      Serial.printf(
+          "chute latch OPEN (%.0f us) -- a loaded spring fires now, stand clear.\n"
+          "Load spring + chute, then `chute lock` (arming is refused until "
+          "then).\n",
+          act.chuteUs());
+    } else if (sub && !strcmp(sub, "us") && arg) {
+      act.chuteJogUs(atoi(arg));
+      Serial.printf(
+          "chute servo -> %.0f us (jog). Record the latch-closed / latch-open\n"
+          "values as CHUTE_LOCK_US / CHUTE_RELEASE_US in config.h; `chute "
+          "lock` before arming.\n",
+          act.chuteUs());
+    } else if (sub && !strcmp(sub, "cycle")) {
+      // The in-flight re-cycle motion, once: back to LOCK, dwell, RELEASE.
+      Serial.printf("re-cycle: LOCK for %.0f ms, then RELEASE -- stand clear.\n",
+                    cfg::CHUTE_RECYCLE_LOCK_MS);
+      act.chuteLock();
+      const uint32_t t0 = millis();
+      while (millis() - t0 < (uint32_t)cfg::CHUTE_RECYCLE_LOCK_MS)
+        if (ctx_.wdogFeed) ctx_.wdogFeed();
+      act.chuteRelease();
+      Serial.println("released. `chute lock` before arming.");
+    } else {
+      Serial.printf("chute latch: %s (%.0f us)\n", chutePosName(act.chutePos()),
+                    act.chuteUs());
+      Serial.println("usage: chute lock|open|cycle|us <n>");
+    }
+  }
+
+  // Bench legs burn = the longest it can run in flight: from fire +
+  // LEGS_DELAY_MS until the LANDING_BURN_MAX_MS touchdown backstop.
+  static float legsTestMs() {
+    return cfg::LANDING_BURN_MAX_MS - cfg::LEGS_DELAY_MS;
   }
 
   void servoTest() {
@@ -188,7 +268,13 @@ class Cli {
         "  servotest         gimbal sweep (disarmed only)\n"
         "  trim a|b <us>     adjust servo center, saved\n"
         "  center            center servos\n"
-        "  pyrotest 1|2      test-fire a pyro channel (two-step confirm)\n"
+        "  chute             show chute latch position\n"
+        "  chute open|lock   open the latch to load the spring / lock it\n"
+        "  chute us <n>      jog the latch servo to find LOCK/RELEASE pulses\n"
+        "  chute cycle       one in-flight re-cycle: LOCK dwell -> RELEASE\n"
+        "  pyrotest land     test-fire the landing e-match (two-step confirm)\n"
+        "  pyrotest legs     test-burn the legs nichrome (two-step confirm)\n"
+        "  stop              all pyro outputs off now\n"
         "  help");
   }
 
@@ -216,9 +302,12 @@ class Cli {
     Serial.printf("sd: %s  flight #%d %s\n", ctx_.logger.sdOk() ? "OK" : "FAIL",
                   ctx_.logger.flightNumber(),
                   ctx_.logger.isOpen() ? "(log open)" : "");
-    Serial.printf("vbat: %.2f V   continuity: chute=%s landing=%s\n",
-                  ctx_.vbatCached, ctx_.contChuteCached ? "YES" : "no",
-                  ctx_.contLandCached ? "YES" : "no");
+    Serial.printf("vbat: %.2f V   continuity: landing=%s legs=%s\n",
+                  ctx_.vbatCached, ctx_.contLandCached ? "YES" : "no",
+                  ctx_.contLegsCached ? "YES" : "no");
+    Serial.printf("legs nichrome: %s\n", ctx_.act.legsActive() ? "ON" : "off");
+    Serial.printf("chute latch: %s (%.0f us)\n",
+                  chutePosName(ctx_.act.chutePos()), ctx_.act.chuteUs());
     Serial.printf("servo trims: A=%+.0f B=%+.0f us   arm switch: %s\n",
                   ctx_.act.trimA(), ctx_.act.trimB(),
                   ctx_.act.armSwitchOn() ? "ON" : "off");
@@ -230,7 +319,8 @@ class Cli {
   CliContext& ctx_;
   char line_[96];
   int idx_ = 0;
-  int pendingTest_ = 0;
+  enum class PendingTest : uint8_t { NONE, LAND, LEGS };
+  PendingTest pendingTest_ = PendingTest::NONE;
   uint32_t pendingExpireMs_ = 0;
   bool servoTestActive_ = false;
 };

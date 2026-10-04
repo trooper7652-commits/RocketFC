@@ -108,10 +108,13 @@ def write_log(path, sim_result, flight_number=999):
     """Write a run.simulate() result to disk in the EXACT logger.h format.
 
     Known simplifications vs. real hardware (documented, not hidden):
-      - pyro/cont/vbat/loop_max_us aren't modeled in detail: pyro is set from
-        the one-shot fire_chute/fire_landing pulse rather than a sustained
-        PYRO_FIRE_MS-wide gate bit, cont is always "both good" (3), vbat is a
-        fixed nominal placeholder, loop_max_us is always 0.
+      - pyro/cont/vbat/loop_max_us aren't modeled in detail: pyro bit0 (chute
+        latch released) and bit2 (legs nichrome on) are the same levels as on
+        hardware, but bit1 is the one-shot fire_landing pulse rather than a
+        sustained PYRO_FIRE_MS-wide gate bit; cont bit0 is the canopy-detected
+        flag (as on hardware) and bits 1-2 (landing / legs continuity) are
+        always good; vbat is a fixed nominal placeholder, loop_max_us is
+        always 0.
     """
     rows = sim_result["rows"]
     events = sim_result["events"]
@@ -134,7 +137,10 @@ def write_log(path, sim_result, flight_number=999):
                 continue
             r = obj
             qw, qx, qy, qz = r.get("quat_est", (1.0, 0.0, 0.0, 0.0))
-            pyro = (1 if r.get("fire_chute") else 0) | (2 if r.get("fire_landing") else 0)
+            pyro = ((1 if r.get("chute_release") else 0) |
+                    (2 if r.get("fire_landing") else 0) |
+                    (4 if r.get("legs_burn") else 0))
+            cont = (1 if r.get("chute_detected") else 0) | 2 | 4
             f.write(",".join(str(v) for v in [
                 t_ms, r["state"],
                 "{:.3f}".format(r["ax"]), "{:.3f}".format(r["ay"]), "{:.3f}".format(r["az"]),
@@ -149,7 +155,7 @@ def write_log(path, sim_result, flight_number=999):
                 "{:.2f}".format(math.degrees(r["gimbal_x_cmd"])),
                 "{:.2f}".format(math.degrees(r["gimbal_y_cmd"])),
                 "{:.0f}".format(r["us_a"]), "{:.0f}".format(r["us_b"]),
-                pyro, 3, "7.60", 0, "",
+                pyro, cont, "7.60", 0, "",
             ]) + "\n")
 
     return path

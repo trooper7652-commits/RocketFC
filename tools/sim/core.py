@@ -90,12 +90,16 @@ class FlightEvent(enum.IntEnum):
     LAUNCH = 3
     BURNOUT = 4
     APOGEE_DET = 5
-    FIRE_CHUTE = 6
+    CHUTE_RELEASE = 6      # every latch release, including re-cycles
     FIRE_LANDING = 7
     IGNITION_CONFIRMED = 8
     LANDING_BURNOUT = 9
     TOUCHDOWN_DET = 10
     ABORT_DET = 11
+    CHUTE_DETECTED = 12    # accelerometer saw the canopy
+    CHUTE_UNCONFIRMED = 13  # out of re-cycles; latch held open
+    LEGS_BURN_ON = 14      # leg-release nichrome energized
+    LEGS_BURN_OFF = 15     # ...and switched off at touchdown
 
 
 class FlightMode(enum.IntEnum):
@@ -133,7 +137,6 @@ class CInput(ctypes.Structure):
         ("baroNew", ctypes.c_int32),
         ("baroAlt", ctypes.c_float),
         ("imuHealthy", ctypes.c_int32),
-        ("contChute", ctypes.c_int32),
         ("contLanding", ctypes.c_int32),
     ]
 
@@ -145,8 +148,10 @@ class COutput(ctypes.Structure):
         ("tvcActive", ctypes.c_int32),
         ("gimbalX", ctypes.c_float),
         ("gimbalY", ctypes.c_float),
-        ("fireChute", ctypes.c_int32),
+        ("chuteRelease", ctypes.c_int32),
+        ("chuteDetected", ctypes.c_int32),
         ("fireLanding", ctypes.c_int32),
+        ("legsBurn", ctypes.c_int32),
         ("kfAlt", ctypes.c_float),
         ("kfVel", ctypes.c_float),
         ("kfBias", ctypes.c_float),
@@ -232,6 +237,7 @@ class CConfigSnapshot(ctypes.Structure):
         ("baroRFallbackM2", ctypes.c_float),
         ("g0", ctypes.c_float),
         ("fastDt", ctypes.c_float),
+        ("legsDelayMs", ctypes.c_float),
     ]
 
 
@@ -319,7 +325,7 @@ class FlightCore:
         return FlightState(self._lib.rfc_state(self._h))
 
     def step(self, ms, dt, accel, gyro, baro_new=False, baro_alt=0.0,
-             imu_healthy=True, cont_chute=True, cont_landing=True):
+             imu_healthy=True, cont_landing=True):
         ci = self._in
         ci.ms = int(ms)
         ci.dt = dt
@@ -328,7 +334,6 @@ class FlightCore:
         ci.baroNew = 1 if baro_new else 0
         ci.baroAlt = baro_alt
         ci.imuHealthy = 1 if imu_healthy else 0
-        ci.contChute = 1 if cont_chute else 0
         ci.contLanding = 1 if cont_landing else 0
         self._lib.rfc_step(self._h, ctypes.byref(ci), ctypes.byref(self._out))
         o = self._out
@@ -337,7 +342,10 @@ class FlightCore:
             "abort_reason": AbortReason(o.abortReason),
             "tvc_active": bool(o.tvcActive),
             "gimbal_x": o.gimbalX, "gimbal_y": o.gimbalY,
-            "fire_chute": bool(o.fireChute), "fire_landing": bool(o.fireLanding),
+            "chute_release": bool(o.chuteRelease),
+            "chute_detected": bool(o.chuteDetected),
+            "fire_landing": bool(o.fireLanding),
+            "legs_burn": bool(o.legsBurn),
             "kf_alt": o.kfAlt, "kf_vel": o.kfVel, "kf_bias": o.kfBias,
             "innovation": o.innovation, "tilt_deg": o.tiltDeg,
             "quat": (o.quat[0], o.quat[1], o.quat[2], o.quat[3]),
@@ -478,13 +486,31 @@ def _patch_float_array(text, name, values):
     return text[:m.start()] + replacement + text[m.end():]
 
 
+def _source_fingerprint():
+    """Hash of everything a sweep build compiles (bridge.cpp, config.h, the
+    core headers -- the same set default_dll() rebuilds on). Part of the cache
+    key, so a DLL built from older flight code or an older bridge ABI is never
+    reused: its struct layout could silently mismatch core.py's."""
+    paths = [os.path.join(SIM_DIR, "bridge.cpp"), os.path.join(SRC_DIR, "config.h")]
+    for root, _, files in os.walk(os.path.join(SRC_DIR, "core")):
+        paths += [os.path.join(root, f) for f in files if f.endswith(".h")]
+    h = hashlib.sha1()
+    for p in sorted(paths):
+        h.update(os.path.relpath(p, REPO_ROOT).replace(os.sep, "/").encode("utf-8"))
+        with open(p, "rb") as f:
+            h.update(f.read())
+    return h.hexdigest()
+
+
 def _config_hash(overrides):
     blob = json.dumps(overrides, sort_keys=True).encode("utf-8")
+    blob += _source_fingerprint().encode("utf-8")
     return hashlib.sha1(blob).hexdigest()[:16]
 
 
 def build_with_overrides(overrides):
-    """Build a DLL from a patched copy of config.h, cached by override hash.
+    """Build a DLL from a patched copy of config.h, cached by override hash
+    plus a fingerprint of the sources it compiles (see _source_fingerprint).
 
     `overrides`: dict of simple-constant NAME -> C++ literal string, e.g.
         {"TILT_ABORT_DEG": "20.0f", "KF_SIGMA_ACCEL": "0.8f"}

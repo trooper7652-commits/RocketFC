@@ -12,8 +12,11 @@ accelerometer/gyro and a **GY-63 (MS5611)** barometer.
   layered aborts
 - Landing-burn ignition timed by a precomputed `h_ignite(velocity)` table
   generated from the Estes F15 thrust curve
-- Two pyro channels: backup parachute + landing-motor igniter, with
-  continuity sensing and multiple safety interlocks
+- Spring-ejected parachute on a servo latch, with accelerometer
+  confirmation and automatic re-cycling of a stuck latch
+- Two pyro channels with continuity sensing and multiple safety
+  interlocks: landing-motor igniter, and a nichrome landing-leg release that
+  burns from 1 s into a confirmed landing burn until touchdown
 - 100 Hz CSV logging to the built-in microSD, USB-serial CLI, buzzer/LED
   status, EEPROM-persisted settings, hardware watchdog
 - A PC replay harness that compiles the *exact* flight code and tests it
@@ -28,6 +31,7 @@ src/core/             flight LOGIC, pure C++, shared with the PC test harness
   altitude_kf.h       altitude/velocity Kalman filter
   control.h           TVC PID
   flight_state.h      state machine + aborts
+  chute_deploy.h      parachute release: canopy confirm + latch re-cycle
   burn_table.h        GENERATED — landing-burn ignition table
   flight_core.h       wires the above together (single entry point)
 src/hw/               Teensy-only drivers: sensors, actuators, logger, CLI...
@@ -46,9 +50,10 @@ tools/
 |---|---|---|
 | Gimbal servo A (body X torque) | 2 | PWM, 50 Hz |
 | Gimbal servo B (body Y torque) | 3 | PWM, 50 Hz |
-| Pyro fire — chute | 6 | MOSFET gate, low-side driver |
+| Parachute latch servo | 23 | PWM, 50 Hz; holds the spring-ejection latch |
+| Pyro fire — leg-release nichrome | 6 | MOSFET gate, low-side driver |
 | Pyro fire — landing motor | 7 | MOSFET gate, low-side driver |
-| Continuity sense — chute | 14 (A0) | voltage divider across e-match |
+| Continuity sense — legs | 14 (A0) | voltage divider across the nichrome |
 | Continuity sense — landing | 15 (A1) | voltage divider across e-match |
 | Battery voltage | 16 (A2) | divider, ratio in `VBAT_DIVIDER` |
 | Buzzer | 8 | active buzzer or transistor-driven |
@@ -63,10 +68,21 @@ Hardware rules that save rockets:
 - **Servos get their own BEC/regulator**, never the Teensy's 3.3 V rail. A
   servo stall browning out the flight computer mid-burn = lost rocket.
   Common ground between BEC, battery, and Teensy.
+- Parachute latch: design it so the spring **cannot back-drive the servo**
+  (e.g. a pin loaded across its axis, not along it). Before the firmware
+  starts, the servo gets no signal; a latch that slips when the servo goes
+  limp ejects the chute on the pad. The chute servo shares the gimbal
+  servos' BEC — check the rail with all three moving at once.
 - Pyro channels: logic-level MOSFETs, low-side, **gate pulldown resistors**
   (so a floating pin during boot can't fire), flyback-safe wiring, and a
   **physical arm switch in series with pyro battery power** — software
   interlocks are the second layer, not the only layer.
+- Leg-release nichrome: it is on for **~3–4 s** (fire + 1 s → touchdown
+  detected), drawing amps the whole time, overlapping the e-match gate by
+  0.2 s and the TVC servos' hardest work. Power it from the **pyro battery**,
+  never the flight computer's, through a MOSFET rated for that current.
+  Touchdown is only declared after 0.8 s of stillness, so the wire keeps
+  glowing ~1 s on the ground — keep it clear of anything flammable.
 - Mount the IMU rigidly, close to the CG, axes square to the airframe. Set
   `IMU_R_SB` in `config.h` to match the mounting orientation.
 - Barometer: open-cell foam over the MS5611 port, in a vented bay, shielded
@@ -113,6 +129,9 @@ important ones:
 | `IGNITION_DELAY_MS` | **static-test the F15 igniter chain**: time from fire command to first thrust. This number directly moves the ignition altitude. |
 | `CDA_M2` | estimate from a drop test or flight log velocity decay |
 | Servo trims, `US_PER_GIMBAL_DEG`, signs | bench: CLI `trim`, `servotest`, direction test below |
+| `CHUTE_LOCK_US`, `CHUTE_RELEASE_US` | bench: CLI `chute us <n>` until the latch is fully closed / fully open |
+| `CHUTE_RECYCLE_LOCK_MS` | bench: time the servo takes to swing release → lock (`chute cycle`) |
+| Leg release timing | bench: `pyrotest legs`, time until the band parts; put it in the sim's "Legs: band cut" field and check the margin (see §4) |
 | `VBAT_DIVIDER`, `CONT_DIVIDER_RATIO` | multimeter vs. `status` readout |
 
 Then regenerate the burn table with your measured values:
@@ -148,16 +167,37 @@ IDLE -> ARMED -> BOOST -> COAST -> APOGEE -+-> DESCENT -> LANDING_BURN -> TOUCHD
   the KF is healthy, and igniter continuity is present.
 - **LANDING_BURN**: TVC active with landing gains. Confirms ignition by the
   accel jump; a dud igniter aborts to chute. No aborts once burning — TVC
-  rides it out.
+  rides it out. `LEGS_DELAY_MS` (1 s) after the fire command — and only into
+  a confirmed burn — the leg-release nichrome comes on and stays on until
+  touchdown is detected (`LEGS_BURN_MAX_MS` is an independent cutoff). The
+  legs never deploy in CHUTE_TEST or after an abort. **Timing is tight:** in
+  the closed-loop sim the vehicle reaches the ground ~2.9 s after the fire
+  command, leaving ~1.9 s for the band to part and the legs to swing down.
 - **ABORT** (tilt > 30°, IMU failure, KF unhealthy, missed window, dud):
-  permanently inhibits the landing motor and fires the chute (waiting for
+  permanently inhibits the landing motor and releases the chute (waiting for
   motor burnout if aborting during BOOST).
+
+**Parachute release** (`src/core/chute_deploy.h`): the chute is pushed out by
+a spring; the servo on pin 23 holds the latch. On release, the flight
+computer watches the accelerometer for the canopy (≈0 g in freefall, ≈1 g
+plus an opening spike under a canopy). If nothing shows within
+`CHUTE_CONFIRM_MS` (1.5 s), it swings the latch back to LOCK for
+`CHUTE_RECYCLE_LOCK_MS` and releases again — up to `CHUTE_MAX_RELEASES` in
+total — then holds it open for good. Re-cycling a latch whose chute is
+already out is harmless, so the detector errs on the strict side; a canopy
+that opens near apogee (no airspeed yet) can show up late and cost one
+needless re-cycle. Jolts below `TOUCHDOWN_ALT_M` never count, so a crash is
+never logged as a good chute. Events in the log: `CHUTE_RELEASE` (every
+release), `CHUTE_DETECTED`, `CHUTE_UNCONFIRMED`; the `pyro` column's bit 0 is
+the latch position and the `cont` column's bit 0 is "canopy detected".
+Each re-cycle costs ~2 s of fall, so on a low flight there is only time
+for one or two.
 
 **Modes** (`mode chute` / `mode land`, persisted in EEPROM):
 `CHUTE_TEST` flies the full TVC ascent and pops the chute at apogee —
 this is how you validate everything before risking a landing attempt.
-`FULL_LANDING` attempts the propulsive landing; the chute remains armed as
-the abort recovery.
+`FULL_LANDING` attempts the propulsive landing; the chute is released only
+as the abort recovery.
 
 ## 5. CLI (USB serial, 115200)
 
@@ -171,7 +211,13 @@ the abort recovery.
 | `mode chute` / `mode land` | select flight mode (persisted) |
 | `trim a +20` / `center` | servo trim (persisted) / center servos |
 | `servotest` | slow gimbal sweep for the direction test |
-| `pyrotest 1|2` | fire a pyro channel on the bench — two-step typed confirmation, disarmed only, **no motors/matches connected** |
+| `chute` | show the parachute latch position |
+| `chute open` / `chute lock` | open the latch to load the spring / lock it (arming is refused until locked) |
+| `chute us <n>` | jog the latch servo to find `CHUTE_LOCK_US` / `CHUTE_RELEASE_US` |
+| `chute cycle` | one in-flight re-cycle: LOCK dwell, then RELEASE — tests freeing a sticky latch |
+| `pyrotest land` | fire the landing e-match channel on the bench — two-step typed confirmation, disarmed only, **no motor/match connected** |
+| `pyrotest legs` | burn the leg-release nichrome for 4 s (its longest in-flight burn) — two-step confirmation, disarmed only |
+| `stop` | every pyro output off immediately |
 
 ## 6. Beeps & LED
 
@@ -190,9 +236,12 @@ the abort recovery.
 1. Fresh battery; `status` shows vbat > `VBAT_MIN`.
 2. SD card inserted; `status` shows SD OK.
 3. `mode` set correctly (listen for the 2-vs-3-beep pattern at arm).
-4. Rig motors + e-matches **last**, on the pad, pyro arm switch OFF.
+4. Load the chute: `chute open`, spring + chute in, `chute lock`. Strap the
+   legs with a fresh band over the nichrome. Then rig motors + e-match
+   **last**, on the pad, pyro arm switch OFF.
 5. Vehicle vertical on the rail, still. `arm` from a laptop, or arm switch.
-   Pre-arm checks verify sensors, SD, battery, continuity, and tilt < 5°.
+   Pre-arm checks verify sensors, SD, battery, chute latch locked, landing
+   e-match and legs nichrome continuity (FULL_LANDING), and tilt < 5°.
 6. Clear the area. Launch when ready — everything from here is autonomous.
 7. After recovery: `flight_NNN.csv` from the SD card →
    `python tools/plot_flight.py flight_NNN.csv` and review before any tuning.
@@ -244,5 +293,5 @@ You are responsible for complying with your local regulations.
 ---
 
 *Built with Claude Code. The core flight logic in `src/core/` is verified by
-`tools/replay` (unit checks + 5 synthetic flight scenarios) on every change:
+`tools/replay` (unit checks + 6 synthetic flight scenarios) on every change:
 `cd tools/replay && make test`.*

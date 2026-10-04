@@ -28,8 +28,8 @@
 
 // ---------------------------------------------------------------------------
 // Watchdog (i.MX RT1062 WDOG1): 2 s timeout, fed from loop(). If the firmware
-// wedges, the processor resets, boots into IDLE with pyros inhibited and
-// servos centered — a safe state.
+// wedges, the processor resets, boots into IDLE with the pyro inhibited,
+// gimbal servos centered and the chute latch at LOCK — a safe state.
 // ---------------------------------------------------------------------------
 #if defined(ARDUINO_TEENSY41) && defined(WDOG1_WCR)
 static void wdogInit() {
@@ -92,10 +92,13 @@ void setup() {
                 store.mode() == cfg::FlightMode::CHUTE_TEST ? "CHUTE_TEST"
                                                             : "FULL_LANDING",
                 store.trimAUs(), store.trimBUs());
+  Serial.printf("chute latch: LOCK (%.0f us, pin %d)\n", act.chuteUs(),
+                cfg::PIN_SERVO_CHUTE);
   if (!sensorsOk) Serial.println("!! sensor failure — check wiring, then reboot.");
   Serial.println("type `help` for commands.\n");
 
-  // Servo wiggle: visible + audible proof the outputs are alive.
+  // Servo wiggle: visible + audible proof the outputs are alive. Gimbal
+  // only — the chute latch servo is never wiggled.
   act.writeRawUs(1540, 1540);
   delay(150);
   act.writeRawUs(1460, 1460);
@@ -133,9 +136,14 @@ static void runProcedures(uint32_t ms) {
       if (!sensors.baroOk()) fail("barometer not healthy");
       if (!logger.sdOk()) fail("SD card missing/failed");
       if (cliCtx.vbatCached < cfg::VBAT_MIN) fail("battery low");
-      if (!cliCtx.contChuteCached) fail("no continuity on CHUTE channel");
+      // Commanded position only -- there's no latch switch, so this can't
+      // prove the latch is physically seated. Load it, then `chute lock`.
+      if (!act.chuteLocked())
+        fail("chute latch not locked (load the spring, then `chute lock`)");
       if (needLandCont && !cliCtx.contLandCached)
         fail("no continuity on LANDING channel");
+      if (needLandCont && !cliCtx.contLegsCached)
+        fail("no continuity on LEGS (nichrome) channel");
       if (cfg::REQUIRE_ARM_SWITCH && !act.armSwitchOn())
         fail("arm switch is off");
       if (!ok) return;
@@ -255,9 +263,10 @@ static void logTick(uint32_t ms) {
   f.gimXDeg = co.gimbalX * cfg::RAD2DEG;
   f.gimYDeg = co.gimbalY * cfg::RAD2DEG;
   f.usA = act.lastUsA(); f.usB = act.lastUsB();
-  f.pyroFlags = (act.pyroActive(Actuators::CH_CHUTE) ? 1 : 0) |
-                (act.pyroActive(Actuators::CH_LAND) ? 2 : 0);
-  f.cont = (cliCtx.contChuteCached ? 1 : 0) | (cliCtx.contLandCached ? 2 : 0);
+  f.pyroFlags = (act.chuteReleased() ? 1 : 0) | (act.pyroActive() ? 2 : 0) |
+                (act.legsActive() ? 4 : 0);
+  f.cont = (co.chuteDetected ? 1 : 0) | (cliCtx.contLandCached ? 2 : 0) |
+           (cliCtx.contLegsCached ? 4 : 0);
   f.vbat = cliCtx.vbatCached;
   f.loopMaxUs = loopMaxUs;
   loopMaxUs = 0;
@@ -268,8 +277,8 @@ static void logTick(uint32_t ms) {
 // ---------------------------------------------------------------------------
 static void slowTick(uint32_t ms) {
   cliCtx.vbatCached = act.vbat();
-  cliCtx.contChuteCached = act.continuity(Actuators::CH_CHUTE);
-  cliCtx.contLandCached = act.continuity(Actuators::CH_LAND);
+  cliCtx.contLandCached = act.continuity();
+  cliCtx.contLegsCached = act.legsContinuity();
 
   // Fault code for the IDLE beeper (continuity is enforced at arm time
   // instead — a bare bench board shouldn't scream all day).
@@ -319,16 +328,21 @@ void loop() {
     ci.baroNew = sensors.baroNew();
     ci.baroAlt = sensors.baroAltitude();
     ci.imuHealthy = sensors.imuOk();
-    ci.contChute = cliCtx.contChuteCached;
     ci.contLanding = cliCtx.contLandCached;
 
     core.step(ci, co);
 
-    // Pyro routing: FlightCore only pulses these in flight; the enable adds a
+    // Pyro routing: FlightCore only pulses this in flight; the enable adds a
     // second layer so nothing can fire from IDLE/ARMED-on-the-pad states.
-    act.enablePyros(co.inFlight);
-    if (co.fireChute) act.firePyro(Actuators::CH_CHUTE, ms);
-    if (co.fireLanding) act.firePyro(Actuators::CH_LAND, ms);
+    act.enablePyro(co.inFlight);
+    if (co.fireLanding) act.firePyro(ms);
+    // Leg-release nichrome: a level, on from fire + LEGS_DELAY_MS (confirmed
+    // burn only) until touchdown is detected.
+    act.applyLegs(co.legsBurn, ms);
+
+    // Chute latch: follows the core's release level (incl. re-cycles of a
+    // stuck latch). Only ever released by the core in flight.
+    act.applyChute(co.chuteRelease, co.inFlight);
   }
 
   // --- every pass: cheap state machines ---
