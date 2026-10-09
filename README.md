@@ -53,8 +53,8 @@ tools/
 | Parachute latch servo | 23 | PWM, 50 Hz; holds the spring-ejection latch |
 | Pyro fire — leg-release nichrome | 6 | MOSFET gate, low-side driver |
 | Pyro fire — landing motor | 7 | MOSFET gate, low-side driver |
-| Continuity sense — legs | 14 (A0) | 100k/33k divider from the legs MOSFET drain |
-| Continuity sense — landing | 15 (A1) | 100k/33k divider from the landing MOSFET drain |
+| Continuity sense — legs | 14 (A0) | 100k/10k divider from the legs MOSFET drain |
+| Continuity sense — landing | 15 (A1) | 100k/10k divider from the landing MOSFET drain |
 | Battery voltage | 16 (A2) | divider, ratio in `VBAT_DIVIDER` |
 | Buzzer | 8 | active buzzer or transistor-driven |
 | Arm switch | 9 | **not fitted** — pin unused, `REQUIRE_ARM_SWITCH = false` |
@@ -138,7 +138,7 @@ important ones:
 | `CHUTE_LOCK_US`, `CHUTE_RELEASE_US` | bench: CLI `chute us <n>` until the latch is fully closed / fully open |
 | `CHUTE_RECYCLE_LOCK_MS` | bench: time the servo takes to swing release → lock (`chute cycle`) |
 | Leg release timing | bench: `pyrotest legs`, time until the band parts; put it in the sim's "Legs: band cut" field and check the margin (see §4) |
-| `VBAT_DIVIDER` | multimeter vs. `status` readout (`CONT_DIVIDER_RATIO` is set from the 100k/33k schematic; check `pyro:` against a meter) |
+| `VBAT_DIVIDER` | multimeter vs. `status` readout (`CONT_DIVIDER_RATIO` is set from the 100k/10k schematic; check `pyro:` against a meter) |
 
 Then regenerate the burn table with your measured values:
 

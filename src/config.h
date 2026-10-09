@@ -200,7 +200,7 @@ constexpr float LEGS_BURN_MAX_MS = 6000.0f;
 // ---------------------------------------------------------------------------
 constexpr float PYRO_FIRE_MS        = 1200.0f; // landing e-match gate-high duration
 constexpr float CONT_THRESHOLD_V    = 0.4f;    // sense voltage above this = e-match/wire present
-constexpr float CONT_DIVIDER_RATIO  = 4.03f;   // 100k over 33k: (100+33)/33; sense_v = drain volts
+constexpr float CONT_DIVIDER_RATIO  = 11.0f;   // 100k over 10k: (100+10)/10; sense_v = drain volts
 
 // ---------------------------------------------------------------------------
 // Battery
