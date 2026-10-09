@@ -30,6 +30,7 @@ struct CliContext {
   bool streamOn = false;
   uint8_t faultCode = 0;
   float vbatCached = 0;
+  float vpyroCached = 0;
   bool contLandCached = false, contLegsCached = false;
   void (*wdogFeed)() = nullptr;
 };
@@ -302,15 +303,15 @@ class Cli {
     Serial.printf("sd: %s  flight #%d %s\n", ctx_.logger.sdOk() ? "OK" : "FAIL",
                   ctx_.logger.flightNumber(),
                   ctx_.logger.isOpen() ? "(log open)" : "");
-    Serial.printf("vbat: %.2f V   continuity: landing=%s legs=%s\n",
-                  ctx_.vbatCached, ctx_.contLandCached ? "YES" : "no",
+    Serial.printf("vbat: %.2f V   pyro: %.2f V   continuity: landing=%s legs=%s\n",
+                  ctx_.vbatCached, ctx_.vpyroCached,
+                  ctx_.contLandCached ? "YES" : "no",
                   ctx_.contLegsCached ? "YES" : "no");
     Serial.printf("legs nichrome: %s\n", ctx_.act.legsActive() ? "ON" : "off");
     Serial.printf("chute latch: %s (%.0f us)\n",
                   chutePosName(ctx_.act.chutePos()), ctx_.act.chuteUs());
-    Serial.printf("servo trims: A=%+.0f B=%+.0f us   arm switch: %s\n",
-                  ctx_.act.trimA(), ctx_.act.trimB(),
-                  ctx_.act.armSwitchOn() ? "ON" : "off");
+    Serial.printf("servo trims: A=%+.0f B=%+.0f us\n", ctx_.act.trimA(),
+                  ctx_.act.trimB());
     Serial.printf("fault code: %d %s\n", ctx_.faultCode,
                   ctx_.faultCode == 0 ? "(healthy)" : "(see README beep table)");
     (void)dummy;

@@ -53,11 +53,17 @@ tools/
 | Parachute latch servo | 23 | PWM, 50 Hz; holds the spring-ejection latch |
 | Pyro fire — leg-release nichrome | 6 | MOSFET gate, low-side driver |
 | Pyro fire — landing motor | 7 | MOSFET gate, low-side driver |
-| Continuity sense — legs | 14 (A0) | voltage divider across the nichrome |
-| Continuity sense — landing | 15 (A1) | voltage divider across e-match |
+| Continuity sense — legs | 14 (A0) | 100k/33k divider from the legs MOSFET drain |
+| Continuity sense — landing | 15 (A1) | 100k/33k divider from the landing MOSFET drain |
 | Battery voltage | 16 (A2) | divider, ratio in `VBAT_DIVIDER` |
 | Buzzer | 8 | active buzzer or transistor-driven |
-| Arm switch (optional) | 9 | to GND, `INPUT_PULLUP`; enable via `REQUIRE_ARM_SWITCH` |
+| Arm switch | 9 | **not fitted** — pin unused, `REQUIRE_ARM_SWITCH = false` |
+
+Power: a 2S LiPo for the flight computer and servos, and a **separate 2S
+pyro LiPo** for both pyro channels. Tie the pyro LiPo's − to Teensy GND
+(never the +): the MOSFET gates and the continuity dividers need the common
+ground. With a load connected, each drain sits at pyro battery voltage, so
+the dividers also read the pyro battery (`pyro:` in `status`).
 | BMI088 + MS5611 | 18 (SDA), 19 (SCL) | I2C, 400 kHz, 3.3 V |
 | LED | 13 | built-in |
 
@@ -74,9 +80,9 @@ Hardware rules that save rockets:
   limp ejects the chute on the pad. The chute servo shares the gimbal
   servos' BEC — check the rail with all three moving at once.
 - Pyro channels: logic-level MOSFETs, low-side, **gate pulldown resistors**
-  (so a floating pin during boot can't fire), flyback-safe wiring, and a
-  **physical arm switch in series with pyro battery power** — software
-  interlocks are the second layer, not the only layer.
+  (so a floating pin during boot can't fire), and flyback-safe wiring.
+  There is **no arm switch**: the pyro LiPo connector is the arm. The pyros
+  are live whenever it is plugged in, so plug it in last, on the pad.
 - Leg-release nichrome: it is on for **~3–4 s** (fire + 1 s → touchdown
   detected), drawing amps the whole time, overlapping the e-match gate by
   0.2 s and the TVC servos' hardest work. Power it from the **pyro battery**,
@@ -132,7 +138,7 @@ important ones:
 | `CHUTE_LOCK_US`, `CHUTE_RELEASE_US` | bench: CLI `chute us <n>` until the latch is fully closed / fully open |
 | `CHUTE_RECYCLE_LOCK_MS` | bench: time the servo takes to swing release → lock (`chute cycle`) |
 | Leg release timing | bench: `pyrotest legs`, time until the band parts; put it in the sim's "Legs: band cut" field and check the margin (see §4) |
-| `VBAT_DIVIDER`, `CONT_DIVIDER_RATIO` | multimeter vs. `status` readout |
+| `VBAT_DIVIDER` | multimeter vs. `status` readout (`CONT_DIVIDER_RATIO` is set from the 100k/33k schematic; check `pyro:` against a meter) |
 
 Then regenerate the burn table with your measured values:
 
@@ -238,10 +244,13 @@ as the abort recovery.
 3. `mode` set correctly (listen for the 2-vs-3-beep pattern at arm).
 4. Load the chute: `chute open`, spring + chute in, `chute lock`. Strap the
    legs with a fresh band over the nichrome. Then rig motors + e-match
-   **last**, on the pad, pyro arm switch OFF.
-5. Vehicle vertical on the rail, still. `arm` from a laptop, or arm switch.
-   Pre-arm checks verify sensors, SD, battery, chute latch locked, landing
-   e-match and legs nichrome continuity (FULL_LANDING), and tilt < 5°.
+   **last**, on the pad, with the pyro LiPo **unplugged**.
+5. Vehicle vertical on the rail, still. Plug in the pyro LiPo; `status`
+   should show `pyro:` ≥ 7.0 V and continuity `landing=YES legs=YES`.
+   Then `arm` from the laptop (the only way to arm). Pre-arm checks verify
+   sensors, SD, battery, chute latch locked, landing e-match and legs
+   nichrome continuity plus pyro battery ≥ `PYRO_VBAT_MIN` (FULL_LANDING),
+   and tilt < 5°.
 6. Clear the area. Launch when ready — everything from here is autonomous.
 7. After recovery: `flight_NNN.csv` from the SD card →
    `python tools/plot_flight.py flight_NNN.csv` and review before any tuning.
@@ -284,8 +293,8 @@ log after every single flight.
 ## 10. Safety & legal
 
 E-matches and rocket motors are energetic devices. Never work on the pad
-with the pyro battery connected; keep the physical arm switch off until the
-pad is clear. Propulsive-landing TVC flights generally fall **outside**
+with the pyro battery connected; keep the pyro LiPo unplugged until the
+vehicle is on the pad. Propulsive-landing TVC flights generally fall **outside**
 NAR/TRA club safety codes — fly under FAA Part 101 hobby rules on private
 land with generous clear distances, or coordinate explicitly with your club.
 You are responsible for complying with your local regulations.

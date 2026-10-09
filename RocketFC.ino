@@ -144,6 +144,8 @@ static void runProcedures(uint32_t ms) {
         fail("no continuity on LANDING channel");
       if (needLandCont && !cliCtx.contLegsCached)
         fail("no continuity on LEGS (nichrome) channel");
+      if (needLandCont && cliCtx.vpyroCached < cfg::PYRO_VBAT_MIN)
+        fail("pyro battery low or unplugged");
       if (cfg::REQUIRE_ARM_SWITCH && !act.armSwitchOn())
         fail("arm switch is off");
       if (!ok) return;
@@ -279,6 +281,7 @@ static void slowTick(uint32_t ms) {
   cliCtx.vbatCached = act.vbat();
   cliCtx.contLandCached = act.continuity();
   cliCtx.contLegsCached = act.legsContinuity();
+  cliCtx.vpyroCached = max(act.contVolts(), act.legsContVolts());
 
   // Fault code for the IDLE beeper (continuity is enforced at arm time
   // instead — a bare bench board shouldn't scream all day).

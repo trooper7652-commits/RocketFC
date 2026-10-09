@@ -52,11 +52,12 @@ constexpr int PIN_CONT_LAND    = 15;  // A1 — continuity sense divider, landin
 constexpr int PIN_SERVO_CHUTE  = 23;  // parachute spring-latch release servo
 constexpr int PIN_VBAT         = 16;  // A2 — battery voltage divider
 constexpr int PIN_BUZZER       = 8;
-constexpr int PIN_ARM_SWITCH   = 9;   // physical arm enable, INPUT_PULLUP, LOW = enabled
+constexpr int PIN_ARM_SWITCH   = 9;   // optional arm switch -- NOT FITTED, pin unused
 constexpr int PIN_LED          = 13;  // built-in LED
 // I2C uses Wire defaults on Teensy 4.1: SDA=18, SCL=19.
 
-constexpr bool REQUIRE_ARM_SWITCH = false;  // set true once the switch is wired
+// No arm switch on this vehicle: plugging in the pyro LiPo is the arm.
+constexpr bool REQUIRE_ARM_SWITCH = false;
 
 // ---------------------------------------------------------------------------
 // IMU mounting: body = R_SB * sensor. Body frame: +Z = long axis toward the
@@ -199,13 +200,16 @@ constexpr float LEGS_BURN_MAX_MS = 6000.0f;
 // ---------------------------------------------------------------------------
 constexpr float PYRO_FIRE_MS        = 1200.0f; // landing e-match gate-high duration
 constexpr float CONT_THRESHOLD_V    = 0.4f;    // sense voltage above this = e-match/wire present
-constexpr float CONT_DIVIDER_RATIO  = 1.0f;    // sense_v = adc_v * ratio (set per your divider)
+constexpr float CONT_DIVIDER_RATIO  = 4.03f;   // 100k over 33k: (100+33)/33; sense_v = drain volts
 
 // ---------------------------------------------------------------------------
 // Battery
 // ---------------------------------------------------------------------------
 constexpr float VBAT_DIVIDER = 6.0f;   // [MEASURE] 10k:2k -> Vbat = Vadc * 6.0
 constexpr float VBAT_MIN     = 7.0f;   // refuse to arm below this (2S LiPo)
+// Separate 2S pyro LiPo, read through the continuity dividers (a drain sits at
+// pyro battery voltage when its load is connected). FULL_LANDING arm only.
+constexpr float PYRO_VBAT_MIN = 7.0f;
 
 // ---------------------------------------------------------------------------
 // Logging
