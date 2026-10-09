@@ -45,10 +45,10 @@ constexpr float FAST_DT  = 1.0f / FAST_HZ;
 // ---------------------------------------------------------------------------
 constexpr int PIN_SERVO_A      = 2;   // gimbal servo producing torque about body +X
 constexpr int PIN_SERVO_B      = 3;   // gimbal servo producing torque about body +Y
-constexpr int PIN_PYRO_LEGS    = 6;   // MOSFET gate, landing-leg release nichrome
-constexpr int PIN_PYRO_LAND    = 7;   // MOSFET gate, F15 landing-motor e-match
-constexpr int PIN_CONT_LEGS    = 14;  // A0 — continuity sense divider, legs nichrome
-constexpr int PIN_CONT_LAND    = 15;  // A1 — continuity sense divider, landing channel
+constexpr int PIN_PYRO_LAND    = 6;   // MOSFET gate, F15 landing-motor e-match
+constexpr int PIN_PYRO_LEGS    = 7;   // MOSFET gate, landing-leg release nichrome
+constexpr int PIN_CONT_LAND    = 14;  // A0 — continuity sense divider, landing channel
+constexpr int PIN_CONT_LEGS    = 15;  // A1 — continuity sense divider, legs nichrome
 constexpr int PIN_SERVO_CHUTE  = 23;  // parachute spring-latch release servo
 constexpr int PIN_VBAT         = 16;  // A2 — battery voltage divider
 constexpr int PIN_BUZZER       = 8;

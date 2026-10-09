@@ -51,10 +51,10 @@ tools/
 | Gimbal servo A (body X torque) | 2 | PWM, 50 Hz |
 | Gimbal servo B (body Y torque) | 3 | PWM, 50 Hz |
 | Parachute latch servo | 23 | PWM, 50 Hz; holds the spring-ejection latch |
-| Pyro fire — leg-release nichrome | 6 | MOSFET gate, low-side driver |
-| Pyro fire — landing motor | 7 | MOSFET gate, low-side driver |
-| Continuity sense — legs | 14 (A0) | 100k/10k divider from the legs MOSFET drain |
-| Continuity sense — landing | 15 (A1) | 100k/10k divider from the landing MOSFET drain |
+| Pyro fire — landing motor | 6 | MOSFET gate, low-side driver |
+| Pyro fire — leg-release nichrome | 7 | MOSFET gate, low-side driver |
+| Continuity sense — landing | 14 (A0) | 100k/10k divider from the landing MOSFET drain |
+| Continuity sense — legs | 15 (A1) | 100k/10k divider from the legs MOSFET drain |
 | Battery voltage | 16 (A2) | divider, ratio in `VBAT_DIVIDER` |
 | Buzzer | 8 | active buzzer or transistor-driven |
 | Arm switch | 9 | **not fitted** — pin unused, `REQUIRE_ARM_SWITCH = false` |
