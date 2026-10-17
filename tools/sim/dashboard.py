@@ -62,6 +62,13 @@ FIELD_SPECS = [
         ("Slew rate (deg/s)", "servo_slew_dps"),
         ("Lag tau (s)", "servo_lag_tau_s"),
     ]),
+    ("Landing / ground", [
+        ("Foot radius (m)", "leg_foot_radius_m"),
+        ("CG height on legs (m)", "landed_cg_height_m"),
+        ("Crash speed (m/s)", "crash_speed_mps"),
+        ("Grass friction", "ground_mu"),
+        ("Max field slope (deg)", "ground_slope_max_deg"),
+    ]),
     ("Environment", [
         ("Wind (m/s)", "wind_mps"),
         ("Gust (m/s)", "gust_mps"),
@@ -411,14 +418,18 @@ class Dashboard:
                 m = s["legs_margin_s"]
                 legs = (" | legs out {:.1f}s before contact".format(m) if m >= 0
                         else " | LEGS LATE by {:.1f}s".format(-m))
+            o = s.get("landing_outcome")
+            verdict = ""
+            if o:
+                verdict = (" | " + o["label"]) if o["success"] else (" | FAILED: " + o["label"])
             self.summary_label.config(
                 text="apogee {:.1f} m @ {:.1f}s | touchdown {:.2f} m/s @ {} | "
-                     "max tilt {:.1f} deg | abort {} | chute {}{}".format(
+                     "max tilt {:.1f} deg | abort {} | chute {}{}{}".format(
                          s["apogee_h"] or 0, s["apogee_t"] or 0,
                          s["touchdown_speed_mps"] or float("nan"),
                          "{:.1f}s".format(s["touchdown_t"]) if s["touchdown_t"] else "n/a",
                          s["max_tilt_deg"], s["abort_reason"] or "none", chute,
-                         legs))
+                         legs, verdict))
         else:
             self.summary_label.config(text="Flight log: {} rows, {} events".format(
                 len(self.rows), len(self.events)))
@@ -493,14 +504,24 @@ class Dashboard:
         summary, which is derived from the plant's touchdown detection and is
         authoritative; Track's fallback derivation is only for bare logs.
         """
-        landing = None
+        landing = outcome = ground = None
         if self.result and not self.is_log:
-            landing = self.result["summary"].get("touchdown_speed_mps")
+            summ = self.result["summary"]
+            landing = summ.get("touchdown_speed_mps")
+            outcome = summ.get("landing_outcome")
+            ground = summ.get("ground")
+        # The leg/chute timings only matter for a log (a sim run carries its
+        # own deployment truth per row); pass the panel's values so editing
+        # "Legs: band cut" re-times a log's leg animation too.
+        vc = self._read_vcfg()
         return flight3d.Track(
             self.rows, self.events, is_log=self.is_log,
             dead_reckon=self.show_dead_reckon.get(),
             label=("flight log" if self.is_log else "simulated flight"),
-            landing_speed=landing)
+            landing_speed=landing, legs_cut_s=vc.legs_cut_s,
+            legs_swing_s=vc.legs_swing_s,
+            chute_inflation_s=vc.chute_inflation_s,
+            outcome=outcome, ground=ground)
 
     def on_open_3d(self):
         if not self.rows:
@@ -512,7 +533,9 @@ class Dashboard:
             snap = core.FlightCore.config_snapshot(core.default_dll())
             self.view3d = flight3d.FlightView(
                 self._make_track(), vehicle_length_m=self.vcfg.length_m,
-                gimbal_limit_deg=math.degrees(snap["gimbalMaxRad"]))
+                gimbal_limit_deg=math.degrees(snap["gimbalMaxRad"]),
+                chute_diameter_m=flight3d.canopy_diameter_m(
+                    self.vcfg.cda_chute_m2))
         except Exception as e:
             self.view3d = None
             messagebox.showerror(
@@ -541,6 +564,21 @@ class Dashboard:
                 return
             if ev["toggle_play"]:
                 self.toggle_play()
+            if ev["stop"]:
+                if self.playing:
+                    self.toggle_play()
+                self.scrub_var.set(0.0)
+                self._cursor_due = 0.0
+            if ev["step"]:
+                if self.playing:
+                    self.toggle_play()
+                self.scrub_var.set(max(0.0, min(self.t_max, self.scrub_var.get()
+                                                + ev["step"] * flight3d.STEP_S)))
+                self._cursor_due = 0.0
+            if ev["speed"] is not None:
+                self.play_speed = ev["speed"]
+            view.playing = self.playing
+            view.speed = self.play_speed
 
             now = time.perf_counter()
             dt = now - (self._last_3d_frame or now)
@@ -553,7 +591,10 @@ class Dashboard:
                 # The render loop paces playback: real elapsed time, so speed
                 # is independent of however fast this machine draws.
                 t = self.scrub_var.get() + dt * self.play_speed
-                self.scrub_var.set(0.0 if t > self.t_max else t)
+                if t >= self.t_max:
+                    t = self.t_max          # hold the final frame (the verdict)
+                    self.toggle_play()
+                self.scrub_var.set(t)
 
             self.time_label.config(
                 text="t = {:.2f} s".format(self.scrub_var.get()))
@@ -592,6 +633,8 @@ class Dashboard:
 
     def toggle_play(self):
         self.playing = not self.playing
+        if self.playing and self.scrub_var.get() >= self.t_max:
+            self.scrub_var.set(0.0)         # play again from the start
         self.play_btn.config(text="Pause" if self.playing else "Play")
         if self.playing:
             self._tick()
@@ -611,8 +654,10 @@ class Dashboard:
 
     def _advance(self, dt):
         t = self.scrub_var.get() + dt
-        if t > self.t_max:
-            t = 0.0
+        if t >= self.t_max:
+            t = self.t_max                  # hold the final frame (the verdict)
+            if self.playing:
+                self.toggle_play()
         self.scrub_var.set(t)
         self.redraw()
 

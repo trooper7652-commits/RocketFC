@@ -25,12 +25,19 @@ Run directly for a quick nominal-flight smoke test:
     python tools/sim/run.py [chute|land]
 """
 import math
+import random
 import sys
 
 import core
+import landing_outcome
 import plant as plant_mod
 import sensors as sensors_mod
 import servo as servo_mod
+
+
+def _ramp(t, t0, duration):
+    """0 before t0, rising linearly to 1 over `duration` seconds."""
+    return min(1.0, max(0.0, (t - t0) / max(duration, 1e-6)))
 
 
 def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
@@ -54,6 +61,12 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
     baro_every = max(1, round((1.0 / baro_hz) / dt))
 
     pl = plant_mod.Plant(vcfg)
+    if pl.ground is not None:
+        # Field slope for this flight: its own RNG stream, so the sensor noise
+        # and every other draw stay exactly as they were.
+        _rng = random.Random(seed * 7907 + 3)
+        pl.ground.set_slope(_rng.uniform(0.0, vcfg.ground_slope_max_deg),
+                            _rng.uniform(0.0, 360.0))
     sm = sensors_mod.SensorModel(vcfg, seed=seed)
     sv = servo_mod.GimbalServos(math.radians(vcfg.servo_slew_dps),
                                 vcfg.servo_lag_tau_s, snap["gimbalMaxRad"], dt)
@@ -91,6 +104,19 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
     chute_unconfirmed = False
     legs_on_t = None
     legs_off_t = None
+    # ---- landing diagnostics (read-only; never fed back into the flight) ----
+    fire_info = None
+    prev_tilt = None
+    prev_state = None
+    abort_state = None
+    hop = False
+    hop_stop_h = None
+    hop_apex_h = None
+    touchdown_hspeed = None
+    lag_shv = lag_svv = lag_sva = lag_saa = 0.0
+    lag_n = 0
+    lag_eh_sum = lag_ev_sum = 0.0
+    prev_v_true = None
 
     t = 0.0
     i = 0
@@ -104,7 +130,12 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
             baro_new_raw = (i % baro_every == 0)
             p_pa = 0.0
             if baro_new_raw:
-                p_pa = sm.baro(s.pos.z, baro_every * dt)
+                if getattr(vcfg, "baro_q_coeff", 0.0) != 0.0:
+                    _w = pl._wind(t)
+                    _rel = s.vel - _w
+                    p_pa = sm.baro(s.pos.z, baro_every * dt, airspeed=_rel.norm())
+                else:
+                    p_pa = sm.baro(s.pos.z, baro_every * dt)
 
             if t < cal_end_t:
                 gbx += gx; gby += gy; gbz += gz
@@ -148,6 +179,18 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
             for ev in fc.pop_events():
                 ev["t"] = t
                 events.append(ev)
+                if ev["code"] == core.FlightEvent.FIRE_LANDING and fire_info is None:
+                    fire_info = {
+                        "fire_t": t, "fire_h_true": s.pos.z,
+                        "fire_v_true": s.vel.z,
+                        "fire_kf_alt": out["kf_alt"],
+                        "fire_kf_vel": out["kf_vel"],
+                        "fire_tilt_deg": out["tilt_deg"],
+                        "fire_tilt_prev_deg": prev_tilt,
+                        "fire_hspeed_true": math.hypot(s.vel.x, s.vel.y),
+                    }
+                if ev["code"] == core.FlightEvent.ABORT_DET:
+                    abort_state = prev_state
                 if ev["code"] == core.FlightEvent.FIRE_LANDING and not dud_landing_igniter:
                     # e-match ignition delay: burn_table.h's ignition altitudes
                     # already account for this gap between the fire COMMAND and
@@ -181,7 +224,41 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
             true_cmd_y = out["gimbal_y"] * snap["servoBSign"]
             act_x, act_y = sv.step(true_cmd_x, true_cmd_y)
 
+            # Kalman error vs truth in the fall (> 5 m/s), fitted as a lag:
+            # altitude error ~ |v| tau_h, velocity error ~ |a| tau_v.
+            if (out["state"] == core.FlightState.DESCENT and s.vel.z < -5.0
+                    and prev_v_true is not None):
+                _a = (s.vel.z - prev_v_true) / dt
+                _eh = out["kf_alt"] - s.pos.z
+                _ev = out["kf_vel"] - s.vel.z
+                lag_shv += _eh * (-s.vel.z)
+                lag_svv += s.vel.z * s.vel.z
+                lag_sva += _ev * (-_a)
+                lag_saa += _a * _a
+                lag_eh_sum += _eh
+                lag_ev_sum += _ev
+                lag_n += 1
+            prev_v_true = s.vel.z
+            prev_tilt = out["tilt_deg"]
+            prev_state = out["state"].name
+
+            # Truth: how far the legs have actually swung down (nichrome on +
+            # band burn + swing). A leg that isn't fully down can't hold the
+            # rocket up in the "legs" ground model.
+            legs_frac = (_ramp(t, legs_on_t + vcfg.legs_cut_s, vcfg.legs_swing_s)
+                         if legs_on_t is not None else 0.0)
+            pl.legs_frac = legs_frac
             pl.step(dt, act_x, act_y)
+
+            # Hop: after landing thrust starts, the rocket stopped falling
+            # while still > 0.25 m up (it will climb, burn out and fall back).
+            if (pl.state.landing_ignite_t is not None and t >= pl.state.landing_ignite_t
+                    and pl.state.touchdown_t is None):
+                if not hop and s.vel.z >= 0.0 and s.pos.z > 0.25:
+                    hop = True
+                    hop_stop_h = s.pos.z
+                if hop:
+                    hop_apex_h = max(hop_apex_h or 0.0, s.pos.z)
 
             if launched:
                 max_tilt = max(max_tilt, out["tilt_deg"])
@@ -191,7 +268,14 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
                         max_kf_err = err
 
             if pl.state.touchdown_t is not None and touchdown_speed is None:
-                touchdown_speed = abs(s.vel.z)
+                if pl.contact is not None:
+                    # legs model: the speed at the instant of first contact
+                    cv = pl.contact["vel"]
+                    touchdown_speed = abs(cv[2])
+                    touchdown_hspeed = math.hypot(cv[0], cv[1])
+                else:
+                    touchdown_speed = abs(s.vel.z)
+                    touchdown_hspeed = math.hypot(s.vel.x, s.vel.y)
 
             if record:
                 rows.append({
@@ -213,6 +297,14 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
                     "baro_alt": baro_alt, "baro_pa": last_baro_pa,
                     "chute_release": out["chute_release"],
                     "chute_detected": out["chute_detected"],
+                    # Deployment TRUTH, for the 3D view: how far the canopy
+                    # has actually inflated (the plant's own drag ramp -- zero
+                    # while a stuck latch holds it in) and how far the legs
+                    # have swung down (nichrome on + band cut + swing).
+                    "chute_frac": (_ramp(t, pl.chute_open_t, vcfg.chute_inflation_s)
+                                   if pl.chute_deployed else 0.0),
+                    "legs_frac": legs_frac,
+                    "thrust_n": thrust_now,
                     "fire_landing": out["fire_landing"],
                     "legs_burn": out["legs_burn"],
                 })
@@ -249,11 +341,36 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
         "final_state": rows[-1]["state"] if rows else None,
         "sim_time_s": t,
     }
+    # ---- landing diagnostics ----
+    fi = fire_info or {}
+    summary.update({
+        "fire_t": fi.get("fire_t"), "fire_h_true": fi.get("fire_h_true"),
+        "fire_v_true": fi.get("fire_v_true"),
+        "fire_kf_alt": fi.get("fire_kf_alt"),
+        "fire_kf_vel": fi.get("fire_kf_vel"),
+        "fire_tilt_deg": fi.get("fire_tilt_deg"),
+        "fire_tilt_prev_deg": fi.get("fire_tilt_prev_deg"),  # >= 15: tilt-limited fire
+        "fire_hspeed_true": fi.get("fire_hspeed_true"),
+        "land_ignite_t": pl.state.landing_ignite_t,
+        "hop": hop, "hop_stop_h": hop_stop_h, "hop_apex_h": hop_apex_h,
+        "touchdown_hspeed_mps": touchdown_hspeed,
+        "abort_state": abort_state,
+        "lag_tau_h_s": (lag_shv / lag_svv) if lag_svv > 0 else None,
+        "lag_tau_v_s": (lag_sva / lag_saa) if lag_saa > 0 else None,
+        "descent_kf_eh_mean": (lag_eh_sum / lag_n) if lag_n else None,
+        "descent_kf_ev_mean": (lag_ev_sum / lag_n) if lag_n else None,
+    })
+    if pl.ground is not None:
+        summary["ground"] = pl.ground_summary()
+        summary["contact_vspeed_mps"] = touchdown_speed
+        summary["landing_outcome"] = landing_outcome.classify(summary, mode=mode)
     return {"rows": rows, "events": events, "summary": summary}
 
 
 def main():
     import vehicle
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # outcome labels use the ≈ sign
     mode = sys.argv[1] if len(sys.argv) > 1 else "land"
     dll = core.default_dll()
     vcfg = vehicle.default_vehicle_config(dll)

@@ -44,7 +44,7 @@ class SensorModel:
         gz = omega_body.z + gbz + self.rng.gauss(0, sig_g)
         return (ax, ay, az), (gx, gy, gz)
 
-    def baro(self, true_alt_m, dt_since_last_sample):
+    def baro(self, true_alt_m, dt_since_last_sample, airspeed=0.0):
         """One barometer sample: applies the lag filter, then returns a noisy
         pressure reading (Pa) for the given TRUE altitude AGL."""
         v = self.v
@@ -52,4 +52,7 @@ class SensorModel:
         alpha = min(alpha, 1.0)
         self._baro_lag_alt += (true_alt_m - self._baro_lag_alt) * alpha
         p = P0_PA * (1.0 - min(self._baro_lag_alt, 40000.0) / 44330.0) ** 5.2553
+        qc = getattr(v, "baro_q_coeff", 0.0)
+        if qc != 0.0:  # static-port error: a fraction of dynamic pressure
+            p += qc * 0.5 * 1.225 * airspeed * airspeed
         return p + self.rng.gauss(0, v.baro_noise_pa)

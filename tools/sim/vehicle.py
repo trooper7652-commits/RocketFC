@@ -85,12 +85,33 @@ class VehicleConfig:
     # ---- Landing legs ------------------------------------------------------
     # The flight computer powers a nichrome wire from fire + LEGS_DELAY_MS
     # until touchdown; the legs are out once the wire has burned through the
-    # rubber band and they have swung down. The sim doesn't change the
-    # physics for this -- it reports how long before ground contact the legs
-    # were out (run.py's legs_margin_s; negative = too late).
+    # rubber band and they have swung down. run.py reports how long before
+    # ground contact the legs were out (legs_margin_s; negative = too late),
+    # and with ground_model "legs" a leg that isn't down yet can't hold the
+    # rocket up (ground.py).
     legs_cut_s: float = 1.5            # [MEASURE] nichrome on -> band parts (s);
                                        #   time it on the bench: `pyrotest legs`
     legs_swing_s: float = 0.3          # [ESTIMATE] band parts -> legs fully down (s)
+
+    # ---- Ground contact and landing outcome (ground.py, landing_outcome.py) ----
+    # "legs": after touchdown the rocket stands, bounces, slides or falls over
+    # on its 4 legs (4 legs x 3 carbon rods each). "arrest": the old fixed
+    # ~12 g vertical stop with no tipping -- bit-identical to earlier runs.
+    ground_model: str = "legs"
+    leg_foot_radius_m: float = 0.25    # [MEASURE] centreline -> foot pad, legs down (m)
+    landed_cg_height_m: float = 0.60   # [MEASURE] CG above the ground standing on the
+                                       #   legs, both motors spent (m)
+    leg_top_ring_from_tail_m: float = 0.25  # [MEASURE] tail -> top ring the strut
+                                            #   rod hangs from (m); drawing only
+    ground_k_npm: float = 2500.0       # [ESTIMATE] grass stiffness per contact point (N/m)
+    ground_c_nspm: float = 28.0        # [ESTIMATE] grass damping per contact point (N*s/m):
+                                       #   a 3 m/s drop on 4 feet stops in ~2-3 cm
+    ground_mu: float = 0.6             # [ESTIMATE] foot-on-grass friction coefficient
+    ground_slope_max_deg: float = 3.0  # random field slope per flight, 0..this (deg)
+    crossflow_cd: float = 1.0          # [ESTIMATE] side drag of the standing body in wind
+    crash_speed_mps: float = 3.0       # [MEASURE: drop test] vertical contact speed above
+                                       #   which legs/airframe break (3 m/s = 46 cm drop)
+    settle_s: float = 2.0              # must stand still this long after burnout
     # Destabilizing/restoring aero torque coefficient: torque = dynamic
     # pressure * reference area * (cp_from_nose_m - cg_from_nose_m) * angle of
     # attack (small-angle). [ESTIMATE] -- this is a coarse model; treat sim
@@ -113,6 +134,10 @@ class VehicleConfig:
     ascent_eng_path: str = DEFAULT_ENG   # RASP .eng file, ascent motor
     landing_eng_path: str = DEFAULT_ENG  # RASP .eng file, landing (F15) motor
     ignition_delay_s: float = 0.5        # [MEASURE on ThrustStand] e-match -> thrust (s)
+    # Plant-side motor mismatch for robustness studies (defaults = no change):
+    # the flight software keeps assuming the nominal .eng curve.
+    landing_thrust_scale: float = 1.0    # multiplies landing thrust (impulse scales too)
+    landing_time_scale: float = 1.0      # stretches the landing burn, impulse kept
 
     # ---- Gimbal / servo --------------------------------------------------
     # NOTE: firmware's own GIMBAL_MAX_RAD (software clamp) and the
@@ -142,7 +167,12 @@ class VehicleConfig:
     gyro_bias_dps: tuple = (0.3, -0.2, 0.15)      # constant per-axis gyro bias (deg/s)
     accel_bias_mps2: tuple = (0.03, -0.02, 0.04)  # constant per-axis accel bias (m/s^2)
     baro_noise_pa: float = 2.0          # barometer pressure noise std-dev (Pa)
-    baro_lag_s: float = 0.025           # barometer response lag (s)
+    baro_lag_s: float = 0.025           # barometer response lag (s); applied once per
+                                        #   baro sample, so values <= the sample
+                                        #   interval (10 ms) act like no lag
+    # Static-pressure error from airflow past the vent holes, as a fraction of
+    # dynamic pressure q = rho*v^2/2 (+ = reads high pressure = low altitude).
+    baro_q_coeff: float = 0.0
 
     def to_json(self, path):
         with open(path, "w", encoding="utf-8") as f:
