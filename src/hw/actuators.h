@@ -7,10 +7,12 @@
 // via per-axis center trim, scale, and sign from config. Hard-clamped to the
 // servo travel limits on top of the controller's own gimbal clamp.
 //
-// Chute servo: holds the spring-ejection latch at CHUTE_LOCK_US; the flight
-// logic's chuteRelease level moves it to CHUTE_RELEASE_US (and back to LOCK
-// briefly when re-cycling a stuck latch). On the ground the flight logic
-// never moves it, so the CLI can hold it open while the spring is loaded.
+// Chute servo: boots OPEN (CHUTE_RELEASE_US) so the spring + chute can be
+// loaded straight away; CLI `chute lock` moves it to CHUTE_LOCK_US, and arming
+// is refused until it's locked. In flight, the flight logic's chuteRelease
+// level moves it to CHUTE_RELEASE_US (and back to LOCK briefly when
+// re-cycling a stuck latch). On the ground the flight logic never moves it.
+// A reboot with a loaded spring therefore ejects the chute.
 //
 // Pyro: MOSFET gate driven HIGH for PYRO_FIRE_MS, then released, on a
 // non-blocking timer. firePyro() only acts when enablePyro() has been set by
@@ -37,16 +39,17 @@ class Actuators {
   enum class ChutePos : uint8_t { LOCK, RELEASE, JOG };
 
   void begin(float trimAUs, float trimBUs) {
-    // Chute latch first, and atomically: Teensy 4's Servo::attach() loads the
-    // 1500 us default and its pulse ISR may read it before our write, which
-    // could nudge the latch toward release at power-up. With interrupts off
-    // across attach + write, the very first pulse is already LOCK.
+    // Chute latch first, and atomically, straight to OPEN: Teensy 4's
+    // Servo::attach() loads the 1500 us default and its pulse ISR may read it
+    // before our write, which would twitch the latch toward some other
+    // position at power-up. With interrupts off across attach + write, the
+    // very first pulse is already RELEASE.
     noInterrupts();
     chute_.attach(cfg::PIN_SERVO_CHUTE, CHUTE_JOG_MIN_US, CHUTE_JOG_MAX_US);
-    chute_.writeMicroseconds((int)cfg::CHUTE_LOCK_US);
+    chute_.writeMicroseconds((int)cfg::CHUTE_RELEASE_US);
     interrupts();
-    chuteUs_ = cfg::CHUTE_LOCK_US;
-    chutePos_ = ChutePos::LOCK;
+    chuteUs_ = cfg::CHUTE_RELEASE_US;
+    chutePos_ = ChutePos::RELEASE;
 
     trimA_ = trimAUs;
     trimB_ = trimBUs;
@@ -216,8 +219,8 @@ class Actuators {
   Servo servoA_, servoB_, chute_;
   float trimA_ = 0, trimB_ = 0;
   float lastUsA_ = 1500, lastUsB_ = 1500;
-  float chuteUs_ = cfg::CHUTE_LOCK_US;
-  ChutePos chutePos_ = ChutePos::LOCK;
+  float chuteUs_ = cfg::CHUTE_RELEASE_US;
+  ChutePos chutePos_ = ChutePos::RELEASE;
   bool pyroEnabled_ = false;
   uint32_t fireEndMs_ = 0;
   LegsSrc legsSrc_ = LegsSrc::NONE;

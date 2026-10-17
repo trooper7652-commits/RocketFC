@@ -77,8 +77,10 @@ Hardware rules that save rockets:
 - Parachute latch: design it so the spring **cannot back-drive the servo**
   (e.g. a pin loaded across its axis, not along it). Before the firmware
   starts, the servo gets no signal; a latch that slips when the servo goes
-  limp ejects the chute on the pad. The chute servo shares the gimbal
-  servos' BEC — check the rail with all three moving at once.
+  limp ejects the chute on the pad. Once running, the firmware drives the
+  latch **open** at boot, so any reboot or power-cycle with a loaded spring
+  ejects the chute — load it only after the FC is up. The chute servo shares
+  the gimbal servos' BEC — check the rail with all three moving at once.
 - Pyro channels: logic-level MOSFETs, low-side, **gate pulldown resistors**
   (so a floating pin during boot can't fire), and flyback-safe wiring.
   There is **no arm switch**: the pyro LiPo connector is the arm. The pyros
@@ -217,6 +219,7 @@ as the abort recovery.
 | `mode chute` / `mode land` | select flight mode (persisted) |
 | `trim a +20` / `center` | servo trim (persisted) / center servos |
 | `servotest` | slow gimbal sweep for the direction test |
+| `circle [s] [deg]` / `circle off` | gimbal runs in circles until turned off — default 1 s/rev at full deflection; disarmed only, `center`/`stop` also end it, `cal`/`zero`/`arm` refused while circling |
 | `chute` | show the parachute latch position |
 | `chute open` / `chute lock` | open the latch to load the spring / lock it (arming is refused until locked) |
 | `chute us <n>` | jog the latch servo to find `CHUTE_LOCK_US` / `CHUTE_RELEASE_US` |
@@ -242,7 +245,8 @@ as the abort recovery.
 1. Fresh battery; `status` shows vbat > `VBAT_MIN`.
 2. SD card inserted; `status` shows SD OK.
 3. `mode` set correctly (listen for the 2-vs-3-beep pattern at arm).
-4. Load the chute: `chute open`, spring + chute in, `chute lock`. Strap the
+4. Load the chute: the latch boots open (or `chute open`), spring + chute
+   in, `chute lock`. Strap the
    legs with a fresh band over the nichrome. Then rig motors + e-match
    **last**, on the pad, with the pyro LiPo **unplugged**.
 5. Vehicle vertical on the rail, still. Plug in the pyro LiPo; `status`

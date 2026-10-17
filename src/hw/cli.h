@@ -40,6 +40,16 @@ class Cli {
   explicit Cli(CliContext& ctx) : ctx_(ctx) {}
 
   bool servoTestActive() const { return servoTestActive_; }
+  bool circleActive() const { return circleOn_; }
+
+  // `circle`: called from the 50 Hz servo tick instead of the flight gimbal
+  // command. Non-blocking, so the CLI stays live for `circle off`.
+  void circleTick(uint32_t ms) {
+    if (!isIdle()) { stopCircle(); return; }
+    const float ph = 2.0f * cfg::PI_F * (float)((ms - circleT0_) % circlePeriodMs_) /
+                     (float)circlePeriodMs_;
+    ctx_.act.writeGimbal(circleRad_ * cosf(ph), circleRad_ * sinf(ph));
+  }
 
   void poll(uint32_t ms) {
     if (pendingTest_ != PendingTest::NONE &&
@@ -96,6 +106,7 @@ class Cli {
     } else if (!strcmp(cmd, "cal") || !strcmp(cmd, "zero") ||
                !strcmp(cmd, "arm")) {
       if (!isIdle()) { requireIdle(cmd); return; }
+      if (circleOn_) { Serial.println("gimbal circling -- `circle off` first."); return; }
       if (ctx_.procBusy) { Serial.println("busy with another procedure."); return; }
       ctx_.procRequest = !strcmp(cmd, "cal") ? ProcRequest::CAL
                         : !strcmp(cmd, "zero") ? ProcRequest::ZERO
@@ -126,11 +137,21 @@ class Cli {
       Serial.printf("trims: A=%+.0f us  B=%+.0f us (saved)\n", ta, tb);
     } else if (!strcmp(cmd, "center")) {
       if (!isIdle()) { requireIdle("center"); return; }
+      circleOn_ = false;
       ctx_.act.center();
       Serial.println("servos centered.");
     } else if (!strcmp(cmd, "servotest")) {
       if (!isIdle()) { requireIdle("servotest"); return; }
+      circleOn_ = false;
       servoTest();
+    } else if (!strcmp(cmd, "circle")) {
+      if (a1 && !strcmp(a1, "off")) {
+        if (circleOn_) stopCircle();
+        else Serial.println("not circling.");
+        return;
+      }
+      if (!isIdle()) { requireIdle("circle"); return; }
+      startCircle(ms, a1, a2);
     } else if (!strcmp(cmd, "chute")) {
       if (!isIdle()) { requireIdle("chute"); return; }
       chuteCmd(a1, a2);
@@ -173,6 +194,7 @@ class Cli {
       if (!isIdle()) { requireIdle("stop"); return; }
       ctx_.act.allPyrosOff();
       pendingTest_ = PendingTest::NONE;
+      if (circleOn_) stopCircle();
       Serial.println("all pyro outputs OFF.");
     } else {
       Serial.printf("unknown command '%s' — type `help`\n", cmd);
@@ -256,6 +278,28 @@ class Cli {
     Serial.println("sweep done (axis A then axis B), centered.");
   }
 
+  // Continuous gimbal circle, `sec` per revolution at `deg` radius (default
+  // and max: the gimbal limit). circleTick() drives it from the main loop
+  // until `circle off` / `center` / `stop`.
+  void startCircle(uint32_t ms, const char* secArg, const char* degArg) {
+    if (secArg && !strcmp(secArg, "on")) secArg = nullptr;
+    const float maxDeg = cfg::GIMBAL_MAX_RAD * cfg::RAD2DEG;
+    const float sec = constrain(secArg ? (float)atof(secArg) : 1.0f, 0.5f, 30.0f);
+    const float deg = constrain(degArg ? (float)atof(degArg) : maxDeg, 0.5f, maxDeg);
+    circlePeriodMs_ = (uint32_t)(sec * 1000.0f);
+    circleRad_ = deg * cfg::DEG2RAD;
+    circleT0_ = ms;
+    circleOn_ = true;
+    Serial.printf("gimbal circling: %.1f deg, %.1f s/rev. `circle off` to stop.\n",
+                  deg, sec);
+  }
+
+  void stopCircle() {
+    circleOn_ = false;
+    ctx_.act.center();
+    Serial.println("circle off, centered.");
+  }
+
   void printHelp() {
     Serial.println(
         "commands:\n"
@@ -267,6 +311,8 @@ class Cli {
         "  arm               full pre-flight sequence -> ARMED\n"
         "  disarm            back to IDLE, closes log\n"
         "  servotest         gimbal sweep (disarmed only)\n"
+        "  circle [s] [deg]  gimbal runs in circles (default 1 s/rev, max deflection)\n"
+        "  circle off        stop circling, center (`center`/`stop` also stop it)\n"
         "  trim a|b <us>     adjust servo center, saved\n"
         "  center            center servos\n"
         "  chute             show chute latch position\n"
@@ -324,4 +370,7 @@ class Cli {
   PendingTest pendingTest_ = PendingTest::NONE;
   uint32_t pendingExpireMs_ = 0;
   bool servoTestActive_ = false;
+  bool circleOn_ = false;
+  uint32_t circleT0_ = 0, circlePeriodMs_ = 1000;
+  float circleRad_ = 0;
 };

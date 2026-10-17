@@ -173,8 +173,8 @@ constexpr float KF_UNHEALTHY_ABORT_MS = 500.0f;
 // the canopy opened from the accelerometer and re-cycles the latch if not.
 // Find LOCK/RELEASE with the CLI `chute us <n>` jog, then set them here.
 // ---------------------------------------------------------------------------
-constexpr float CHUTE_LOCK_US         = 1000.0f; // [MEASURE] latch holding the spring
-constexpr float CHUTE_RELEASE_US      = 2000.0f; // [MEASURE] latch fully open
+constexpr float CHUTE_LOCK_US         = 1500.0f; // [MEASURE] latch holding the spring
+constexpr float CHUTE_RELEASE_US      = 1000.0f; // [MEASURE] latch fully open
 constexpr float CHUTE_CONFIRM_MS      = 1500.0f; // no chute seen this long after a release -> re-cycle
 constexpr float CHUTE_RECYCLE_LOCK_MS = 400.0f;  // [MEASURE] dwell back at LOCK (servo travel time)
 constexpr int   CHUTE_MAX_RELEASES    = 4;       // first release + 3 re-cycles, then hold RELEASE

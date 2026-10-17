@@ -92,8 +92,9 @@ void setup() {
                 store.mode() == cfg::FlightMode::CHUTE_TEST ? "CHUTE_TEST"
                                                             : "FULL_LANDING",
                 store.trimAUs(), store.trimBUs());
-  Serial.printf("chute latch: LOCK (%.0f us, pin %d)\n", act.chuteUs(),
-                cfg::PIN_SERVO_CHUTE);
+  Serial.printf("chute latch: OPEN (%.0f us, pin %d) -- load spring + chute, "
+                "then `chute lock`\n",
+                act.chuteUs(), cfg::PIN_SERVO_CHUTE);
   if (!sensorsOk) Serial.println("!! sensor failure — check wiring, then reboot.");
   Serial.println("type `help` for commands.\n");
 
@@ -358,7 +359,9 @@ void loop() {
   // --- 50 Hz: servos ---
   if (usServo >= (uint32_t)(1e6f / cfg::SERVO_HZ)) {
     usServo = 0;
-    if (!serialCli.servoTestActive()) {
+    if (serialCli.circleActive()) {
+      serialCli.circleTick(ms);  // CLI `circle` (IDLE only)
+    } else if (!serialCli.servoTestActive()) {
       if (co.tvcActive) act.writeGimbal(co.gimbalX, co.gimbalY);
       else act.center();
     }
