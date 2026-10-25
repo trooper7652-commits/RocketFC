@@ -26,3 +26,7 @@ desktop.ini
 # tools/sim build cache and compiled bridge
 tools/sim/build/
 *.dll
+
+# tools/hil generated traces and hil_ctl session logs (regenerate with tools/hil/make_trace.py)
+tools/hil/traces/
+tools/hil/sessions/

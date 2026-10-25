@@ -42,7 +42,7 @@ def _ramp(t, t0, duration):
 
 def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
             countdown_s=0.5, max_t=60.0, dt=0.002, baro_hz=100.0,
-            record=True, dud_landing_igniter=False):
+            record=True, dud_landing_igniter=False, record_inputs=False):
     """Run one closed-loop flight. Returns a dict:
         rows: list of per-tick dicts (only if record=True) -- truth, sensor,
               estimator and control values, one row per FAST_HZ tick, in the
@@ -55,6 +55,12 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
         flight computer as normal but the plant never actually ignites the
         landing motor -- exercises the same DUD_IGNITER abort path as
         tools/replay/cases/dud_igniter.csv (real e-match failure to light).
+    record_inputs: if True, the result also carries "inputs" -- every
+        CoreInput fed to the flight core from the arm tick onward, as
+        (ms, dt, accel, gyro_bias_corrected, baro_new, baro_alt) tuples -- and
+        "arm_info" (the pad-level accel, baro noise variance and arm ms the
+        core was armed with). tools/hil plays these back on the real Teensy.
+        Read-only: the flight itself is unchanged.
     """
     dll_path = dll_path or core.default_dll()
     snap = core.FlightCore.config_snapshot(dll_path)
@@ -93,6 +99,8 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
     last_baro_pa = 0.0
 
     rows = [] if record else None
+    inputs = [] if record_inputs else None
+    arm_info = None
     events = []
     max_tilt = 0.0
     max_kf_err = 0.0
@@ -159,6 +167,11 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
                 fc.zero_altitude()
                 fc.request_arm(int(t * 1000.0 + 0.5))
                 armed = True
+                if record_inputs:
+                    arm_info = {"pad_accel": (aax, aay, aaz),
+                                "baro_var": max(alt_var, 0.0025),
+                                "arm_ms": int(t * 1000.0 + 0.5),
+                                "launch_ms": int(launch_t * 1000.0 + 0.5)}
 
             if armed and not launched and t >= launch_t:
                 pl.ignite_ascent(t)
@@ -175,6 +188,9 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
             ms = int(t * 1000.0 + 0.5)
             out = fc.step(ms, dt, (ax, ay, az), gyro_corrected,
                          baro_new=baro_new, baro_alt=baro_alt)
+            if inputs is not None and armed:
+                inputs.append((ms, dt, (ax, ay, az), gyro_corrected,
+                               baro_new, baro_alt))
 
             for ev in fc.pop_events():
                 ev["t"] = t
@@ -364,7 +380,11 @@ def simulate(vcfg, mode="land", dll_path=None, seed=42, arm_t=2.6,
         summary["ground"] = pl.ground_summary()
         summary["contact_vspeed_mps"] = touchdown_speed
         summary["landing_outcome"] = landing_outcome.classify(summary, mode=mode)
-    return {"rows": rows, "events": events, "summary": summary}
+    result = {"rows": rows, "events": events, "summary": summary}
+    if record_inputs:
+        result["inputs"] = inputs
+        result["arm_info"] = arm_info
+    return result
 
 
 def main():
