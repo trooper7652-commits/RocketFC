@@ -16,6 +16,9 @@ with `sweep.py monte-carlo` and with each other across solver builds. On top:
                         mass_descent_kg=0.01 ignition_delay_s=0.05 ("measured")
   --ext attr:lo:hi ...  extra multiplicative dispersions from an independent
                         RNG stream (standard draws stay paired)
+  --wind W              steady wind W m/s on every flight instead of the usual
+                        uniform -4..+4 draw (the draw still happens, so the other
+                        dispersions stay paired across --wind values)
   --plant-list JSON     dispersion-free flights, one per {k: v} dict per seed
                         (e.g. an apogee sweep over ascent_eng_path)
 
@@ -67,7 +70,7 @@ def parse_kv(items):
     return out
 
 
-def build_jobs(base, disp_fields, seed, n, ext):
+def build_jobs(base, disp_fields, seed, n, ext, wind=None):
     """Standard draws exactly as sweep.monte_carlo; ext from its own stream."""
     rng = random.Random(seed)
     jobs = []
@@ -80,6 +83,8 @@ def build_jobs(base, disp_fields, seed, n, ext):
             setattr(vc, attr, nominal * factor)
             disp[attr] = factor
         vc.wind_mps = rng.uniform(-4.0, 4.0)
+        if wind is not None:
+            vc.wind_mps = wind   # still drawn above, so the other draws stay paired
         disp["wind_mps"] = vc.wind_mps
         jobs.append([vc, disp, seed + i, i])
     if ext:
@@ -103,6 +108,8 @@ def main():
     ap.add_argument("--disp", nargs="*", default=[])
     ap.add_argument("--ext", nargs="*", default=[])
     ap.add_argument("--plant-list", default=None)
+    ap.add_argument("--wind", type=float, default=None,
+                    help="steady wind (m/s) for every flight instead of the -4..+4 draw")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
@@ -143,7 +150,7 @@ def main():
                 tasks.append((vc, {"plant": pv}, seed, j))
     else:
         for seed in args.seeds:
-            for vc, disp, s, i in build_jobs(base, disp_fields, seed, args.n, ext):
+            for vc, disp, s, i in build_jobs(base, disp_fields, seed, args.n, ext, args.wind):
                 tasks.append((vc, disp, s, i))
 
     jobs = [(dataclasses.asdict(vc), args.mode, flight_dll, s) for vc, _, s, _ in tasks]
@@ -156,7 +163,7 @@ def main():
             for (vc, disp, s, i), summ in zip(tasks, summaries)]
     meta = {"flight_dll": flight_dll, "fw_overrides": fw, "plant": parse_kv(args.plant),
             "disp": args.disp, "ext": args.ext, "seeds": args.seeds, "n": args.n,
-            "plant_list": args.plant_list, "elapsed_s": time.time() - t0}
+            "plant_list": args.plant_list, "wind": args.wind, "elapsed_s": time.time() - t0}
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump({"meta": meta, "rows": rows}, f)
     nerr = sum(1 for r in rows if "error" in r["summary"])

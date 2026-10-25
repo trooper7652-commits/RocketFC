@@ -386,6 +386,10 @@ class FlightCore:
 # only KERNEL32 and api-ms-win-crt-* should remain), so the DLL loads
 # identically no matter which Python calls ctypes.CDLL on it.
 _CXXFLAGS = ["-O2", "-std=c++17", "-Wall", "-Wextra", "-shared", "-static"]
+if os.name != "nt":
+    # Linux/macOS: a shared library needs position-independent code, and glibc
+    # can't link one fully static (the libwinpthread issue above is Windows-only).
+    _CXXFLAGS = ["-O2", "-std=c++17", "-Wall", "-Wextra", "-shared", "-fPIC"]
 
 
 def _compile(work_dir, bridge_rel, out_dll):
