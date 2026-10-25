@@ -233,7 +233,7 @@ class LegGeom:
     the CG sits cg_from_nose_m below the nose tip. The foot stands
     landed_cg_height_m below the CG and leg_foot_radius_m out."""
 
-    def __init__(self, foot_r_m=0.25, cg_h_m=0.60, top_ring_m=0.25,
+    def __init__(self, foot_r_m=0.711, cg_h_m=0.60, top_ring_m=0.25,
                  cg_from_nose_m=0.66, m_per_unit=1.2 / 4.05):
         u = m_per_unit
         self.cg_z = NOSE_TIP_Z - cg_from_nose_m / u

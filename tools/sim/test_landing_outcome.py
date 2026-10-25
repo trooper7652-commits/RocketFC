@@ -17,6 +17,10 @@ import plant as plant_mod  # noqa: E402
 import vehicle  # noqa: E402
 
 failures = 0
+# The physics checks use a fixed reference stance (the original 0.25 m
+# estimate), so they test the ground model, not the real rocket's measured
+# legs (0.711 m in vehicle.py tips far less readily).
+REF_GEOMETRY = {"leg_foot_radius_m": 0.25}
 
 
 def check(cond, msg):
@@ -33,7 +37,7 @@ def drop(vx=0.0, vz=-1.0, roll_deg=0.0, tilt_deg=0.0, legs_frac=1.0, wind=0.0,
     (vx, 0, vz), rolled `roll_deg` about its axis (0 = a leg points along +x)
     and leaning `tilt_deg` toward +x. Returns (outcome, plant)."""
     vc = dataclasses.replace(vehicle.VehicleConfig(), ground_model="legs",
-                             wind_mps=wind, **cfg)
+                             wind_mps=wind, **dict(REF_GEOMETRY, **cfg))
     pl = plant_mod.Plant(vc)
     s = pl.state
     s.ascent_ignite_t = -10.0          # ascent long over: motor off, past the pad window
@@ -80,7 +84,7 @@ def main():
     # Energy estimate for tipping over the edge between two feet, with the
     # plant's own mass and inertia at contact.
     c = pl.contact
-    vc = vehicle.VehicleConfig()
+    vc = dataclasses.replace(vehicle.VehicleConfig(), **REF_GEOMETRY)
     _, v_edge, _ = landing_outcome.edge_limits(vc.leg_foot_radius_m,
                                                vc.landed_cg_height_m,
                                                c["mass_kg"], c["inertia_kgm2"])

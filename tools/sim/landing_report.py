@@ -39,8 +39,6 @@ SENS_SEEDS = [101, 102, 103]
 N_PER_SEED = 200
 MEASURED = {"mass_descent_kg": 0.01, "ignition_delay_s": 0.05}
 SENSITIVITY = [
-    ("foot radius 0.15 m", {"leg_foot_radius_m": 0.15}),
-    ("foot radius 0.35 m", {"leg_foot_radius_m": 0.35}),
     ("CG height 0.50 m", {"landed_cg_height_m": 0.50}),
     ("CG height 0.70 m", {"landed_cg_height_m": 0.70}),
     ("grass friction 0.4", {"ground_mu": 0.4}),
@@ -144,6 +142,20 @@ def fmt_rate(st):
     p, lo, hi = st["ci"]
     return "most likely **{}** ({} of {}), very likely between {} and {}".format(
         pct(p), st["k"], st["n"], pct(lo), pct(hi))
+
+
+def tip_limits(rows):
+    """(between two legs, toward a leg) sideways tip-over speed (m/s) for the
+    legs geometry these flights used, at a real contact's mass and inertia."""
+    for r in rows:
+        g = r["summary"].get("ground") or {}
+        c = g.get("contact")
+        if c:
+            p = g["params"]
+            _, v_edge, _ = landing_outcome.edge_limits(
+                p["leg_foot_radius_m"], p["landed_cg_height_m"], c["mass_kg"], c["inertia_kgm2"])
+            return v_edge, v_edge * math.sqrt(2.0)
+    return float("nan"), float("nan")
 
 
 def contact_quantiles(rows):
@@ -265,6 +277,7 @@ def main():
     sweep_t = [(c, stats(today, c)) for c in CRASH_SWEEP]
     sweep_m = [(c, stats(meas, c)) for c in CRASH_SWEEP]
     cq_t, cq_m = contact_quantiles(today), contact_quantiles(meas)
+    tip_edge, tip_foot = tip_limits(today)
 
     plot_causes(st_t, st_m, os.path.join(args.out, "causes.png"))
     plot_crash(sweep_t, sweep_m, os.path.join(args.out, "crash_speed_sweep.png"))
@@ -320,10 +333,11 @@ def main():
     w("")
     w("Contact speeds of the powered landings -- vertical: median {:.1f} / p90 {:.1f} m/s today, "
       "{:.1f} / {:.1f} after measuring; **sideways: median {:.1f} / p90 {:.1f} m/s today**, "
-      "{:.1f} / {:.1f} after measuring. The legs tip over at roughly 0.9 m/s sideways (between two "
-      "legs) to 1.3 m/s (toward a leg) with the estimated geometry.\n".format(
+      "{:.1f} / {:.1f} after measuring. The legs tip over at roughly {:.1f} m/s sideways (between "
+      "two legs) to {:.1f} m/s (toward a leg) with foot radius {:.2f} m and CG height {:.2f} m.\n".format(
           cq_t["vz_med"], cq_t["vz_p90"], cq_m["vz_med"], cq_m["vz_p90"],
-          cq_t["vh_med"], cq_t["vh_p90"], cq_m["vh_med"], cq_m["vh_p90"]))
+          cq_t["vh_med"], cq_t["vh_p90"], cq_m["vh_med"], cq_m["vh_p90"],
+          tip_edge, tip_foot, base.leg_foot_radius_m, base.landed_cg_height_m))
     if st_t["n_tipped"]:
         w("What pushed the {} falls over hardest (today; biggest cause vs. its own limit at "
           "contact):\n".format(st_t["n_tipped"]))
@@ -350,7 +364,9 @@ def main():
 
     w("## Sensitivity to the guessed numbers\n")
     w("Today's guesses, 600 flights (seeds 101-103), one change at a time vs. the same 600 "
-      "flights with the defaults (foot radius 0.25 m, CG 0.60 m, friction 0.6, band burn 1.5 s):\n")
+      "flights with the defaults (foot radius {:.2f} m, CG {:.2f} m, friction {:.1f}, band burn "
+      "{:.1f} s):\n".format(base.leg_foot_radius_m, base.landed_cg_height_m, base.ground_mu,
+                            base.legs_cut_s))
     w("| Change | Success rate [95 % range] | Legs not down | Tipped over |")
     w("|---|---|---|---|")
     rows_ = [("defaults", sens_base)] + [(name, stats(rr)) for name, _, rr in sens]

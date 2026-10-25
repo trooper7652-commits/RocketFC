@@ -99,7 +99,7 @@ class VehicleConfig:
     # on its 4 legs (4 legs x 3 carbon rods each). "arrest": the old fixed
     # ~12 g vertical stop with no tipping -- bit-identical to earlier runs.
     ground_model: str = "legs"
-    leg_foot_radius_m: float = 0.25    # [MEASURE] centreline -> foot pad, legs down (m)
+    leg_foot_radius_m: float = 0.711   # centreline -> foot pad, legs down (m): 28 in, measured 2026-10-25
     landed_cg_height_m: float = 0.60   # [MEASURE] CG above the ground standing on the
                                        #   legs, both motors spent (m)
     leg_top_ring_from_tail_m: float = 0.25  # [MEASURE] tail -> top ring the strut
