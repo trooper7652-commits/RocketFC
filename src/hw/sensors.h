@@ -56,7 +56,9 @@ class Ms5611 {
       case Phase::WAIT_D2:
         if (ms - convStartMs_ >= kConvMs) {
           const uint32_t d2 = readAdc();
-          if (d2 != 0) { d2_ = d2; errs_ = 0; }
+          // Count temperature reads too: tempDue() keys off cycle_, so without
+          // this it stays true at cycle_ 0 and pressure is never read.
+          if (d2 != 0) { d2_ = d2; errs_ = 0; ++cycle_; }
           else if (++errs_ > 10) { ok_ = false; }
           phase_ = Phase::START;
         }
