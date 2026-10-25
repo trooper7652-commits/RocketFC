@@ -112,6 +112,15 @@ class VehicleConfig:
     crash_speed_mps: float = 3.0       # [MEASURE: drop test] vertical contact speed above
                                        #   which legs/airframe break (3 m/s = 46 cm drop)
     settle_s: float = 2.0              # must stand still this long after burnout
+
+    # ---- Launch pad and crossflow (2026-10-20 fixes) ----
+    # Held in the pad cradle until ascent ignition. False = the old model, where
+    # the fin-less rocket could tip over on the pad in wind before launch and
+    # the pad gyro calibration absorbed that motion as bias.
+    pad_hold: bool = True
+    # The aero normal force also pushes the rocket sideways (and the
+    # accelerometer feels it), not just turns it. False = the old torque-only model.
+    normal_force_translates: bool = True
     # Destabilizing/restoring aero torque coefficient: torque = dynamic
     # pressure * reference area * (cp_from_nose_m - cg_from_nose_m) * angle of
     # attack (small-angle). [ESTIMATE] -- this is a coarse model; treat sim

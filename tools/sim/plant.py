@@ -289,6 +289,11 @@ class Plant:
         aero_torque_body = V3(0.0, 0.0, self._z_cp_rel_cg).cross(normal_force_body)
         # Rotational aero damping (opposes body rate directly).
         aero_torque_body = aero_torque_body - s.omega * v.aero_damping_nms
+        # The same normal force pushes the CG too (in flight only: the pad
+        # cradle holds it before ignition, the legs model handles the ground).
+        if (getattr(v, "normal_force_translates", False) and
+                s.ascent_ignite_t is not None and s.touchdown_t is None):
+            drag_world = drag_world + s.q.rotate(normal_force_body)
 
         gravity_world = V3(0.0, 0.0, -9.80665)
         G0 = 9.80665
@@ -355,8 +360,11 @@ class Plant:
         # ---- rotation ----
         torque_body = self._torque_body(thrust, aero_torque_body, fx_body, fy_body)
         alpha = torque_body * (1.0 / max(inertia, 1e-6))
-        s.omega = s.omega + alpha * dt
-        s.q.integrate(s.omega, dt)
+        if getattr(v, "pad_hold", False) and s.ascent_ignite_t is None:
+            s.omega = V3(0.0, 0.0, 0.0)  # held in the pad cradle until ignition
+        else:
+            s.omega = s.omega + alpha * dt
+            s.q.integrate(s.omega, dt)
 
         s.t += dt
         if s.touchdown_t is not None and s.t > s.touchdown_t + 0.5 and \
