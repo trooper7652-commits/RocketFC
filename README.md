@@ -283,6 +283,11 @@ The F15 is a fixed-impulse solid motor — it cannot throttle. The physics
 
 - Only apogees roughly **15–80 m** arrive at the ignition window with an
   energy the F15 can cancel. Size the ascent motor accordingly.
+- **Ascent motor: AeroTech F10** (29 mm single-use, 7 s burn, flown *plugged*,
+  `tools/motors/AeroTech_F10.eng`). Its ~73 m apogee matches the F15's energy,
+  and because it pushes almost all the way to apogee the fin-less airframe
+  never coasts long enough to tip over in wind. The closed-loop sim study
+  (2026-10-24) found short, hard-burning motors abort 94–100 % of flights.
 - **±10% motor-to-motor thrust variation → ~9–15 m/s touchdown error** if
   uncompensated. This — not the software — is the hard part. Mitigate with:
   legs that absorb residual velocity, fresh motors from the same pack,

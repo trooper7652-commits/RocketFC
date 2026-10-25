@@ -449,10 +449,11 @@ static void runCase(const std::string& path) {
   bool wantChute = false;
   for (const auto& s : expectStates) wantChute |= s == "DESCENT_CHUTE";
   if (wantChute) {
+    // A confirm must come from the canopy itself, never from the ground impact.
     CHECK(chuteReleases == expectReleases && (chuteDetT > 0) == expectDetect &&
-              co.chuteRelease,
+              (chuteDetT < 0 || chuteDetT < tdTrue) && co.chuteRelease,
           "chute released at %.2f s, %d release%s (want %d), canopy %s at "
-          "%.2f s (want %s), latch held open",
+          "%.2f s (want %s, before contact), latch held open",
           chuteT, chuteReleases, chuteReleases == 1 ? "" : "s", expectReleases,
           chuteDetT > 0 ? "confirmed" : "NOT confirmed", chuteDetT,
           expectDetect ? "confirmed" : "not confirmed");

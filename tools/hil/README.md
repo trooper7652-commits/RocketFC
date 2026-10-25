@@ -89,7 +89,7 @@ Check that the boot banner has **no** `HIL BUILD` line and that the Teensy shows
 
 - [ ] Static firing is allowed where you are, and the site is clear. Stay at least the NAR/Tripoli distance for the total installed impulse (30 ft / 9 m minimum for F/G class). Keep an extinguisher and water on hand.
 - [ ] The hold-down is rated well above the larger motor's peak thrust, plus the side load at full gimbal deflection. Nose up, with a blast deflector under the tail.
-- [ ] Neither motor has an ejection charge (F15-**0**; the ascent motor plugged or without a charge).
+- [ ] Neither motor has an ejection charge (landing F15-**0**; the AeroTech F10 ascent motor plugged, no charge).
 - [ ] The chute spring is unloaded, or the nose cone is tethered. FULL_LANDING releases the latch on any abort, and the latch also boots OPEN on every power-up.
 - [ ] The legs are free to swing, or you expect the band to burn and the legs to drop.
 - [ ] At the rocket: `load` the trace, `cli "mode land"`, `cli "chute lock"`. The pyro LiPo goes in **last**; in this design, plugging it in is the arm.

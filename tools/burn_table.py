@@ -14,7 +14,7 @@ end tells you which apogee band your ascent must hit — adjust ballast or the
 ascent motor until you're inside it.
 
 Usage:
-    python tools/burn_table.py                      # defaults from config
+    python tools/burn_table.py                      # defaults from src/config.h
     python tools/burn_table.py --mass 0.95 --delay-ms 500 --cda 0.004
 
 Pure stdlib. Regenerate whenever mass, motor, ignition delay, or drag change.
@@ -23,9 +23,21 @@ import argparse
 import datetime
 import math
 import os
+import re
 
 G = 9.80665
 RHO = 1.225
+CONFIG_H = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "config.h")
+
+
+def config_value(name, path=CONFIG_H):
+    """A `constexpr float NAME = <value>f;` constant from src/config.h, so the
+    tools can't drift from what the firmware is built with."""
+    m = re.search(r"constexpr\s+float\s+%s\s*=\s*([-0-9.eE]+)f" % name,
+                  open(path, encoding="utf-8").read())
+    if m is None:
+        raise KeyError("%s not found in %s" % (name, path))
+    return float(m.group(1))
 
 
 class Motor:
@@ -155,10 +167,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     here = os.path.dirname(os.path.abspath(__file__))
     ap.add_argument("--eng", default=os.path.join(here, "motors", "Estes_F15.eng"))
-    ap.add_argument("--mass", type=float, default=0.95,
+    ap.add_argument("--mass", type=float, default=config_value("MASS_DESCENT_KG"),
                     help="vehicle mass at descent, landing motor loaded (kg)")
-    ap.add_argument("--cda", type=float, default=0.004, help="drag Cd*A (m^2)")
-    ap.add_argument("--delay-ms", type=float, default=500.0,
+    ap.add_argument("--cda", type=float, default=config_value("CDA_M2"),
+                    help="drag Cd*A (m^2)")
+    ap.add_argument("--delay-ms", type=float, default=config_value("IGNITION_DELAY_MS"),
                     help="measured ignition delay, command->thrust (ms)")
     ap.add_argument("--vmin", type=float, default=2.0)
     ap.add_argument("--vmax", type=float, default=25.0)

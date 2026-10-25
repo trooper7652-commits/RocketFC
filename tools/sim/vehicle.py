@@ -21,7 +21,8 @@ import os
 
 SIM_DIR = os.path.dirname(os.path.abspath(__file__))
 MOTORS_DIR = os.path.join(os.path.dirname(SIM_DIR), "motors")
-DEFAULT_ENG = os.path.join(MOTORS_DIR, "Estes_F15.eng")
+DEFAULT_ENG = os.path.join(MOTORS_DIR, "Estes_F15.eng")      # landing motor
+ASCENT_ENG = os.path.join(MOTORS_DIR, "AeroTech_F10.eng")    # ascent motor (flown plugged)
 
 
 def estimate_inertia_kgm2(mass_kg, length_m):
@@ -41,8 +42,8 @@ class VehicleConfig:
     # ---- Mass & geometry ---------------------------------------------------
     # [MEASURE] Defaults mirror src/config.h so the sim starts from what the
     # flight computer itself already assumes; see default_vehicle_config().
-    mass_pad_kg: float = 1.10          # on the pad, everything loaded (kg)
-    mass_descent_kg: float = 0.95      # after ascent burnout, F15 still loaded (kg)
+    mass_pad_kg: float = 0.991         # on the pad, everything loaded (kg)
+    mass_descent_kg: float = 0.951     # after ascent burnout, F15 still loaded (kg)
 
     length_m: float = 1.20             # [ESTIMATE] overall airframe length (m):
                                        #   nose tip to tail. Measure directly.
@@ -70,7 +71,7 @@ class VehicleConfig:
     # pendulum (see estimate_inertia_kgm2's docstring) and just type the
     # measured value in here -- this field is not recomputed automatically.
     inertia_kgm2: float = dataclasses.field(
-        default_factory=lambda: estimate_inertia_kgm2(1.10, 1.20))
+        default_factory=lambda: estimate_inertia_kgm2(0.991, 1.20))
 
     # ---- Aerodynamics --------------------------------------------------------
     cda_m2: float = 0.0040             # [MEASURE/estimate] drag Cd*A, no chute (m^2)
@@ -145,9 +146,9 @@ class VehicleConfig:
                                        #   treat aero-instability results qualitatively
 
     # ---- Motors --------------------------------------------------------------
-    ascent_eng_path: str = DEFAULT_ENG   # RASP .eng file, ascent motor
+    ascent_eng_path: str = ASCENT_ENG    # RASP .eng file, ascent motor (AeroTech F10)
     landing_eng_path: str = DEFAULT_ENG  # RASP .eng file, landing (F15) motor
-    ignition_delay_s: float = 0.5        # [MEASURE on ThrustStand] e-match -> thrust (s)
+    ignition_delay_s: float = 0.62       # e-match -> thrust (s), measured 2026-10-25
     # Plant-side motor mismatch for robustness studies (defaults = no change):
     # the flight software keeps assuming the nominal .eng curve.
     landing_thrust_scale: float = 1.0    # multiplies landing thrust (impulse scales too)

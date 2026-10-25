@@ -13,8 +13,10 @@ own events. If they don't, the trace is incomplete and must not be used.
 
 Presets (both on today's src/config.h, calm-wind vehicle defaults otherwise):
     nominal  powered landing: LAUNCH, APOGEE, FIRE_LANDING, LEGS_BURN_ON, ...
-    abort    4 m/s wind, tilt abort in DESCENT: the landing motor must NOT
-             fire and the chute latch must release
+    abort    4 m/s wind plus a 12 m/s gust just after apogee, tilt abort in
+             DESCENT: the landing motor must NOT fire and the chute latch
+             must release. (With the F10 ascent, steady wind alone no longer
+             tips the rocket over, even at 10 m/s.)
 
 Usage:
     python tools/hil/make_trace.py                 # nominal
@@ -35,9 +37,11 @@ import vehicle  # noqa: E402
 
 PRESETS = {
     "nominal": {"wind": 0.0, "seed": 1},
-    "abort": {"wind": 4.0, "seed": 1},
+    # gust: (m/s, start in s after launch, length s); 7.9 s is just past apogee
+    "abort": {"wind": 4.0, "seed": 1, "gust": (12.0, 7.9, 0.5)},
 }
 TRACES_DIR = os.path.join(hil_trace.HIL_DIR, "traces")
+ARM_T = 2.6   # sim time the harness arms at (run.simulate's default)
 LOOPBACK_TOL_S = 0.02
 
 
@@ -65,8 +69,11 @@ def main():
     dll = core.default_dll()
     vcfg = vehicle.default_vehicle_config(dll)
     vcfg.wind_mps = p["wind"]
+    if "gust" in p:
+        vcfg.gust_mps, after_launch, vcfg.gust_dur_s = p["gust"]
+        vcfg.gust_time_s = ARM_T + args.countdown + after_launch
     print("simulating: mode={} seed={} wind={} m/s".format(args.mode, p["seed"], p["wind"]))
-    sim = run.simulate(vcfg, mode=args.mode, dll_path=dll, seed=p["seed"],
+    sim = run.simulate(vcfg, mode=args.mode, dll_path=dll, seed=p["seed"], arm_t=ARM_T,
                        countdown_s=args.countdown, record=True, record_inputs=True)
     s, arm = sim["summary"], sim["arm_info"]
     if arm is None:
@@ -83,7 +90,9 @@ def main():
     meta = {
         "name": name,
         "created": datetime.datetime.now().isoformat(timespec="seconds"),
-        "source": "tools/sim run.simulate, seed {}, wind {} m/s".format(p["seed"], p["wind"]),
+        "source": "tools/sim run.simulate, seed {}, wind {} m/s{}".format(
+            p["seed"], p["wind"], ", gust {} m/s at launch + {} s for {} s".format(*p["gust"])
+            if "gust" in p else ""),
         "mode": int(core.FlightMode.FULL_LANDING if args.mode == "land"
                     else core.FlightMode.CHUTE_TEST),
         "mode_name": "FULL_LANDING" if args.mode == "land" else "CHUTE_TEST",

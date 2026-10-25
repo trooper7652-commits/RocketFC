@@ -37,10 +37,12 @@ P0 = 101325.0
 HERE = os.path.dirname(os.path.abspath(__file__))
 CASES = os.path.join(HERE, "replay", "cases")
 
-# Must match the burn-table generation & config.h placeholders.
-MASS_DESCENT = 0.95     # kg, after ascent burnout (F15 loaded)
-CDA = 0.004             # m^2
-IGN_DELAY = 0.5         # s
+# Read from src/config.h, the same values the burn table is generated from.
+MASS_DESCENT = bt.config_value("MASS_DESCENT_KG")       # kg, after ascent burnout (F15 loaded)
+CDA = bt.config_value("CDA_M2")                         # m^2
+IGN_DELAY = bt.config_value("IGNITION_DELAY_MS") / 1000.0  # s
+ASCENT_ENG = os.path.join(HERE, "motors", "AeroTech_F10.eng")
+LANDING_ENG = os.path.join(HERE, "motors", "Estes_F15.eng")
 CDA_CHUTE = 0.45        # m^2 -> ~5.5 m/s terminal
 PAD_S = 3.0             # stillness before ignition
 ARM_T = 2.6             # harness arms here (meta)
@@ -129,8 +131,8 @@ def simulate(scenario):
     rng = random.Random(42)
     hi, _ = load_burn_table()
 
-    ascent = bt.Motor(os.path.join(HERE, "motors", "Estes_F15.eng"))
-    lander = bt.Motor(os.path.join(HERE, "motors", "Estes_F15.eng"))
+    ascent = bt.Motor(ASCENT_ENG)
+    lander = bt.Motor(LANDING_ENG)
     m_pad = MASS_DESCENT + ascent.prop_kg
 
     mode = scenario["mode"]
@@ -293,9 +295,10 @@ SCENARIOS = {
                           "DESCENT", "LANDING_BURN", "ABORT", "DESCENT_CHUTE",
                           "TOUCHDOWN"],
         "max_kf_alt_err": 3.0, "expect_abort": "DUD_IGNITER",
-        # The scripted canopy opens ~0.05 s before ground contact: too low to
-        # ever show on the accelerometer, and the impact must not count.
-        "expect_chute_detected": False,
+        # With the F10 ascent the dud is caught ~2.2 s above the ground, so the
+        # scripted canopy opens ~0.5 s before contact and really slows the
+        # rocket: it must be confirmed, before contact (the impact never counts).
+        "expect_chute_detected": True,
     },
     "high_tilt": {
         "mode": "chute", "tilt_runaway": True,
