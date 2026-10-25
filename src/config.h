@@ -153,7 +153,8 @@ constexpr float COAST_MAX_MS     = 30000.0f; // absolute backup: force apogee
 constexpr float TILT_ABORT_DEG   = 30.0f;  // sustained tilt beyond this aborts
 constexpr float TILT_ABORT_MS    = 100.0f;
 constexpr float TILT_IGNITE_MAX_DEG = 15.0f;  // never light the F15 beyond this tilt
-constexpr float BURN_TABLE_MARGIN_M = 0.0f;   // + = ignite earlier (higher)
+constexpr float BURN_TABLE_MARGIN_M = 1.0f;   // + = ignite earlier (higher); 1 m with S3:
+                                              // sim holdout 2026-10-24 (motor-study-2026-10-24)
 constexpr float BURN_MIN_SPEED_MS   = 2.0f;   // table domain lower bound
 constexpr float MISSED_WINDOW_ALT_M = 4.0f;   // in DESCENT below this = missed ignition -> abort
 constexpr float IGNITE_CONFIRM_G    = 1.3f;   // accel that confirms the F15 actually lit
@@ -165,6 +166,16 @@ constexpr float TOUCHDOWN_MS     = 800.0f;
 constexpr float PREARM_TILT_MAX_DEG = 5.0f;   // refuse to arm unless near vertical
 constexpr bool  ABORT_FIRES_CHUTE_ALWAYS = true; // fire chute on abort even if low
 constexpr float KF_UNHEALTHY_ABORT_MS = 500.0f;
+
+// ---------------------------------------------------------------------------
+// Landing-burn drift cancelling (S3): during the landing burn, lean the TVC
+// target against the sideways velocity dead-reckoned from launch
+// (world-frame accelerometer), so the rocket has stopped drifting by
+// touchdown and doesn't tip over on its legs. Sim study 2026-10-24
+// (motor-study-2026-10-24): sideways contact speed ~1.4 -> ~0.45 m/s.
+// ---------------------------------------------------------------------------
+constexpr float DRIFT_GAIN = 2.0f;           // 1/s; 0 = off
+constexpr float DRIFT_MAX_TILT_DEG = 5.0f;   // cap on the commanded lean
 
 // ---------------------------------------------------------------------------
 // Parachute release servo. The chute is pushed out by a spring; this servo

@@ -68,6 +68,18 @@ class Ahrs {
     return q_.rotateInv(rWorld);
   }
 
+  // Tilt error toward an arbitrary world-frame target direction (unit
+  // vector), same convention as tiltErrorBody() (which is target = up).
+  Vec3 tiltErrorBodyTo(const Vec3& target) const {
+    const Vec3 zbWorld = q_.rotate(Vec3{0, 0, 1});
+    const Vec3 axis = zbWorld.cross(target);
+    const float s = axis.norm();
+    if (s < 1e-6f) return {0, 0, 0};
+    const float ang = std::atan2(s, zbWorld.x * target.x + zbWorld.y * target.y +
+                                        zbWorld.z * target.z);
+    return q_.rotateInv(axis * (ang / s));
+  }
+
   // Vertical (world-Z) component of specific force, for the altitude KF:
   // a_world = R(q)*f_body - g. Returns m/s^2, +up.
   float worldVerticalAccel(const Vec3& accelBody, float g0) const {

@@ -80,6 +80,16 @@ class FlightCore {
 
     // --- altitude / velocity estimation ---
     kf_.predict(ahrs_.worldVerticalAccel(in.accel, cfg::G0), in.dt);
+    // Sideways velocity, dead-reckoned from launch for the drift loop:
+    // gravity is vertical, so the world-frame horizontal specific force
+    // IS the horizontal acceleration.
+    if (onPad) {
+      velHx_ = velHy_ = 0.0f;
+    } else {
+      const Vec3 aw = ahrs_.quat().rotate(in.accel);
+      velHx_ += aw.x * in.dt;
+      velHy_ += aw.y * in.dt;
+    }
     if (in.baroNew) {
       kf_.setRInflation(fsm_.state() == FlightState::BOOST
                             ? cfg::KF_R_BOOST_INFLATE : 1.0f);
@@ -105,7 +115,20 @@ class FlightCore {
     if (fo.tvcActive) {
       ctl_.setGains(fo.useLandingGains ? cfg::GAINS_LANDING
                                        : cfg::GAINS_BOOST);
-      const Vec3 e = ahrs_.tiltErrorBody();
+      Vec3 e = ahrs_.tiltErrorBody();
+      if (fo.useLandingGains && cfg::DRIFT_GAIN > 0.0f) {
+        const float aT = in.accel.norm();   // ~thrust/mass while burning
+        if (aT > 3.0f) {
+          // Want horizontal accel = -K v: lean the thrust axis by -K v / aT.
+          float hx = -cfg::DRIFT_GAIN * velHx_ / aT;
+          float hy = -cfg::DRIFT_GAIN * velHy_ / aT;
+          const float hn = std::sqrt(hx * hx + hy * hy);
+          const float cap = std::tan(cfg::DRIFT_MAX_TILT_DEG * cfg::DEG2RAD);
+          if (hn > cap) { hx *= cap / hn; hy *= cap / hn; }
+          const float n = std::sqrt(hx * hx + hy * hy + 1.0f);
+          e = ahrs_.tiltErrorBodyTo(Vec3{hx / n, hy / n, 1.0f / n});
+        }
+      }
       ctl_.update(e.x, e.y, in.gyro.x, in.gyro.y, in.dt, true);
     } else if (wasActive_) {
       ctl_.reset();  // clean integrators/slew state for the next burn phase
@@ -138,4 +161,5 @@ class FlightCore {
   TvcControl ctl_;
   FlightStateMachine fsm_;
   bool wasActive_ = false;
+  float velHx_ = 0.0f, velHy_ = 0.0f;  // dead-reckoned sideways velocity (m/s, world x/y)
 };

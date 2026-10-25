@@ -1,0 +1,31 @@
+; AeroTech F10 exported from the OpenRocket motor database (ThrustCurve.org simfile 5f4294d20002e9000000041b, source cert)
+; masses from the database listing, [MEASURE] the real motor before trusting them
+; Ascent-motor candidate (motor-study-2026-10-24). Sold with 4/6/8 s delays: fly it PLUGGED (no ejection charge).
+F10 29 92 P 0.0400 0.0830 AeroTech
+   0.010 16.810
+   0.030 22.340
+   0.110 22.230
+   0.260 21.490
+   0.370 20.000
+   0.470 20.210
+   0.670 18.090
+   0.990 15.740
+   1.310 13.400
+   1.810 10.850
+   2.490 10.210
+   3.130 8.940
+   3.600 8.830
+   4.110 8.620
+   4.950 8.620
+   5.450 8.620
+   5.580 8.510
+   5.880 8.720
+   6.220 8.510
+   6.460 8.510
+   6.600 7.770
+   6.710 7.020
+   6.790 5.640
+   6.910 3.830
+   6.950 2.230
+   7.000 0.960
+   7.050 0.000

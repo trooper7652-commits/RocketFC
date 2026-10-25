@@ -344,7 +344,9 @@ class FlightStateMachine {
     }
 
     const float vDown = -in.kfVel;
-    if (vDown < cfg::BURN_MIN_SPEED_MS) return;
+    // Written as !(>=) so a NaN velocity also returns here: hIgnite() casts
+    // its argument to int, which is undefined behaviour for NaN.
+    if (!(vDown >= cfg::BURN_MIN_SPEED_MS)) return;
 
     const float hIgn = burntable::hIgnite(vDown) + cfg::BURN_TABLE_MARGIN_M;
     const bool windowOpen = in.kfAlt <= hIgn;
