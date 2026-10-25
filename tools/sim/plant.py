@@ -267,16 +267,25 @@ class Plant:
         speed = v_rel_body.norm()
 
         cda = v.cda_m2
+        chute_cda = 0.0
         # With the legs ground model the canopy collapses once the rocket is
         # down instead of dragging it across the field (the old arrest model
         # ended the run at touchdown, so it never mattered there).
         if self.chute_deployed and not (self.ground is not None and
                                         s.touchdown_t is not None):
             k = min(1.0, (s.t - self.chute_open_t) / max(v.chute_inflation_s, 1e-6))
-            cda = v.cda_m2 + k * v.cda_chute_m2
+            chute_cda = k * v.cda_chute_m2
+        chute_along_wind = getattr(v, "chute_drag_along_wind", False)
+        if not chute_along_wind:
+            cda += chute_cda   # old model: canopy drag along the body axis only
         drag_body_z = -0.5 * RHO * cda * v_rel_body.z * abs(v_rel_body.z)
         drag_body = V3(0.0, 0.0, drag_body_z)
         drag_world = s.q.rotate(drag_body)
+        if chute_along_wind and chute_cda > 0.0:
+            # The canopy's drag opposes its airspeed whatever the rocket's
+            # attitude: a rocket hanging sideways under it still gets the full
+            # canopy drag, not just the share along its body axis.
+            drag_world = drag_world + v_rel_world * (-0.5 * RHO * chute_cda * speed)
 
         # Aerodynamic normal force at the CP, from the transverse (crossflow)
         # component of relative airspeed -- see vehicle.py's normal_force_coeff

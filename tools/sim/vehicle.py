@@ -121,6 +121,11 @@ class VehicleConfig:
     # The aero normal force also pushes the rocket sideways (and the
     # accelerometer feels it), not just turns it. False = the old torque-only model.
     normal_force_translates: bool = True
+    # The canopy's drag acts along the relative wind (2026-10-25 fix). False =
+    # the old model, where it acted along the body axis only, so a rocket
+    # swinging sideways under the canopy lost most of its chute drag and hit
+    # the ground at 9-14 m/s instead of ~5.5 m/s.
+    chute_drag_along_wind: bool = True
     # Destabilizing/restoring aero torque coefficient: torque = dynamic
     # pressure * reference area * (cp_from_nose_m - cg_from_nose_m) * angle of
     # attack (small-angle). [ESTIMATE] -- this is a coarse model; treat sim
