@@ -1,4 +1,5 @@
 # RocketFC — TVC Self-Landing Model Rocket Flight Computer
+<img width="1512" height="2016" alt="IMG_3111" src="https://github.com/user-attachments/assets/24cda4eb-49ee-4003-96ca-7cc5b36d366a" />
 
 A complete flight computer for a thrust-vector-controlled (TVC), propulsively
 landed model rocket, built for the **Teensy 4.1** with a **BMI088**
@@ -308,3 +309,7 @@ You are responsible for complying with your local regulations.
 *Built with Claude Code. The core flight logic in `src/core/` is verified by
 `tools/replay` (unit checks + 6 synthetic flight scenarios) on every change:
 `cd tools/replay && make test`.*
+
+
+# Why I made this project
+I wanted to get my hands dirty with an advanced project so that I would force myself to learn new software and hardware skills that will be useful to me for later projects. I chose to build an autonomously landing model rocket because I was inspired by SpaceX landing their Starship. 
