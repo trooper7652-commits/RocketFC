@@ -1,5 +1,7 @@
 # RocketFC — TVC Self-Landing Model Rocket Flight Computer
 <img width="400" alt="IMG_3111" src="https://github.com/user-attachments/assets/24cda4eb-49ee-4003-96ca-7cc5b36d366a" />
+<img width="569" alt="image" src="https://github.com/user-attachments/assets/939f8535-6281-4afa-90d8-443e04722aaf" />
+
 
 Google drive link with numerous photos of this model rocket project (and a few of my other projects): https://drive.google.com/drive/folders/1t4HR8e49pa-YUd3eFnzsIMzDf4J9D1U2?usp=sharing
 
