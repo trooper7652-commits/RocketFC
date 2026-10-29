@@ -313,4 +313,4 @@ You are responsible for complying with your local regulations.
 
 
 # Why I made this project
-I wanted to get my hands dirty with an advanced project so that I would force myself to learn new software and hardware skills that will be useful to me for later projects. I chose to build an autonomously landing model rocket because I was inspired by SpaceX landing their Starship. 
+I wanted to get my hands dirty with an advanced project so that I would force myself to learn new software and hardware skills that will be useful to me for later projects. I chose to build an autonomously landing model rocket because I was inspired by SpaceX landing their Starship. Additionally, I knew about thrust vector control in planes and fighter jets before, but I became really interested in it after I found out that they were also used in rockets as well. 
