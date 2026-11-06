@@ -1,0 +1,12 @@
+; Cesaroni Technology 74F85-15A from the OpenRocket motor database (thrustcurve.org, cert curve)
+Cesaroni_74F85-15A 24 133 plug? 0.0420 0.0960 Cesaroni
+0.0100 76.074
+0.0230 100.185
+0.0400 92.425
+0.1180 100.878
+0.2830 102.402
+0.5100 96.443
+0.6880 87.436
+0.7870 25.912
+0.8520 7.206
+0.8730 0.000

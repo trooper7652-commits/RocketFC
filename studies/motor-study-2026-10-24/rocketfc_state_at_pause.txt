@@ -1,0 +1,6 @@
+e11823e
+f249e9a1e557f2c86afb6139ff20e4f00dd4636a1bc65ddd980f69b8ca562ea3 *.gitignore
+d7dcc60ba0c85e11edcfb91d984be474470c7e3417e3bba9992055879bc606c6 *src/hw/sensors.h
+db1af2c7477e89d7b10a54183309ab5de93ede5042bb366985e7b2796fdf2d7a *tools/sim/plant.py
+7bd49e030a45ef77ed5daf6602adfd4fe787b6d38c09e6b736533ca267cc1b2a *tools/sim/run.py
+502af6ffd0b06b5cdedf005f56b05f82cac77f7c26d5b7300c3eca7d5dc2d438 *tools/sim/vehicle.py

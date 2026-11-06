@@ -1,0 +1,88 @@
+c_AeroTech_E15W__AeroTech_E23T | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__Roadrunner_E25 | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-25 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__AeroTech_E16W | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__AeroTech_E16W | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__AeroTech_F24W | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-35 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__AeroTech_E18W | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__Ellis_F23 | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__AeroTech_E15W | desc 1.3799 casing 0.0400 | >> NO apogee lands softly with this mass/motor combination!
+c_AeroTech_E15W__AeroTech_F12J | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__Piotr_E20 | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__AeroTech_F22J | desc 1.3799 casing 0.0400 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__AeroTech_E23T | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E15W__Estes_E16 | desc 1.3799 casing 0.0400 | >> NO apogee lands softly with this mass/motor combination!
+c_AeroTech_E16W__Roadrunner_E25 | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-30 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__AeroTech_E18W | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__AeroTech_F24W | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-40 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__AeroTech_F12J | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__Ellis_F23 | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-70 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__Piotr_E20 | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__AeroTech_E16W | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__Estes_E16 | desc 1.3810 casing 0.0880 | >> NO apogee lands softly with this mass/motor combination!
+c_AeroTech_E18W__AeroTech_E23T | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__AeroTech_E15W | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-15 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E16W__AeroTech_F22J | desc 1.3810 casing 0.0880 | >> Target apogee window: 15-70 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__AeroTech_E18W | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__Roadrunner_E25 | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-25 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__AeroTech_F24W | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-35 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__AeroTech_F12J | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__Estes_E16 | desc 1.3793 casing 0.0463 | >> NO apogee lands softly with this mass/motor combination!
+c_AeroTech_E23T__AeroTech_E16W | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__Ellis_F23 | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-65 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__Piotr_E20 | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__AeroTech_E23T | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__AeroTech_E15W | desc 1.3793 casing 0.0463 | >> NO apogee lands softly with this mass/motor combination!
+c_AeroTech_E23T__AeroTech_E18W | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E18W__AeroTech_F22J | desc 1.3793 casing 0.0463 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__Roadrunner_E25 | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-30 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__AeroTech_F24W | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-40 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__AeroTech_E16W | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__Estes_E16 | desc 1.3826 casing 0.0865 | >> NO apogee lands softly with this mass/motor combination!
+c_AeroTech_E23T__AeroTech_F12J | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__Ellis_F23 | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-70 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__Piotr_E20 | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__AeroTech_E18W | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__AeroTech_E23T | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__AeroTech_E15W | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-15 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E23T__AeroTech_F22J | desc 1.3826 casing 0.0865 | >> Target apogee window: 15-70 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__Roadrunner_E25 | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-30 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__AeroTech_F24W | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-40 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__AeroTech_E16W | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__Estes_E16 | desc 1.3800 casing 0.0580 | >> NO apogee lands softly with this mass/motor combination!
+c_Roadrunner_E25__Ellis_F23 | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-65 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__AeroTech_F12J | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__Piotr_E20 | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__AeroTech_E18W | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__AeroTech_E23T | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__AeroTech_E15W | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-15 m (touchdown under 2.5 m/s with ideal timing).
+c_Roadrunner_E25__AeroTech_F22J | desc 1.3800 casing 0.0580 | >> Target apogee window: 15-65 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__Roadrunner_E25 | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-25 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__AeroTech_F24W | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-35 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__AeroTech_E16W | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__Estes_E16 | desc 1.3816 casing 0.0461 | >> NO apogee lands softly with this mass/motor combination!
+c_AeroTech_E28T__Ellis_F23 | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__AeroTech_F12J | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__Piotr_E20 | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__AeroTech_E18W | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__AeroTech_E15W | desc 1.3816 casing 0.0461 | >> NO apogee lands softly with this mass/motor combination!
+c_Cesaroni_25E75-17A__AeroTech_E23T | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_AeroTech_E28T__AeroTech_F22J | desc 1.3816 casing 0.0461 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__Roadrunner_E25 | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-25 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__AeroTech_F24W | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-35 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__AeroTech_E16W | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__Estes_E16 | desc 1.3840 casing 0.0460 | >> NO apogee lands softly with this mass/motor combination!
+c_Cesaroni_25E75-17A__Ellis_F23 | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__AeroTech_F12J | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__Piotr_E20 | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__AeroTech_E18W | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__AeroTech_E15W | desc 1.3840 casing 0.0460 | >> NO apogee lands softly with this mass/motor combination!
+c_Cesaroni_26E31-15A__AeroTech_E23T | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_25E75-17A__AeroTech_F22J | desc 1.3840 casing 0.0460 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__Roadrunner_E25 | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-25 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__AeroTech_F24W | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-35 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__Estes_E16 | desc 1.3831 casing 0.0451 | >> NO apogee lands softly with this mass/motor combination!
+c_Cesaroni_26E31-15A__Ellis_F23 | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__AeroTech_F12J | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__Piotr_E20 | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+c_Cesaroni_26E31-15A__AeroTech_E15W | desc 1.3831 casing 0.0451 | >> NO apogee lands softly with this mass/motor combination!
+c_Cesaroni_26E31-15A__AeroTech_F22J | desc 1.3831 casing 0.0451 | >> Target apogee window: 15-60 m (touchdown under 2.5 m/s with ideal timing).

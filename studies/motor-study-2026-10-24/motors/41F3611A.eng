@@ -1,0 +1,23 @@
+; Cesaroni Technology 41F36-11A exported from the OpenRocket motor database (ThrustCurve.org simfile 5f4294d20002e900000005fb, source cert)
+; masses from the database listing, [MEASURE] the real motor before trusting them
+41F3611A 29 98 P 0.0350 0.1040 Cesaroni
+   0.010 12.000
+   0.020 46.000
+   0.030 75.000
+   0.040 79.000
+   0.060 77.000
+   0.070 62.000
+   0.080 32.000
+   0.100 35.000
+   0.200 38.000
+   0.300 39.000
+   0.400 41.000
+   0.500 43.000
+   0.600 43.000
+   0.700 43.000
+   0.800 43.000
+   0.850 47.000
+   0.920 54.000
+   0.950 32.000
+   0.990 8.000
+   1.050 0.000

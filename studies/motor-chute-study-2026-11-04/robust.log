@@ -1,0 +1,50 @@
+
+== Robustness: E18W / E18W (dev 101-103, 600 flights each)
+| Run | Success (95 % CI) | Apogee med / p99 / max | Contact vz med / p90 | Lifted off | Legs late | Aborts | vs measured: rescued / lost |
+|---|---|---|---|---|---|---|---|
+| measured spreads (reference) | 81.2 % (78-84) | 18.2 / 18.8 / 18.8 m | 2.01 / 3.30 | 3 % | 2 % | 0.0 % |  |
+  ran rb_guess_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 23.3 s
+| today's guessed spreads | 28.0 % (25-32) | 18.0 / 21.1 / 21.2 m | 3.80 / 6.23 | 33 % | 32 % | 0.0 % | 0 / 319, p=1.9e-96 |
+  ran rb_wind0_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 23.8 s
+| steady wind 0 m/s | 74.8 % (71-78) | 18.2 / 18.8 / 18.8 m | 2.11 / 3.62 | 1 % | 0 % | 0.0 % | 12 / 50, p=1.2e-06 |
+  ran rb_wind2_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 23.6 s
+| steady wind 2 m/s | 79.5 % (76-83) | 18.2 / 18.8 / 18.8 m | 1.99 / 3.34 | 2 % | 1 % | 0.0 % | 21 / 31, p=0.21 |
+  ran rb_wind4_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 25.8 s
+| steady wind 4 m/s | 87.7 % (85-90) | 18.2 / 18.8 / 18.8 m | 2.02 / 2.73 | 9 % | 6 % | 0.0 % | 83 / 44, p=0.00068 |
+  ran rb_wind5_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 24.9 s
+| steady wind 5 m/s | 55.8 % (52-60) | 18.2 / 18.8 / 18.8 m | 2.13 / 2.86 | 22 % | 16 % | 25.8 % | 65 / 217, p=2.7e-20 |
+  ran rb_wind6_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 19.2 s
+| steady wind 6 m/s | 12.0 % (10-15) | 18.2 / 18.8 / 18.8 m | 2.02 / 2.97 | 28 % | 20 % | 82.2 % | 16 / 431, p=5.3e-106 |
+  ran rb_wind7_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 17.6 s
+| steady wind 7 m/s | 0.0 % (0-1) | 18.1 / 18.8 / 18.8 m | nan / nan | 0 % | 0 % | 100.0 % | 0 / 487, p=5e-147 |
+  ran rb_land3_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 25.2 s
+| landing thrust +-3 % | 72.7 % (69-76) | 18.2 / 18.8 / 18.8 m | 2.16 / 3.86 | 6 % | 4 % | 0.0 % | 36 / 87, p=4.8e-06 |
+  ran rb_asc5_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 23.5 s
+| ascent impulse +-5 % | 77.2 % (74-80) | 18.3 / 21.1 / 21.5 m | 2.25 / 3.44 | 4 % | 3 % | 0.0 % | 10 / 34, p=0.00039 |
+  ran rb_legs1s_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 25.1 s
+| today's legs (1 s delay, 1.5 s band) | 0.0 % (0-1) | 18.2 / 18.8 / 18.8 m | 2.05 / 3.52 | 2 % | 100 % | 0.0 % | 0 / 487, p=5e-147 |
+
+== Robustness: E15W / E15W (dev 101-103, 600 flights each)
+| Run | Success (95 % CI) | Apogee med / p99 / max | Contact vz med / p90 | Lifted off | Legs late | Aborts | vs measured: rescued / lost |
+|---|---|---|---|---|---|---|---|
+| measured spreads (reference) | 86.7 % (84-89) | 13.2 / 13.7 / 13.8 m | 2.21 / 3.20 | 0 % | 0 % | 0.0 % |  |
+  ran rb_guess_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 28.1 s
+| today's guessed spreads | 39.5 % (36-43) | 13.0 / 16.0 / 16.1 m | 3.09 / 6.27 | 23 % | 2 % | 0.0 % | 0 / 283, p=1.3e-85 |
+  ran rb_wind0_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 25.0 s
+| steady wind 0 m/s | 84.3 % (81-87) | 13.2 / 13.7 / 13.8 m | 2.22 / 3.32 | 0 % | 0 % | 0.0 % | 0 / 14, p=0.00012 |
+  ran rb_wind2_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 24.7 s
+| steady wind 2 m/s | 85.3 % (82-88) | 13.2 / 13.7 / 13.8 m | 2.21 / 3.21 | 0 % | 0 % | 0.0 % | 1 / 9, p=0.021 |
+  ran rb_wind4_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 25.0 s
+| steady wind 4 m/s | 89.7 % (87-92) | 13.2 / 13.7 / 13.8 m | 2.21 / 3.04 | 0 % | 0 % | 0.0 % | 19 / 1, p=4e-05 |
+  ran rb_wind5_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 24.7 s
+| steady wind 5 m/s | 93.3 % (91-95) | 13.2 / 13.7 / 13.8 m | 2.23 / 2.85 | 0 % | 0 % | 0.0 % | 40 / 0, p=1.8e-12 |
+  ran rb_wind6_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 24.7 s
+| steady wind 6 m/s | 95.3 % (93-97) | 13.2 / 13.7 / 13.8 m | 2.27 / 2.70 | 0 % | 0 % | 0.0 % | 61 / 9, p=1.3e-10 |
+  ran rb_wind7_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 25.9 s
+| steady wind 7 m/s | 87.3 % (84-90) | 13.1 / 13.7 / 13.7 m | 2.29 / 2.64 | 2 % | 0 % | 0.0 % | 68 / 64, p=0.79 |
+  ran rb_land3_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 24.8 s
+| landing thrust +-3 % | 76.2 % (73-79) | 13.2 / 13.7 / 13.8 m | 2.48 / 4.14 | 0 % | 0 % | 0.0 % | 23 / 86, p=9.6e-10 |
+  ran rb_asc5_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 24.7 s
+| ascent impulse +-5 % | 80.0 % (77-83) | 13.3 / 16.1 / 16.5 m | 2.55 / 3.33 | 0 % | 0 % | 0.0 % | 5 / 45, p=4.2e-09 |
+  ran rb_legs1s_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 25.1 s
+| today's legs (1 s delay, 1.5 s band) | 30.3 % (27-34) | 13.2 / 13.7 / 13.8 m | 2.27 / 3.20 | 0 % | 56 % | 0.0 % | 0 / 338, p=3.6e-102 |

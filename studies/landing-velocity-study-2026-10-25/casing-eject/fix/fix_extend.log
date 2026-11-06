@@ -1,0 +1,22 @@
+  built c1_ej_b100 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+  ran f_c1_b80_m0.75 | 600 flights, 0 errors, 24.5 s
+  ran f_c1_b80_m1.25 | 600 flights, 0 errors, 24.5 s
+  ran f_c1_b100_m0.75 | 600 flights, 0 errors, 25.8 s
+  ran f_c1_b100_m1.0 | 600 flights, 0 errors, 25.4 s
+  ran f_c1_b100_m1.25 | 600 flights, 0 errors, 24.6 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| 60 g, margin 1.00 m | 82.5 % (495/600) | 1.70 / 2.95 | 9 % | 10 % | 0.0 % | 16 rescued / 25 lost, p=0.211 |
+| 80 g, margin 1.00 m | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| 80 g, margin 0.75 m | 82.0 % (492/600) | 1.68 / 2.63 | 3 % | 16 % | 0.0 % | 47 rescued / 59 lost, p=0.285 |
+| 80 g, margin 1.25 m | 76.8 % (461/600) | 1.94 / 3.56 | 21 % | 2 % | 0.0 % | 25 rescued / 68 lost, p=9.38e-06 |
+| 100 g, margin 0.75 m | 84.0 % (504/600) | 1.65 / 2.61 | 3 % | 13 % | 0.0 % | 41 rescued / 41 lost, p=1 |
+| 100 g, margin 1.00 m | 83.8 % (503/600) | 1.75 / 3.01 | 11 % | 5 % | 0.0 % | 19 rescued / 20 lost, p=1 |
+| 100 g, margin 1.25 m | 78.2 % (469/600) | 1.97 / 3.59 | 21 % | 1 % | 0.0 % | 32 rescued / 67 lost, p=0.000562 |
+   60 g, margin 1.00 m  apogee median 20.9 m
+   80 g, margin 1.00 m  apogee median 19.4 m
+   80 g, margin 0.75 m  apogee median 19.4 m
+   80 g, margin 1.25 m  apogee median 19.4 m
+   100 g, margin 0.75 m apogee median 18.0 m
+   100 g, margin 1.00 m apogee median 18.0 m
+   100 g, margin 1.25 m apogee median 18.0 m

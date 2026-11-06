@@ -1,0 +1,12 @@
+# Host visualizer dependencies.
+#   pip install -r requirements.txt
+#
+# numpy is also required, but you already have it if you use RocketFC's
+# tools/plot_flight.py; it is listed here so a fresh machine works too.
+#
+# PyOpenGL_accelerate is deliberately NOT listed: it needs a C toolchain to
+# build on Windows and makes no measurable difference for a model this small.
+pyserial>=3.5
+pygame>=2.5
+PyOpenGL>=3.1.7
+numpy>=1.24

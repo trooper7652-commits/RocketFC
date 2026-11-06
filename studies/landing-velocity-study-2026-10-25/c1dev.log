@@ -1,0 +1,16 @@
+  ran c1_dev | 600 flights, 0 errors, 26.8 s
+  ran c1_dev_conf | 600 flights, 0 errors, 26.7 s
+  ran c1_dev_conf_cut075 | 600 flights, 0 errors, 31.4 s
+  ran c1_dev_conf_cut05 | 600 flights, 0 errors, 34.2 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| today (F10 + F15) | 22.3 % (134/600) | 3.93 / 5.86 | 74 % | 41 % | 0.0 % |  |
+| E12/E12, legs as today | 38.2 % (229/600) | 2.23 / 2.91 | 8 % | 9 % | 0.0 % | 182 rescued / 87 lost, p=7.02e-09 |
+| E12/E12, nichrome at confirm | 71.7 % (430/600) | 2.24 / 2.91 | 8 % | 12 % | 0.0 % | 307 rescued / 11 lost, p=2.75e-76 |
+| E12/E12, at confirm + 0.75 s band | 86.5 % (519/600) | 2.26 / 2.98 | 9 % | 13 % | 0.0 % | 388 rescued / 3 lost, p=3.95e-111 |
+| E12/E12, at confirm + 0.5 s band | 86.5 % (519/600) | 2.26 / 2.98 | 9 % | 13 % | 0.0 % | 388 rescued / 3 lost, p=3.95e-111 |
+   today (F10 + F15)                    legs late   0 % | apogee p10/median/p90 71/73/76 m
+   E12/E12, legs as today               legs late  61 % | apogee p10/median/p90 25/26/27 m
+   E12/E12, nichrome at confirm         legs late  27 % | apogee p10/median/p90 25/26/27 m
+   E12/E12, at confirm + 0.75 s band    legs late   0 % | apogee p10/median/p90 25/26/27 m
+   E12/E12, at confirm + 0.5 s band     legs late   0 % | apogee p10/median/p90 25/26/27 m

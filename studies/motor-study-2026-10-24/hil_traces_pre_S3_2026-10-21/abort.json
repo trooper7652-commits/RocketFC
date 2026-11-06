@@ -1,0 +1,96 @@
+{
+  "name": "abort",
+  "created": "2026-10-21T00:17:12",
+  "source": "tools/sim run.simulate, seed 1, wind 4.0 m/s",
+  "mode": 1,
+  "mode_name": "FULL_LANDING",
+  "pad_accel": [
+    0.03090924359214783,
+    -0.017636977662029294,
+    9.846185757903362
+  ],
+  "baro_var": 0.023139105677077342,
+  "dt": 0.002,
+  "launch_s": 2.998,
+  "fire_s": null,
+  "sim_summary": {
+    "apogee_h": 48.26554534607955,
+    "fire_t": null,
+    "touchdown_speed_mps": 19.27005963788447,
+    "abort_reason": "TILT",
+    "abort_state": "DESCENT",
+    "legs_on_t": null
+  },
+  "sim_events": [
+    [
+      "ARM",
+      -6.502887117676436e-14
+    ],
+    [
+      "LAUNCH",
+      3.3579999999995653
+    ],
+    [
+      "BURNOUT",
+      6.595999999999742
+    ],
+    [
+      "APOGEE",
+      8.398000000000343
+    ],
+    [
+      "ABORT",
+      8.8680000000005
+    ],
+    [
+      "CHUTE_RELEASE",
+      8.8700000000005
+    ],
+    [
+      "CHUTE_DETECTED",
+      9.07400000000057
+    ],
+    [
+      "TOUCHDOWN",
+      15.13000000000105
+    ]
+  ],
+  "version": 1,
+  "frames": 7665,
+  "crc32": "e2cd0093",
+  "ref_events": [
+    [
+      "ARM",
+      -1.0
+    ],
+    [
+      "LAUNCH",
+      3.358
+    ],
+    [
+      "BURNOUT",
+      6.596
+    ],
+    [
+      "APOGEE",
+      8.398
+    ],
+    [
+      "ABORT",
+      8.868
+    ],
+    [
+      "CHUTE_RELEASE",
+      8.87
+    ],
+    [
+      "CHUTE_DETECTED",
+      9.074
+    ],
+    [
+      "TOUCHDOWN",
+      15.13
+    ]
+  ],
+  "ref_go_ms": 2000
+}

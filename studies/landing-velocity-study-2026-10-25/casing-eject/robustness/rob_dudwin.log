@@ -1,0 +1,10 @@
+  ran r_dudwin300 | 600 flights, 0 errors, 22.2 s
+  ran r_dudwin300_dsc15 | 600 flights, 0 errors, 27.0 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| fix, dud window 700 ms | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| fix, dud window 300 ms | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % | 0 rescued / 0 lost, p=1 |
+| fix, dud window 300 ms, delay scatter +-15 % | 29.3 % (176/600) | 3.56 / 6.03 | 62 % | 34 % | 0.0 % | 0 rescued / 328 lost, p=3.66e-99 |
+   fix, dud window 700 ms                         false dud aborts: 0
+   fix, dud window 300 ms                         false dud aborts: 0
+   fix, dud window 300 ms, delay scatter +-15 %   false dud aborts: 0

@@ -1,0 +1,201 @@
+--- a/tools/sim/run.py
++++ b/tools/sim/run.py
+@@ -96,6 +96,19 @@
+     chute_unconfirmed = False
+     legs_on_t = None
+     legs_off_t = None
++    # ---- landing diagnostics (read-only; never fed back into the flight) ----
++    fire_info = None
++    prev_tilt = None
++    prev_state = None
++    abort_state = None
++    hop = False
++    hop_stop_h = None
++    hop_apex_h = None
++    touchdown_hspeed = None
++    lag_shv = lag_svv = lag_sva = lag_saa = 0.0
++    lag_n = 0
++    lag_eh_sum = lag_ev_sum = 0.0
++    prev_v_true = None
+ 
+     t = 0.0
+     i = 0
+@@ -109,7 +122,12 @@
+             baro_new_raw = (i % baro_every == 0)
+             p_pa = 0.0
+             if baro_new_raw:
+-                p_pa = sm.baro(s.pos.z, baro_every * dt)
++                if getattr(vcfg, "baro_q_coeff", 0.0) != 0.0:
++                    _w = pl._wind(t)
++                    _rel = s.vel - _w
++                    p_pa = sm.baro(s.pos.z, baro_every * dt, airspeed=_rel.norm())
++                else:
++                    p_pa = sm.baro(s.pos.z, baro_every * dt)
+ 
+             if t < cal_end_t:
+                 gbx += gx; gby += gy; gbz += gz
+@@ -153,6 +171,18 @@
+             for ev in fc.pop_events():
+                 ev["t"] = t
+                 events.append(ev)
++                if ev["code"] == core.FlightEvent.FIRE_LANDING and fire_info is None:
++                    fire_info = {
++                        "fire_t": t, "fire_h_true": s.pos.z,
++                        "fire_v_true": s.vel.z,
++                        "fire_kf_alt": out["kf_alt"],
++                        "fire_kf_vel": out["kf_vel"],
++                        "fire_tilt_deg": out["tilt_deg"],
++                        "fire_tilt_prev_deg": prev_tilt,
++                        "fire_hspeed_true": math.hypot(s.vel.x, s.vel.y),
++                    }
++                if ev["code"] == core.FlightEvent.ABORT_DET:
++                    abort_state = prev_state
+                 if ev["code"] == core.FlightEvent.FIRE_LANDING and not dud_landing_igniter:
+                     # e-match ignition delay: burn_table.h's ignition altitudes
+                     # already account for this gap between the fire COMMAND and
+@@ -186,8 +216,36 @@
+             true_cmd_y = out["gimbal_y"] * snap["servoBSign"]
+             act_x, act_y = sv.step(true_cmd_x, true_cmd_y)
+ 
++            # Kalman error vs truth in the fall (> 5 m/s), fitted as a lag:
++            # altitude error ~ |v| tau_h, velocity error ~ |a| tau_v.
++            if (out["state"] == core.FlightState.DESCENT and s.vel.z < -5.0
++                    and prev_v_true is not None):
++                _a = (s.vel.z - prev_v_true) / dt
++                _eh = out["kf_alt"] - s.pos.z
++                _ev = out["kf_vel"] - s.vel.z
++                lag_shv += _eh * (-s.vel.z)
++                lag_svv += s.vel.z * s.vel.z
++                lag_sva += _ev * (-_a)
++                lag_saa += _a * _a
++                lag_eh_sum += _eh
++                lag_ev_sum += _ev
++                lag_n += 1
++            prev_v_true = s.vel.z
++            prev_tilt = out["tilt_deg"]
++            prev_state = out["state"].name
++
+             pl.step(dt, act_x, act_y)
+ 
++            # Hop: after landing thrust starts, the rocket stopped falling
++            # while still > 0.25 m up (it will climb, burn out and fall back).
++            if (pl.state.landing_ignite_t is not None and t >= pl.state.landing_ignite_t
++                    and pl.state.touchdown_t is None):
++                if not hop and s.vel.z >= 0.0 and s.pos.z > 0.25:
++                    hop = True
++                    hop_stop_h = s.pos.z
++                if hop:
++                    hop_apex_h = max(hop_apex_h or 0.0, s.pos.z)
++
+             if launched:
+                 max_tilt = max(max_tilt, out["tilt_deg"])
+                 if pl.state.touchdown_t is None:
+@@ -197,6 +255,7 @@
+ 
+             if pl.state.touchdown_t is not None and touchdown_speed is None:
+                 touchdown_speed = abs(s.vel.z)
++                touchdown_hspeed = math.hypot(s.vel.x, s.vel.y)
+ 
+             if record:
+                 rows.append({
+@@ -263,6 +322,25 @@
+         "final_state": rows[-1]["state"] if rows else None,
+         "sim_time_s": t,
+     }
++    # ---- landing diagnostics ----
++    fi = fire_info or {}
++    summary.update({
++        "fire_t": fi.get("fire_t"), "fire_h_true": fi.get("fire_h_true"),
++        "fire_v_true": fi.get("fire_v_true"),
++        "fire_kf_alt": fi.get("fire_kf_alt"),
++        "fire_kf_vel": fi.get("fire_kf_vel"),
++        "fire_tilt_deg": fi.get("fire_tilt_deg"),
++        "fire_tilt_prev_deg": fi.get("fire_tilt_prev_deg"),  # >= 15: tilt-limited fire
++        "fire_hspeed_true": fi.get("fire_hspeed_true"),
++        "land_ignite_t": pl.state.landing_ignite_t,
++        "hop": hop, "hop_stop_h": hop_stop_h, "hop_apex_h": hop_apex_h,
++        "touchdown_hspeed_mps": touchdown_hspeed,
++        "abort_state": abort_state,
++        "lag_tau_h_s": (lag_shv / lag_svv) if lag_svv > 0 else None,
++        "lag_tau_v_s": (lag_sva / lag_saa) if lag_saa > 0 else None,
++        "descent_kf_eh_mean": (lag_eh_sum / lag_n) if lag_n else None,
++        "descent_kf_ev_mean": (lag_ev_sum / lag_n) if lag_n else None,
++    })
+     return {"rows": rows, "events": events, "summary": summary}
+ 
+ 
+--- a/tools/sim/plant.py
++++ b/tools/sim/plant.py
+@@ -133,7 +133,10 @@
+     def __init__(self, vcfg):
+         self.v = vcfg
+         self.ascent_motor = bt.Motor(vcfg.ascent_eng_path)
+-        self.landing_motor = bt.Motor(vcfg.landing_eng_path)
++        _ls = getattr(vcfg, "landing_thrust_scale", 1.0)
++        self.landing_motor = (bt.Motor(vcfg.landing_eng_path) if _ls == 1.0
++                              else bt.Motor(vcfg.landing_eng_path, scale=_ls))
++        self._land_k = getattr(vcfg, "landing_time_scale", 1.0)
+         self.state = PlantState()
+         self.chute_deployed = False
+         self.chute_open_t = None
+@@ -186,8 +189,12 @@
+                 self.state.ascent_burnout_t = t
+         if self.state.landing_ignite_t is not None:
+             tb = t - self.state.landing_ignite_t
+-            thrust += self.landing_motor.thrust(tb)
+-            m -= self.landing_motor.mass_burned(tb)
++            if self._land_k == 1.0:
++                thrust += self.landing_motor.thrust(tb)
++                m -= self.landing_motor.mass_burned(tb)
++            else:  # stretched burn, same impulse: T'(t) = T(t/k)/k
++                thrust += self.landing_motor.thrust(tb / self._land_k) / self._land_k
++                m -= self.landing_motor.mass_burned(tb / self._land_k)
+         return max(m, 0.05), thrust
+ 
+     def _wind(self, t):
+--- a/tools/sim/sensors.py
++++ b/tools/sim/sensors.py
+@@ -44,7 +44,7 @@
+         gz = omega_body.z + gbz + self.rng.gauss(0, sig_g)
+         return (ax, ay, az), (gx, gy, gz)
+ 
+-    def baro(self, true_alt_m, dt_since_last_sample):
++    def baro(self, true_alt_m, dt_since_last_sample, airspeed=0.0):
+         """One barometer sample: applies the lag filter, then returns a noisy
+         pressure reading (Pa) for the given TRUE altitude AGL."""
+         v = self.v
+@@ -52,4 +52,7 @@
+         alpha = min(alpha, 1.0)
+         self._baro_lag_alt += (true_alt_m - self._baro_lag_alt) * alpha
+         p = P0_PA * (1.0 - min(self._baro_lag_alt, 40000.0) / 44330.0) ** 5.2553
++        qc = getattr(v, "baro_q_coeff", 0.0)
++        if qc != 0.0:  # static-port error: a fraction of dynamic pressure
++            p += qc * 0.5 * 1.225 * airspeed * airspeed
+         return p + self.rng.gauss(0, v.baro_noise_pa)
+--- a/tools/sim/vehicle.py
++++ b/tools/sim/vehicle.py
+@@ -113,6 +113,10 @@
+     ascent_eng_path: str = DEFAULT_ENG   # RASP .eng file, ascent motor
+     landing_eng_path: str = DEFAULT_ENG  # RASP .eng file, landing (F15) motor
+     ignition_delay_s: float = 0.5        # [MEASURE on ThrustStand] e-match -> thrust (s)
++    # Plant-side motor mismatch for robustness studies (defaults = no change):
++    # the flight software keeps assuming the nominal .eng curve.
++    landing_thrust_scale: float = 1.0    # multiplies landing thrust (impulse scales too)
++    landing_time_scale: float = 1.0      # stretches the landing burn, impulse kept
+ 
+     # ---- Gimbal / servo --------------------------------------------------
+     # NOTE: firmware's own GIMBAL_MAX_RAD (software clamp) and the
+@@ -142,7 +146,12 @@
+     gyro_bias_dps: tuple = (0.3, -0.2, 0.15)      # constant per-axis gyro bias (deg/s)
+     accel_bias_mps2: tuple = (0.03, -0.02, 0.04)  # constant per-axis accel bias (m/s^2)
+     baro_noise_pa: float = 2.0          # barometer pressure noise std-dev (Pa)
+-    baro_lag_s: float = 0.025           # barometer response lag (s)
++    baro_lag_s: float = 0.025           # barometer response lag (s); applied once per
++                                        #   baro sample, so values <= the sample
++                                        #   interval (10 ms) act like no lag
++    # Static-pressure error from airflow past the vent holes, as a fraction of
++    # dynamic pressure q = rho*v^2/2 (+ = reads high pressure = low altitude).
++    baro_q_coeff: float = 0.0
+ 
+     def to_json(self, path):
+         with open(path, "w", encoding="utf-8") as f:

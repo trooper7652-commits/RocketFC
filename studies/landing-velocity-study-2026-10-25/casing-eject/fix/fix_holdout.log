@@ -1,0 +1,24 @@
+  ran h_fix_b80 | 2000 flights, 0 errors, 80.1 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing aboard (earlier best) | 86.8 % (1737/2000) | 2.22 / 2.96 | 9 % | 11 % | 0.1 % |  |
+| casing out, no fix | 69.7 % (1394/2000) | 1.75 / 3.12 | 12 % | 23 % | 0.3 % | 0 rescued / 343 lost, p=1.12e-103 |
+| casing out + 80 g ballast (fix) | 86.5 % (1731/2000) | 1.67 / 2.92 | 9 % | 5 % | 0.0 % | 140 rescued / 146 lost, p=0.768 |
+
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing out, no fix | 69.7 % (1394/2000) | 1.75 / 3.12 | 12 % | 23 % | 0.3 % |  |
+| casing out + 80 g ballast (fix) | 86.5 % (1731/2000) | 1.67 / 2.92 | 9 % | 5 % | 0.0 % | 390 rescued / 53 lost, p=1.69e-64 |
+   casing aboard (earlier best)       apogee median 26.0 m
+   casing out, no fix                 apogee median 26.0 m
+   casing out + 80 g ballast (fix)    apogee median 19.5 m
+
+  ran f_wind_b80_m1.0_w6 | 600 flights, 0 errors, 27.7 s
+  ran w_c1_7 | 600 flights, 0 errors, 22.1 s
+  ran f_wind_b80_m1.0_w7 | 600 flights, 0 errors, 29.9 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing aboard, wind 6 | 2.2 % (13/600) | 2.65 / 4.55 | 35 % | 35 % | 96.7 % |  |
+| fix, wind 6 | 70.5 % (423/600) | 1.78 / 3.03 | 11 % | 29 % | 0.0 % | 410 rescued / 0 lost, p=7.56e-124 |
+| casing aboard, wind 7 | 0.0 % (0/600) | nan / nan | 0 % | 0 % | 100.0 % | 0 rescued / 13 lost, p=0.000244 |
+| fix, wind 7 | 51.5 % (309/600) | 2.12 / 3.56 | 24 % | 47 % | 1.7 % | 296 rescued / 0 lost, p=1.57e-89 |

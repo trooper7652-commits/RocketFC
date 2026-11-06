@@ -1,0 +1,5 @@
+| Dud landing igniter | flights | fire height (median) | dud detected | canopy open before ground | impact median / p90 |
+|---|---|---|---|---|---|
+| fix (19.5 m apogee), dud window 700 ms | 200 | 17.3 m | 100 % | 0 % | 18.9 / 19.1 m/s |
+| fix, dud window 300 ms | 200 | 17.3 m | 100 % | 100 % | 7.5 / 7.7 m/s |
+| today's F10 + F15 (73 m apogee), 700 ms | 200 | 54.3 m | 100 % | 100 % | 5.8 / 5.8 m/s |

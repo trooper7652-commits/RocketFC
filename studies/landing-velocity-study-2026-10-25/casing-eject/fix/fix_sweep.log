@@ -1,0 +1,45 @@
+  built c1_ej_b20 | >> Target apogee window: 15-30 m (touchdown under 2.5 m/s with ideal timing).
+  built c1_ej_b60 | >> Target apogee window: 15-25 m (touchdown under 2.5 m/s with ideal timing).
+  built c1_ej_b80 | >> Target apogee window: 15-20 m (touchdown under 2.5 m/s with ideal timing).
+  built base_ej_b20 | >> Target apogee window: 15-85 m (touchdown under 2.5 m/s with ideal timing).
+  ran f_c1_b0_m0.5 | 600 flights, 0 errors, 25.4 s
+  ran f_c1_b0_m1.0 | 600 flights, 0 errors, 25.1 s
+  ran f_c1_b0_m1.5 | 600 flights, 0 errors, 24.4 s
+  ran f_c1_b20_m0.5 | 600 flights, 0 errors, 26.4 s
+  ran f_c1_b20_m1.0 | 600 flights, 0 errors, 25.6 s
+  ran f_c1_b20_m1.5 | 600 flights, 0 errors, 24.9 s
+  ran f_c1_b39_m0.5 | 600 flights, 0 errors, 26.9 s
+  ran f_c1_b39_m1.0 | 600 flights, 0 errors, 25.6 s
+  ran f_c1_b39_m1.5 | 600 flights, 0 errors, 24.8 s
+  ran f_c1_b60_m0.5 | 600 flights, 0 errors, 26.1 s
+  ran f_c1_b60_m1.0 | 600 flights, 0 errors, 24.9 s
+  ran f_c1_b60_m1.5 | 600 flights, 0 errors, 24.4 s
+  ran f_c1_b80_m0.5 | 600 flights, 0 errors, 26.0 s
+  ran f_c1_b80_m1.0 | 600 flights, 0 errors, 24.9 s
+  ran f_c1_b80_m1.5 | 600 flights, 0 errors, 24.3 s
+check: 0 g / margin 1.0 vs d_c1_best_ej: 600/600 identical outcomes
+
+== E12/E12 best legs, casing out (dev 101-103; casing aboard = 86.5 %)
+| Ballast | apogee | margin 0.5 m | margin 1.0 m | margin 1.5 m |
+|---|---|---|---|---|
+| 0 g | 26 m | 51.0 % (lift 49 %, vz 1.94) | 63.7 % (lift 26 %, vz 1.77) | 65.8 % (lift 8 %, vz 2.08) |
+| 20 g | 24 m | 56.0 % (lift 44 %, vz 1.85) | 71.2 % (lift 20 %, vz 1.75) | 68.0 % (lift 4 %, vz 2.06) |
+| 39 g | 23 m | 61.5 % (lift 38 %, vz 1.80) | 78.3 % (lift 15 %, vz 1.71) | 71.2 % (lift 2 %, vz 2.01) |
+| 60 g | 21 m | 66.8 % (lift 33 %, vz 1.73) | 82.5 % (lift 10 %, vz 1.70) | 68.2 % (lift 1 %, vz 2.23) |
+| 80 g | 19 m | 70.8 % (lift 29 %, vz 1.71) | 84.0 % (lift 6 %, vz 1.71) | 65.8 % (lift 0 %, vz 2.40) |
+  ran f_f10_b0_m0.5 | 600 flights, 0 errors, 37.3 s
+  ran f_f10_b0_m1.0 | 600 flights, 0 errors, 36.2 s
+  ran f_f10_b0_m2.0 | 600 flights, 0 errors, 35.9 s
+  ran f_f10_b20_m0.5 | 600 flights, 0 errors, 36.6 s
+  ran f_f10_b20_m1.0 | 600 flights, 0 errors, 35.7 s
+  ran f_f10_b20_m2.0 | 600 flights, 0 errors, 35.0 s
+  ran f_f10_b43_m0.5 | 600 flights, 0 errors, 36.2 s
+  ran f_f10_b43_m1.0 | 600 flights, 0 errors, 35.3 s
+  ran f_f10_b43_m2.0 | 600 flights, 0 errors, 34.4 s
+
+== F10 + F15, casing out (dev 101-103; casing aboard = 22.3 %)
+| Ballast | apogee | margin 0.5 m | margin 1.0 m | margin 2.0 m |
+|---|---|---|---|---|
+| 0 g | 73 m | 6.0 % (lift 62 %, vz 4.10) | 6.7 % (lift 49 %, vz 4.04) | 8.0 % (lift 23 %, vz 4.77) |
+| 20 g | 67 m | 7.5 % (lift 63 %, vz 3.93) | 7.2 % (lift 49 %, vz 3.88) | 6.7 % (lift 22 %, vz 4.60) |
+| 43 g | 60 m | 9.3 % (lift 63 %, vz 3.71) | 6.2 % (lift 50 %, vz 3.68) | 8.3 % (lift 21 %, vz 4.54) |

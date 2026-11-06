@@ -1,0 +1,14 @@
+; Cesaroni Technology 60F50-13A from the OpenRocket motor database (thrustcurve.org, cert curve)
+Cesaroni_60F50-13A 24 133 plug? 0.0382 0.0939 Cesaroni
+0.0150 64.982
+0.0220 69.516
+0.0640 55.537
+0.1180 62.810
+0.3420 62.149
+0.5360 59.410
+0.7430 53.837
+0.8840 46.942
+0.9760 40.047
+1.0960 12.562
+1.2460 2.078
+1.2980 0.000

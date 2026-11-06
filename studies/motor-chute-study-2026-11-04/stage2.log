@@ -1,0 +1,24 @@
+  ran dev_c_AeroTech_E15W__AeroTech_E15W | 600 flights, 0 errors, 22.9 s
+  ran dev_c_Cesaroni_26E31-15A__AeroTech_E15W | 600 flights, 0 errors, 22.6 s
+  ran dev_c_AeroTech_E18W__AeroTech_E18W | 600 flights, 0 errors, 23.6 s
+  ran dev_c_AeroTech_E18W__AeroTech_F12J | 600 flights, 0 errors, 24.4 s
+  ran dev_c_AeroTech_E16W__AeroTech_E18W | 600 flights, 0 errors, 23.6 s
+  ran dev_c_AeroTech_E16W__AeroTech_F12J | 600 flights, 0 errors, 24.4 s
+  ran dev_c_Cesaroni_25E75-17A__AeroTech_E15W | 600 flights, 0 errors, 22.8 s
+  ran dev_c_AeroTech_E18W__AeroTech_E16W | 600 flights, 0 errors, 24.4 s
+  ran dev_c_AeroTech_E23T__AeroTech_E18W | 600 flights, 0 errors, 23.9 s
+  ran dev_c_AeroTech_E23T__AeroTech_F12J | 600 flights, 0 errors, 27.3 s
+
+== Stage 2: dev seeds 101-103, 600 flights each, measured spreads
+| Ascent / landing | Success (95 % CI) | Apogee med / p99 / max | Contact vz med / p90 | Lifted off | Legs late | Hops | Aborts | Casing |
+|---|---|---|---|---|---|---|---|---|
+| E15W / E15W | 86.7 % (84-89) | 13.2 / 13.7 / 13.8 m | 2.21 / 3.20 | 0 % | 0 % | 0 % | 0.0 % | 40 g |
+| CTI 26E31-15A / E15W | 84.2 % (81-87) | 10.4 / 10.7 / 10.7 m | 1.54 / 3.05 | 6 % | 0 % | 0 % | 0.0 % | 45 g |
+| E18W / E18W | 81.2 % (78-84) | 18.2 / 18.8 / 18.8 m | 2.01 / 3.30 | 3 % | 2 % | 0 % | 0.0 % | 46 g |
+| E18W / F12J | 78.3 % (75-81) | 18.2 / 18.8 / 18.8 m | 2.09 / 3.20 | 9 % | 0 % | 0 % | 0.0 % | 46 g |
+| E16W / E18W | 75.3 % (72-79) | 19.0 / 19.7 / 19.7 m | 1.94 / 3.34 | 9 % | 5 % | 0 % | 1.0 % | 88 g |
+| E16W / F12J | 71.2 % (67-75) | 19.0 / 19.7 / 19.7 m | 2.00 / 3.29 | 15 % | 0 % | 0 % | 0.0 % | 88 g |
+| CTI 25E75-17A / E15W | 68.5 % (65-72) | 12.8 / 13.1 / 13.1 m | 2.17 / 2.79 | 14 % | 0 % | 0 % | 19.8 % | 46 g |
+| E18W / E16W | 67.0 % (63-71) | 18.2 / 18.8 / 18.8 m | 1.94 / 3.62 | 10 % | 7 % | 0 % | 0.0 % | 46 g |
+| E23T / E18W | 64.7 % (61-68) | 18.1 / 18.7 / 18.7 m | 1.85 / 3.36 | 14 % | 11 % | 0 % | 7.8 % | 86 g |
+| E23T / F12J | 63.3 % (59-67) | 18.1 / 18.7 / 18.7 m | 1.92 / 3.28 | 24 % | 0 % | 0 % | 1.7 % | 86 g |

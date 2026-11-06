@@ -1,0 +1,14 @@
+; Cesaroni Technology 26E31-15A from the OpenRocket motor database (thrustcurve.org, cert curve)
+Cesaroni_26E31-15A 24 69 plug? 0.0169 0.0520 Cesaroni
+0.0200 43.824
+0.0270 39.964
+0.0490 26.781
+0.1130 32.601
+0.1930 34.739
+0.2820 35.808
+0.5000 34.442
+0.7270 29.276
+0.7710 22.743
+0.8070 9.561
+0.8400 3.563
+0.8700 0.000

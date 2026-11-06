@@ -1,0 +1,11 @@
+; AeroTech E11J from the OpenRocket motor database (thrustcurve.org, user curve)
+AeroTech_E11J 24 70 plug? 0.0250 0.0624 AeroTech
+0.0725 14.370
+0.1618 17.630
+0.2065 18.370
+0.4185 19.259
+0.7310 18.370
+1.3170 14.222
+1.9196 9.037
+2.5112 2.222
+2.8300 0.000

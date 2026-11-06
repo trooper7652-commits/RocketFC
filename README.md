@@ -47,6 +47,23 @@ tools/
   plot_flight.py      post-flight log plots (matplotlib)
 ```
 
+The rest of the project lives beside the firmware:
+
+```
+CAD/                  Autodesk Inventor parts (.ipt) and assemblies (.iam);
+                      SpaceX Assembly.iam is the whole rocket
+  exports/            STEP / STL exports
+  Avionics Holder/    FEA (stress analysis) data for the avionics holder
+Electronics/          KiCad schematic/PCB and the wiring diagram
+ThrustStand/          HX711 static thrust stand (measures ignition delay, thrust curves)
+SensorServoBenchTest/ bench rig that checks IMU axes and servo signs on real hardware
+tools/sim/            closed-loop simulator + flight-log dashboard
+tools/hil/            hardware-in-the-loop static-fire tooling
+tools/tvc-sim/        standalone TVC PID auto-tuner
+studies/              simulator design studies (landing timing, motors, parachute size)
+docs/research/        research notes (other propulsive-landing projects, solver notes)
+```
+
 ---
 
 ## 1. Hardware & wiring

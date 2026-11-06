@@ -1,0 +1,14 @@
+; Cesaroni Technology 56F31-12A from the OpenRocket motor database (thrustcurve.org, cert curve)
+Cesaroni_56F31-12A 29 98 0 0.0320 0.1020 Cesaroni
+0.0010 3.483
+0.0230 64.053
+0.0500 31.347
+0.0590 28.459
+0.0950 32.027
+0.2120 36.189
+0.3440 37.549
+1.5670 26.165
+1.6310 26.930
+1.6630 25.316
+1.7850 3.653
+1.8280 0.000

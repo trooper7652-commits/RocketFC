@@ -1,0 +1,16 @@
+{
+ "c1_e12_e12": {
+  "ws": "c1_e12_e12",
+  "m_desc": 0.9145,
+  "m_pad": 0.9448,
+  "ascent_eng": "C:\\Users\\troop\\AppData\\Local\\Temp\\claude\\C--Users-troop\\3686f4b3-d039-440c-b2d7-d9daf3d08953\\scratchpad\\lv\\ws\\c1_e12_e12\\tools\\motors\\ascent.eng",
+  "landing_eng": "C:\\Users\\troop\\AppData\\Local\\Temp\\claude\\C--Users-troop\\3686f4b3-d039-440c-b2d7-d9daf3d08953\\scratchpad\\lv\\ws\\c1_e12_e12\\tools\\motors\\landing.eng"
+ },
+ "c2_f15_f10": {
+  "ws": "c2_f15_f10",
+  "m_desc": 0.931,
+  "m_pad": 0.991,
+  "ascent_eng": "C:\\Users\\troop\\AppData\\Local\\Temp\\claude\\C--Users-troop\\3686f4b3-d039-440c-b2d7-d9daf3d08953\\scratchpad\\lv\\ws\\c2_f15_f10\\tools\\motors\\ascent.eng",
+  "landing_eng": "C:\\Users\\troop\\AppData\\Local\\Temp\\claude\\C--Users-troop\\3686f4b3-d039-440c-b2d7-d9daf3d08953\\scratchpad\\lv\\ws\\c2_f15_f10\\tools\\motors\\landing.eng"
+ }
+}

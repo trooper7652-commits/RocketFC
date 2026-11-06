@@ -1,0 +1,68 @@
+ab3140af17101408cfcd494333304f295f803d0b808467e7070f5b62fcb51d2e *./.claude/settings.local.json
+8d0458302369c2d1fb3915fff220b9174a0a000ada21aae8edd38450da550c26 *./.gitignore
+3d462ed0a2eab60dca888c065863386fa7561026b58da2474b24e746679ff281 *./.vscode/c_cpp_properties.json
+81829dd10db5de92b82948bdbab7fac6618e2cbfb6b1253de8b7f4bdbee1de9d *./README.md
+b5e302d6f630a087c3f59c1774c4a18ed8cd2c9ead398aa56245ba928fa94246 *./RocketFC Simulator.bat
+8b28dce35a36a3b2c982c152b534f136379bc030a1d6680a84aee89587216cb5 *./RocketFC.ino
+bb3bbc8224b4fb9eb33719fdf149b26d43b2f467b38b097f80caa31e0cec96cc *./ThrustStand/README.md
+f3bf13c11bd811c722e4131a7faef5050b86533082c64cff9870b96e0205a2ef *./ThrustStand/ThrustStand.ino
+f58b8c26c8821dc1010ea3c889c91a1386946be51e07b7afeb5d9c24e8c632ad *./ThrustStand/WIRING.md
+63367d80e1dd16bc2b21a4ab592ba7b56a4ebfa1a5422aa13b6c764228563436 *./ThrustStand/config.h
+be54e8461bc8dd267192a59af7026117b87fc2132628cdf471570c335b38eb49 *./ThrustStand/src/cal_store.h
+9654d26d5629396a7d35e552954bab5595e952fd31a1f9c1f2d74c949bb6fa88 *./ThrustStand/src/igniter.h
+e9c5e902f9a214df76b2074b99314db68858afd1fdb7b28f8649428de7c51650 *./ThrustStand/src/ir_input.h
+eeeb8d2f9df9a6f95bc69a138406d1107e3a77e8eaebbc633a322683e920fd73 *./ThrustStand/src/load_cell.h
+1ebc2847aa1eceeef35625f2eeab41fcf9c5b1e43d985e3cb7bbd5d7bd4df77c *./ThrustStand/src/stand_state.h
+b0eaeae7e6141d8ced6bd73a2bc56cd90a25ba68b9b84245f0a860cb670f9d9b *./ThrustStand/src/telemetry.h
+efb56ddf51f0c07669b9bbe88d3a95bef7b391179f199d4e186de214df9c57d7 *./ThrustStand/src/ui_lcd.h
+c906c842248a22bfce6004e63468d0af5ab39c353d6466d2ae23e46ca6e5471a *./ThrustStand/tools/eng_export.py
+9a1d7bf6b4d2bd734d3a51565144717ebc79aefb63461b64c8bdd27832352261 *./ThrustStand/tools/plot_thrust.py
+df0a930d5799eb58242e28bf6e226c306b997521f7696d285808e81f27d30aaf *./ThrustStand/tools/stand_capture.py
+609c5229142b3877b8de7b6422edfe24261465c8da8e65cec491fb9432ec891a *./src/config.h
+620fa7cbe275357af7e4d7f9e33906849ee0234ddefc1baea93881d998513391 *./src/core/ahrs.h
+455bf8c269d3e7a9a94c3c7b8bab5eba92ec22982b4e221fd35d4e2a66236d0f *./src/core/altitude_kf.h
+3865617060098701bfb883ace04170dde87f3220e063f9b334ce6c57c549d12b *./src/core/burn_table.h
+c823804ab3f59d0ed2f49d024e7a8b45109a1e1f7b99da60917cab0698f08190 *./src/core/chute_deploy.h
+85def64e2b414f9260c5334c9cd7534da2c3425c932a2f054f37285aae9c1a79 *./src/core/control.h
+64bba2cbefba243606df5d0e07644de71f240cf984f38320f86812d854beef20 *./src/core/flight_core.h
+6f3b0878f2749e923041505116bd9b2395ac18656ed67763bbc475dca8221cb5 *./src/core/flight_state.h
+bca3e03068c761430fc1db5339bc3b5b3653bcda9e25e6454e8d2028c1e763d5 *./src/core/quat.h
+3e35e446f853853ab736066cd4710aa1f68a585d0cba027e307f00426c6d350e *./src/hw/actuators.h
+89be4068625aa2b5e5e9284d2ec2aecedf8a47d15f3e3d4d3852914537824800 *./src/hw/cli.h
+fbf05abd5470b8658744184222e80e15588dd34d132c689f2ddcdafa9dc8a21d *./src/hw/config_store.h
+518362672e687a7d22fee861ae231a1ca492434b17f9579fef9368cda1fab523 *./src/hw/logger.h
+59dfaeedd7e1d8b2bd8bb3d4602cca823a57d9d77d027dda42f84b0e743c871e *./src/hw/sensors.h
+7346f415913193d31082ecc3fb5b41e01187de8bbdf54f32dab85fdeaebbc3f6 *./src/hw/status.h
+1fc0133ba3bff31b77ef021c369807e1cd3537c058297103734517d4bc371f55 *./tools/burn_table.py
+d0bd1b5b2de8a27963e11cafa2425cd45b505bb727f9fd3c28927e48e7c7926c *./tools/motors/Estes_F15.eng
+75f09b61737d7936795b1ceae6aa44af92daeadb8200ea92c2d2b8e42fb55c32 *./tools/plot_flight.py
+6e297ddec5dc5443991c361f39f072e38aceee55e32a18cf4a92aa327d2a6dec *./tools/replay/Makefile
+2916c34b18507f1e661e4e54f8053ce9eb3929dff547ca465a0dbc5ec7d0e1c4 *./tools/replay/main.cpp
+e8bb170bab192d04f805276fd26765ac138397ccde85b54ab3ca2282245c43a3 *./tools/sim/Makefile
+31d5cb16c693d9c0ad54e54305c1dcf7a581ed5c0d24f49e5d2f72da49cb220b *./tools/sim/bridge.cpp
+aa0aa7c5af782cc8f565d73c85bb580b0b5467938cf69990f0cdd5cc2ca3aed1 *./tools/sim/core.py
+fbe446e419888f9d15267266d3368c7345e21ba1e9950ceb04419eca85892131 *./tools/sim/dashboard.py
+e67aa35ae020e93d92fac93cc842cc71524da0040b094324f19461303a260680 *./tools/sim/flight3d.py
+2813c979e32df1229c1a296ded495335b9f318b9bcaf742c381da8b83809e8d4 *./tools/sim/logfile.py
+dd1d52552be94a02ee62a6b429cacafb9d2118533d2dc343e87d10de1248dd56 *./tools/sim/plant.py
+4948ce51a62d8a879a317f43f0af91b5b17a0a4ecddf78db051b1a4e8b5031ab *./tools/sim/reflight.py
+d2c4f11d1963c4cf34a4e85ef018966fca4482bfe8857d5c3a785f060c61731a *./tools/sim/run.py
+6bed1ef59202f53dfc666d0508a2abef4d08768673d8b8b65d6f5e74a6209571 *./tools/sim/sensors.py
+844e786c27e38bc65c4501f7de01443ccac9e0a2aca5d1cc6193c12a4e8722b6 *./tools/sim/servo.py
+e2547c320624df2e92a024ab89b0c554487daf6933500be4b49b413b77c2c390 *./tools/sim/sweep.py
+5d4e90d9f6eaaeb0e902f1b29baf710663aeb720602db701f1551a1d7bce4b94 *./tools/sim/test_bridge.py
+17e6b160a23fe942df3c67da46886fd1e7a0725d65bec8e01b01eeff4a18d3ea *./tools/sim/vehicle.py
+92247b933ab149c12c028fd1cf7daaa1af8e3c593c939927cd1114ea902533f2 *./tools/sim/viz3d/__init__.py
+cde0cb9360ce1cb7bfc9459d91bb85ea5b0d4c5b3579749f87c3af5ae7a323f8 *./tools/sim/viz3d/model.py
+fbb1b1b173449d045ab58ccd3ed90a2d75f66581c07c94f201ec4954f50b2027 *./tools/sim/viz3d/quatmath.py
+1a558b048b46e310a8457e99b93434bb9db87786e59edebfedf7c679ca44616a *./tools/sim/viz3d/scene.py
+dddc950033296905ad15f0de19ac6f4bfec7d942e1ddb3b5d3271385a7071d29 *./tools/synth_flight.py
+copied at 2026-10-12T18:14:17-05:00; git HEAD 239d096
+ M README.md
+ M RocketFC.ino
+ M src/config.h
+ M src/hw/actuators.h
+ M tools/sim/dashboard.py
+ M tools/sim/flight3d.py
+ M tools/sim/run.py
+ M tools/sim/viz3d/model.py

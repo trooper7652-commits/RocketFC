@@ -1,0 +1,23 @@
+base_eject_ballast | vehicle 0.994 kg -> net delta-v capacity ~ 19.2 m/s (energy-matched arrival speed) | >> Target apogee window: 15-80 m (touchdown under 2.5 m/s with ideal timing).
+c1_eject_ballast | vehicle 0.954 kg -> net delta-v capacity ~ 7.5 m/s (energy-matched arrival speed) | >> Target apogee window: 15-25 m (touchdown under 2.5 m/s with ideal timing).
+== HOLDOUT 701-710: today's F10 + F15
+  ran h_ej_ballast | 2000 flights, 0 errors, 130.6 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing stays (today) | 26.0 % (520/2000) | 3.84 / 5.77 | 69 % | 38 % | 0.0 % |  |
+| casing pushed out | 8.6 % (172/2000) | 3.92 / 6.03 | 69 % | 47 % | 0.0 % | 4 rescued / 352 lost, p=9.07e-99 |
+| casing pushed out + 43 g ballast | 10.4 % (208/2000) | 3.57 / 5.52 | 65 % | 47 % | 0.0 % | 13 rescued / 325 lost, p=3.55e-79 |
+
+== HOLDOUT 701-710: E12/E12, nichrome at confirm + 0.75 s band
+  ran h_c1_best_ej_ballast | 2000 flights, 0 errors, 96.0 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing stays | 86.8 % (1737/2000) | 2.22 / 2.96 | 9 % | 11 % | 0.1 % |  |
+| casing pushed out | 69.7 % (1394/2000) | 1.75 / 3.12 | 12 % | 23 % | 0.3 % | 0 rescued / 343 lost, p=1.12e-103 |
+| casing pushed out + 39 g ballast | 80.2 % (1604/2000) | 1.66 / 2.89 | 8 % | 13 % | 0.0 % | 19 rescued / 152 lost, p=5.93e-27 |
+   casing stays (today)               apogee p10/median/p90 71/73/76 m
+   casing pushed out                  apogee p10/median/p90 71/73/76 m
+   casing pushed out + 43 g ballast   apogee p10/median/p90 58/60/63 m
+   casing stays                       apogee p10/median/p90 25/26/27 m
+   casing pushed out                  apogee p10/median/p90 25/26/27 m
+   casing pushed out + 39 g ballast   apogee p10/median/p90 22/23/23 m

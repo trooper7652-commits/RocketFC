@@ -1,0 +1,231 @@
+// AUTO-COPIED from RocketFC (src/config.h) @ e11823e+dirty on 2026-10-21.
+// DO NOT EDIT HERE. Edit the original in RocketFC and re-run
+// sync_core.py, or your fix will be silently overwritten and the
+// bench will stop testing what actually flies.
+#pragma once
+//
+// RocketFC — master configuration. Single source of truth for pins, rates,
+// masses, gains, and thresholds.
+//
+// This header is PURE C++ (no Arduino includes) because it is shared by the
+// Teensy firmware and the PC replay harness (tools/replay).
+//
+// Items marked [MEASURE] are placeholders that MUST be replaced with values
+// measured from the actual vehicle before any flight.
+//
+#include <cstdint>
+
+namespace cfg {
+
+// ---------------------------------------------------------------------------
+// Math constants / units. Internal units are SI (m, m/s, rad). Degrees and
+// g's appear only here at the config boundary and in logs.
+// ---------------------------------------------------------------------------
+constexpr float PI_F    = 3.14159265f;
+constexpr float DEG2RAD = PI_F / 180.0f;
+constexpr float RAD2DEG = 180.0f / PI_F;
+constexpr float G0      = 9.80665f;   // standard gravity, m/s^2
+
+// ---------------------------------------------------------------------------
+// Flight modes
+// ---------------------------------------------------------------------------
+enum class FlightMode : uint8_t {
+  CHUTE_TEST   = 0,  // TVC ascent, parachute at apogee. Fly this first.
+  FULL_LANDING = 1,  // TVC ascent, F15 landing burn; spring chute reserved for aborts.
+};
+constexpr FlightMode DEFAULT_MODE = FlightMode::CHUTE_TEST;
+
+// ---------------------------------------------------------------------------
+// Loop rates (Hz)
+// ---------------------------------------------------------------------------
+constexpr float FAST_HZ  = 500.0f;  // IMU read, AHRS, KF predict, PID
+constexpr float MID_HZ   = 100.0f;  // baro pipeline, FSM, logging
+constexpr float SERVO_HZ = 50.0f;   // servo refresh (Servo library standard)
+constexpr float SLOW_HZ  = 10.0f;   // battery, health, status patterns
+constexpr float FAST_DT  = 1.0f / FAST_HZ;
+
+// ---------------------------------------------------------------------------
+// Pins (Teensy 4.1). Adjust to your wiring; verify with `selftest`/`servotest`.
+// ---------------------------------------------------------------------------
+constexpr int PIN_SERVO_A      = 2;   // gimbal servo producing torque about body +X
+constexpr int PIN_SERVO_B      = 3;   // gimbal servo producing torque about body +Y
+constexpr int PIN_PYRO_LAND    = 6;   // MOSFET gate, F15 landing-motor e-match
+constexpr int PIN_PYRO_LEGS    = 7;   // MOSFET gate, landing-leg release nichrome
+constexpr int PIN_CONT_LAND    = 14;  // A0 — continuity sense divider, landing channel
+constexpr int PIN_CONT_LEGS    = 15;  // A1 — continuity sense divider, legs nichrome
+constexpr int PIN_SERVO_CHUTE  = 23;  // parachute spring-latch release servo
+constexpr int PIN_VBAT         = 16;  // A2 — battery voltage divider
+constexpr int PIN_BUZZER       = 8;
+constexpr int PIN_ARM_SWITCH   = 9;   // optional arm switch -- NOT FITTED, pin unused
+constexpr int PIN_LED          = 13;  // built-in LED
+// I2C uses Wire defaults on Teensy 4.1: SDA=18, SCL=19.
+
+// No arm switch on this vehicle: plugging in the pyro LiPo is the arm.
+constexpr bool REQUIRE_ARM_SWITCH = false;
+
+// ---------------------------------------------------------------------------
+// IMU mounting: body = R_SB * sensor. Body frame: +Z = long axis toward the
+// NOSE, X/Y lateral aligned with the gimbal axes. Edit this row-major 3x3 to
+// match how the BMI088 breakout sits in the vehicle (entries are -1/0/+1 for
+// axis-aligned mounting).
+//
+// Measured on the bench 2026-08-16 with SensorServoBenchTest: standing the
+// vehicle nose up put gravity on sensor -X, i.e. the breakout's -X axis points
+// out the nose. This matrix maps that onto body +Z and completes a right-handed
+// frame (determinant +1).
+//
+// Gravity only fixes the LONG axis. The lateral assignment below -- sensor +Y
+// to body +X, sensor -Z to body +Y -- is the right-handed completion, and which
+// of those is the servo A gimbal axis still has to be confirmed by the gimbal
+// direction test. If A and B come out swapped, exchange the first two rows.
+// ---------------------------------------------------------------------------
+constexpr float IMU_R_SB[9] = {
+   0,  1,  0,
+   0,  0, -1,
+  -1,  0,  0,
+};
+
+// ---------------------------------------------------------------------------
+// Vehicle & motors   [MEASURE] all of these on the real vehicle
+// ---------------------------------------------------------------------------
+constexpr float MASS_PAD_KG     = 1.10f;  // [MEASURE] on the pad, everything loaded
+constexpr float MASS_DESCENT_KG = 0.95f;  // [MEASURE] after ascent burnout (F15 still loaded)
+constexpr float CDA_M2          = 0.0040f; // [MEASURE/estimate] drag Cd*A for descent
+constexpr float ASCENT_BURN_MS  = 3500.0f; // [MEASURE] your ascent motor burn time
+// F15 landing motor: table generated by tools/burn_table.py into src/core/burn_table.h
+constexpr float IGNITION_DELAY_MS = 500.0f; // [MEASURE] e-match command -> thrust (static test!)
+
+// ---------------------------------------------------------------------------
+// Sensors
+// ---------------------------------------------------------------------------
+constexpr uint32_t I2C_HZ = 400000;
+// MS5611: OSR=2048 -> ~4.6 ms conversion; pressure every cycle, temperature
+// refreshed every N pressure conversions.
+constexpr int   BARO_TEMP_EVERY      = 20;
+constexpr int   BARO_GROUND_SAMPLES  = 200;   // ~2 s of pad data for ground ref + noise (R)
+constexpr float BARO_R_FALLBACK_M2   = 0.25f; // (0.5 m)^2 if pad measurement unavailable
+constexpr float GYRO_CAL_SECONDS     = 3.0f;
+constexpr float GYRO_STILL_DPS       = 1.5f;  // max |rate| considered "still" during cal
+
+// ---------------------------------------------------------------------------
+// Kalman filter (altitude / vertical velocity / accel bias)
+// ---------------------------------------------------------------------------
+constexpr float KF_SIGMA_ACCEL      = 0.5f;    // m/s^2 process noise from accel/vibration
+constexpr float KF_SIGMA_BIAS_RW    = 0.01f;   // m/s^2 per sqrt(s), bias random walk
+constexpr float KF_GATE_SIGMA       = 5.0f;    // reject baro innovations beyond this
+constexpr int   KF_GATE_FORCE_ACCEPT = 25;     // accept after N consecutive rejects (recovery)
+constexpr float KF_R_BOOST_INFLATE  = 25.0f;   // baro variance multiplier during BOOST
+
+// ---------------------------------------------------------------------------
+// TVC control. Two gain sets: vehicle is heavy w/ your ascent motor during
+// BOOST, light w/ the F15 during LANDING_BURN. Units: gimbal rad per rad of
+// tilt error (kp), per rad*s (ki), per rad/s of body rate (kd).
+// START ON THE TEST STAND — these are bench placeholders, not flight-ready.
+// ---------------------------------------------------------------------------
+struct PidGains { float kp, ki, kd, iMaxRad; };
+constexpr PidGains GAINS_BOOST   = { 0.60f, 0.15f, 0.110f, 2.0f * DEG2RAD };
+constexpr PidGains GAINS_LANDING = { 0.80f, 0.20f, 0.130f, 2.0f * DEG2RAD };
+
+constexpr float GIMBAL_MAX_RAD    = 5.0f * DEG2RAD;   // mechanical gimbal limit
+constexpr float GIMBAL_SLEW_RADPS = 400.0f * DEG2RAD; // command slew limit
+constexpr float D_LPF_HZ          = 25.0f;            // low-pass on gyro rate for D term
+
+// Servo mapping: us = CENTER + SIGN * gimbal_deg * US_PER_GIMBAL_DEG, clamped.
+// US_PER_GIMBAL_DEG = (servo us per servo deg, ~10) * (servo deg per gimbal deg
+// from linkage geometry). [MEASURE] Verify direction with `servotest` procedure.
+constexpr float SERVO_A_CENTER_US = 1500.0f;  // [MEASURE] trim via CLI `trim`
+constexpr float SERVO_B_CENTER_US = 1500.0f;  // [MEASURE]
+constexpr float SERVO_A_US_PER_GIMBAL_DEG = 20.0f;  // [MEASURE] linkage ratio included
+constexpr float SERVO_B_US_PER_GIMBAL_DEG = 20.0f;  // [MEASURE]
+constexpr float SERVO_A_SIGN = +1.0f;  // [MEASURE] flip if bench direction test fails
+constexpr float SERVO_B_SIGN = +1.0f;  // [MEASURE]
+constexpr float SERVO_MIN_US = 1000.0f;
+constexpr float SERVO_MAX_US = 2000.0f;
+
+// ---------------------------------------------------------------------------
+// Flight state machine thresholds (all debounced)
+// ---------------------------------------------------------------------------
+constexpr float LAUNCH_ACCEL_G   = 1.5f;   // long-axis specific force to declare liftoff
+                                           // (slow-ramp motors like the F15 barely reach 2 g)
+constexpr float LAUNCH_MS        = 80.0f;
+constexpr float BURNOUT_ACCEL_G  = 0.35f;  // |specific force| below this = motor out
+constexpr float BURNOUT_MS       = 150.0f;
+constexpr float BOOST_MAX_MS     = ASCENT_BURN_MS + 1500.0f; // burnout backup timer
+constexpr float APOGEE_VEL_MS    = 200.0f; // KF vel <= 0 must persist this long
+constexpr float APOGEE_DROP_M    = 2.5f;   // backup: altitude fell this far below max
+constexpr float COAST_MAX_MS     = 30000.0f; // absolute backup: force apogee
+constexpr float TILT_ABORT_DEG   = 30.0f;  // sustained tilt beyond this aborts
+constexpr float TILT_ABORT_MS    = 100.0f;
+constexpr float TILT_IGNITE_MAX_DEG = 15.0f;  // never light the F15 beyond this tilt
+constexpr float BURN_TABLE_MARGIN_M = 0.0f;   // + = ignite earlier (higher)
+constexpr float BURN_MIN_SPEED_MS   = 2.0f;   // table domain lower bound
+constexpr float MISSED_WINDOW_ALT_M = 4.0f;   // in DESCENT below this = missed ignition -> abort
+constexpr float IGNITE_CONFIRM_G    = 1.3f;   // accel that confirms the F15 actually lit
+constexpr float DUD_WINDOW_MS       = 700.0f; // after expected delay, no thrust = dud
+constexpr float LANDING_BURN_MAX_MS = 5000.0f; // F15 3.45 s + delay + margin
+constexpr float TOUCHDOWN_ALT_M  = 3.0f;
+constexpr float TOUCHDOWN_VEL_MS = 1.0f;
+constexpr float TOUCHDOWN_MS     = 800.0f;
+constexpr float PREARM_TILT_MAX_DEG = 5.0f;   // refuse to arm unless near vertical
+constexpr bool  ABORT_FIRES_CHUTE_ALWAYS = true; // fire chute on abort even if low
+constexpr float KF_UNHEALTHY_ABORT_MS = 500.0f;
+
+// ---------------------------------------------------------------------------
+// Parachute release servo. The chute is pushed out by a spring; this servo
+// holds the latch. FlightStateMachine decides WHEN (apogee in CHUTE_TEST, any
+// abort in either mode); ChuteDeploy (src/core/chute_deploy.h) then confirms
+// the canopy opened from the accelerometer and re-cycles the latch if not.
+// Find LOCK/RELEASE with the CLI `chute us <n>` jog, then set them here.
+// ---------------------------------------------------------------------------
+constexpr float CHUTE_LOCK_US         = 1500.0f; // [MEASURE] latch holding the spring
+constexpr float CHUTE_RELEASE_US      = 1000.0f; // [MEASURE] latch fully open
+constexpr float CHUTE_CONFIRM_MS      = 1500.0f; // no chute seen this long after a release -> re-cycle
+constexpr float CHUTE_RECYCLE_LOCK_MS = 400.0f;  // [MEASURE] dwell back at LOCK (servo travel time)
+constexpr int   CHUTE_MAX_RELEASES    = 4;       // first release + 3 re-cycles, then hold RELEASE
+// Detection: |specific force| must rise this far above its value at release
+// (freefall ~0 g, under canopy ~1 g plus an opening spike) and hold. Relative
+// to the release baseline because drag on a fast, tumbling post-abort rocket
+// can already read ~0.5 g.
+constexpr float CHUTE_DETECT_RISE_G   = 0.4f;
+constexpr float CHUTE_DETECT_MS       = 100.0f;
+
+// ---------------------------------------------------------------------------
+// Landing-leg release (FULL_LANDING only). A nichrome wire burns through the
+// rubber band holding the legs. On LEGS_DELAY_MS after the landing-motor fire
+// command (once ignition is confirmed), off when touchdown is detected.
+// LEGS_BURN_MAX_MS is an independent actuator-level cutoff in case touchdown
+// never comes (LANDING_BURN_MAX_MS forces it, so this should never trip).
+// ---------------------------------------------------------------------------
+constexpr float LEGS_DELAY_MS    = 1000.0f;
+constexpr float LEGS_BURN_MAX_MS = 6000.0f;
+
+// ---------------------------------------------------------------------------
+// Pyro channels (F15 landing-motor e-match + leg-release nichrome)
+// ---------------------------------------------------------------------------
+constexpr float PYRO_FIRE_MS        = 1200.0f; // landing e-match gate-high duration
+constexpr float CONT_THRESHOLD_V    = 0.4f;    // sense voltage above this = e-match/wire present
+constexpr float CONT_DIVIDER_RATIO  = 11.0f;   // 100k over 10k: (100+10)/10; sense_v = drain volts
+
+// ---------------------------------------------------------------------------
+// Battery
+// ---------------------------------------------------------------------------
+constexpr float VBAT_DIVIDER = 6.0f;   // [MEASURE] 10k:2k -> Vbat = Vadc * 6.0
+constexpr float VBAT_MIN     = 7.0f;   // refuse to arm below this (2S LiPo)
+// Separate 2S pyro LiPo, read through the continuity dividers (a drain sits at
+// pyro battery voltage when its load is connected). FULL_LANDING arm only.
+constexpr float PYRO_VBAT_MIN = 7.0f;
+
+// ---------------------------------------------------------------------------
+// Logging
+// ---------------------------------------------------------------------------
+constexpr float LOG_FAST_HZ = 100.0f;  // ARMED and in flight
+constexpr float LOG_IDLE_HZ = 5.0f;    // disarmed on the bench
+constexpr float LOG_FLUSH_MS = 500.0f;
+
+// ---------------------------------------------------------------------------
+// Misc firmware
+// ---------------------------------------------------------------------------
+constexpr bool ENABLE_WATCHDOG = true;
+constexpr int  EEPROM_BASE_ADDR = 0;
+
+} // namespace cfg

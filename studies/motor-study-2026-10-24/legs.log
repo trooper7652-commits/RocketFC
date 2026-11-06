@@ -1,0 +1,16 @@
+  ran legs_F10_d1000_c1.5 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d1000_c1.5.json: 600 flights, 0 errors, 36.6 s
+LEGS_DELAY_MS 1000.0 band cut 1.5 s: nichrome on at fire+1.00 s | legs down at contact 100.0% | success 17.33%
+  ran legs_F10_d1000_c2.0 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d1000_c2.0.json: 600 flights, 0 errors, 44.1 s
+LEGS_DELAY_MS 1000.0 band cut 2.0 s: nichrome on at fire+1.00 s | legs down at contact  97.8% | success 17.33%
+  ran legs_F10_d1000_c2.5 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d1000_c2.5.json: 600 flights, 0 errors, 43.8 s
+LEGS_DELAY_MS 1000.0 band cut 2.5 s: nichrome on at fire+1.00 s | legs down at contact  55.5% | success 15.67%
+  ran legs_F10_d1000_c3.0 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d1000_c3.0.json: 600 flights, 0 errors, 43.7 s
+LEGS_DELAY_MS 1000.0 band cut 3.0 s: nichrome on at fire+1.00 s | legs down at contact  18.8% | success  0.00%
+  ran legs_F10_d0_c1.5 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d0_c1.5.json: 600 flights, 0 errors, 44.6 s
+LEGS_DELAY_MS 0.0    band cut 1.5 s: nichrome on at fire+0.69 s | legs down at contact 100.0% | success 17.33%
+  ran legs_F10_d0_c2.0 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d0_c2.0.json: 600 flights, 0 errors, 95.5 s
+LEGS_DELAY_MS 0.0    band cut 2.0 s: nichrome on at fire+0.69 s | legs down at contact 100.0% | success 17.33%
+  ran legs_F10_d0_c2.5 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d0_c2.5.json: 600 flights, 0 errors, 98.4 s
+LEGS_DELAY_MS 0.0    band cut 2.5 s: nichrome on at fire+0.69 s | legs down at contact  81.8% | success 17.33%
+  ran legs_F10_d0_c3.0 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\legs_F10_d0_c3.0.json: 600 flights, 0 errors, 79.7 s
+LEGS_DELAY_MS 0.0    band cut 3.0 s: nichrome on at fire+0.69 s | legs down at contact  46.3% | success  8.33%

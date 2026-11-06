@@ -1,0 +1,4114 @@
+[
+ {
+  "id": 967,
+  "mfr": "Piotr Tendera Rocket Motors",
+  "desig": "D20",
+  "common": "D20",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 20.0,
+  "avg": 20.0,
+  "max": null,
+  "burn": 1.0,
+  "prop_g": 14.8,
+  "total_g": 45.5,
+  "type": "SU",
+  "delays": "0,2,4,6,8",
+  "case": "SU 24.0x70.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "user",
+  "key": "Piotr_D20",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Piotr_D20.eng",
+  "ascent": {
+   "apogee": 5.5884018095143775,
+   "v_burnout": 4.87836974472088,
+   "h_burnout": 4.380060797154612,
+   "coast_s": 0.49799999999992384,
+   "vmax": 5.680913886513959,
+   "t_lift": 0.059000000000000045,
+   "tw_avg": 1.3856604349866581,
+   "tw_first03": 1.6502428492163057
+  },
+  "landing": {
+   "tw_avg": 1.4477049320756126,
+   "dv_spare": 5.268582686567166,
+   "apogees": {
+    "8": {
+     "best_vi": 1.8217530168039107,
+     "window_m": 0.06212108654783105
+    },
+    "9": {
+     "best_vi": 2.33493691394098,
+     "window_m": 0.03921265327252291
+    },
+    "10": {
+     "best_vi": 2.835455730889736,
+     "window_m": 0.0
+    },
+    "11": {
+     "best_vi": 3.318538671978273,
+     "window_m": 0.0
+    },
+    "12": {
+     "best_vi": 3.787014670262741,
+     "window_m": 0.0
+    },
+    "13": {
+     "best_vi": 4.245737840679495,
+     "window_m": 0.0
+    },
+    "14": {
+     "best_vi": 4.693991355824639,
+     "window_m": 0.0
+    },
+    "15": {
+     "best_vi": 5.122714552866643,
+     "window_m": 0.0
+    },
+    "16": {
+     "best_vi": 5.5501891333219575,
+     "window_m": 0.0
+    },
+    "17": {
+     "best_vi": 5.966505546091248,
+     "window_m": 0.0
+    },
+    "18": {
+     "best_vi": 6.373478443700759,
+     "window_m": 0.0
+    },
+    "19": {
+     "best_vi": 6.775070185325828,
+     "window_m": 0.0
+    },
+    "20": {
+     "best_vi": 7.16735558098191,
+     "window_m": 0.0
+    },
+    "21": {
+     "best_vi": 7.543233901977218,
+     "window_m": 0.0
+    },
+    "22": {
+     "best_vi": 7.919167760978106,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 8.292343759454466,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 8.652626828240141,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 9.010722722125102,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 9.357828454067084,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 9.701434811296673,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 10.033806442969947,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 10.366384845123758,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 10.698989325209144,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 11.021076878000441,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 11.336123020800834,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 382,
+  "mfr": "Cesaroni Technology",
+  "desig": "24E22-13A",
+  "common": "E22",
+  "dia": 24.0,
+  "length": 69.0,
+  "impulse": 24.2,
+  "avg": 23.4,
+  "max": 34.4,
+  "burn": 1.03,
+  "prop_g": 20.3,
+  "total_g": 56.5,
+  "type": "reload",
+  "delays": "4,6,8,10,13",
+  "case": "Pro24-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_24E22-13A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_24E22-13A.eng",
+  "ascent": {
+   "apogee": 7.0144469341426765,
+   "v_burnout": 6.778758118025435,
+   "h_burnout": 4.684676380646715,
+   "coast_s": 0.690999999999915,
+   "vmax": 7.689889821218671,
+   "t_lift": 0.007,
+   "tw_avg": 1.6262335395896887,
+   "tw_first03": 1.7432340008347107
+  },
+  "landing": {
+   "tw_avg": 1.6990499667354952,
+   "dv_spare": 7.451752793283584,
+   "apogees": {
+    "8": {
+     "best_vi": 0.2470038267614395,
+     "window_m": 0.093165266899323
+    },
+    "9": {
+     "best_vi": 0.6983998606879717,
+     "window_m": 0.11290632220384579
+    },
+    "10": {
+     "best_vi": 1.2015350461279752,
+     "window_m": 0.11727181413309837
+    },
+    "11": {
+     "best_vi": 1.692457756629067,
+     "window_m": 0.13354490753241946
+    },
+    "12": {
+     "best_vi": 2.1640090471945093,
+     "window_m": 0.09323778599453161
+    },
+    "13": {
+     "best_vi": 2.6372484985548605,
+     "window_m": 0.0
+    },
+    "14": {
+     "best_vi": 3.0890514347854205,
+     "window_m": 0.0
+    },
+    "15": {
+     "best_vi": 3.5356992721523035,
+     "window_m": 0.0
+    },
+    "16": {
+     "best_vi": 3.9715392297630854,
+     "window_m": 0.0
+    },
+    "17": {
+     "best_vi": 4.391508732031996,
+     "window_m": 0.0
+    },
+    "18": {
+     "best_vi": 4.802581631247117,
+     "window_m": 0.0
+    },
+    "19": {
+     "best_vi": 5.213910171280519,
+     "window_m": 0.0
+    },
+    "20": {
+     "best_vi": 5.60828302257501,
+     "window_m": 0.0
+    },
+    "21": {
+     "best_vi": 6.000876714001468,
+     "window_m": 0.0
+    },
+    "22": {
+     "best_vi": 6.379511676254504,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 6.761634654544439,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 7.121943704650334,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 7.4809720078117925,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 7.838706402515152,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 8.184180476478492,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 8.527453292887957,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 8.868700787058426,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 9.198645901400967,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 9.526642775754615,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 9.852465768029033,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 384,
+  "mfr": "Cesaroni Technology",
+  "desig": "25E75-17A",
+  "common": "E75",
+  "dia": 24.0,
+  "length": 69.0,
+  "impulse": 24.8,
+  "avg": 74.3,
+  "max": 99.9,
+  "burn": 0.33,
+  "prop_g": 16.0,
+  "total_g": 52.0,
+  "type": "reload",
+  "delays": "8,10,12,14,17",
+  "case": "Pro24-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_25E75-17A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_25E75-17A.eng",
+  "ascent": {
+   "apogee": 12.79553435925631,
+   "v_burnout": 14.333382256171719,
+   "h_burnout": 2.5176125729159886,
+   "coast_s": 1.4439999999999156,
+   "vmax": 14.373488197108054,
+   "t_lift": 0.002,
+   "tw_avg": 5.421564552445237,
+   "tw_first03": 5.944347218781259
+  }
+ },
+ {
+  "id": 383,
+  "mfr": "Cesaroni Technology",
+  "desig": "26E31-15A",
+  "common": "E31",
+  "dia": 24.0,
+  "length": 69.0,
+  "impulse": 26.1,
+  "avg": 30.8,
+  "max": 52.6,
+  "burn": 0.85,
+  "prop_g": 16.9,
+  "total_g": 52.0,
+  "type": "reload",
+  "delays": "6,8,10,12,15",
+  "case": "Pro24-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_26E31-15A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_26E31-15A.eng",
+  "ascent": {
+   "apogee": 10.41888537938779,
+   "v_burnout": 10.175644918365961,
+   "h_burnout": 5.193543188027295,
+   "coast_s": 1.0319999999999014,
+   "vmax": 10.623531777683546,
+   "t_lift": 0.007,
+   "tw_avg": 2.183765176870489,
+   "tw_first03": 2.594412974869094
+  }
+ },
+ {
+  "id": 781,
+  "mfr": "Estes Industries",
+  "desig": "E12",
+  "common": "E12",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 27.24,
+  "avg": 11.17,
+  "max": 33.29,
+  "burn": 2.44,
+  "prop_g": 35.9,
+  "total_g": 59.9,
+  "type": "SU",
+  "delays": "0,4,6,8",
+  "case": "SU 24.0x95.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "Estes_E12",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Estes_E12.eng",
+  "ascent": {
+   "apogee": -0.00019038286436628537,
+   "v_burnout": null,
+   "h_burnout": null,
+   "coast_s": 0.0,
+   "vmax": 1.8256483913549568,
+   "t_lift": 0.1230000000000001,
+   "tw_avg": 0.810039036862037,
+   "tw_first03": 1.6185931169641206
+  }
+ },
+ {
+  "id": 784,
+  "mfr": "Estes Industries",
+  "desig": "E9",
+  "common": "E9",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 27.87,
+  "avg": 9.02,
+  "max": 19.47,
+  "burn": 3.09,
+  "prop_g": 35.8,
+  "total_g": 64.6,
+  "type": "SU",
+  "delays": "0,4,6,8,100",
+  "case": "SU 24.0x95.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "Estes_E9",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Estes_E9.eng",
+  "ascent": {
+   "apogee": -0.00037219052730821207,
+   "v_burnout": null,
+   "h_burnout": null,
+   "coast_s": 0.0,
+   "vmax": 0.2710853128302169,
+   "t_lift": 0.19700000000000015,
+   "tw_avg": 0.6616557114235554,
+   "tw_first03": 0.8993896998465327
+  }
+ },
+ {
+  "id": 32,
+  "mfr": "AeroTech",
+  "desig": "E7-RCT",
+  "common": "E7",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 29.35,
+  "avg": 5.41,
+  "max": 11.58,
+  "burn": 5.43,
+  "prop_g": 17.1,
+  "total_g": 48.4,
+  "type": "reload",
+  "delays": "100,1000,P",
+  "case": "RMS-R/C-24/20-40",
+  "plugged": true,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_E7-RCT",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E7-RCT.eng",
+  "ascent": {
+   "apogee": 0.0,
+   "v_burnout": 0.0,
+   "h_burnout": 0.0,
+   "coast_s": 24.570000000013682,
+   "vmax": 0.0,
+   "t_lift": null,
+   "tw_avg": 0.3937047034885173,
+   "tw_first03": 0.7387261268046246
+  }
+ },
+ {
+  "id": 19,
+  "mfr": "AeroTech",
+  "desig": "E11J",
+  "common": "E11",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 32.74,
+  "avg": 11.57,
+  "max": 19.85,
+  "burn": 2.83,
+  "prop_g": 25.0,
+  "total_g": 62.4,
+  "type": "reload",
+  "delays": "3,4",
+  "case": "RMS-24/40",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_E11J",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E11J.eng",
+  "ascent": {
+   "apogee": 4.153993903414939,
+   "v_burnout": -3.7532189439615813,
+   "h_burnout": 4.153993903414939,
+   "coast_s": 0.0009999999997991615,
+   "vmax": 3.3629081993325642,
+   "t_lift": 0.07000000000000005,
+   "tw_avg": 0.8458473780346123,
+   "tw_first03": 1.2229310868499583
+  }
+ },
+ {
+  "id": 782,
+  "mfr": "Estes Industries",
+  "desig": "E16",
+  "common": "E16",
+  "dia": 29.0,
+  "length": 114.0,
+  "impulse": 33.38,
+  "avg": 15.97,
+  "max": 26.44,
+  "burn": 2.09,
+  "prop_g": 40.0,
+  "total_g": 82.0,
+  "type": "SU",
+  "delays": "0,4,6,8",
+  "case": "SU 29.0x114.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "Estes_E16",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Estes_E16.eng",
+  "ascent": {
+   "apogee": 8.667095721988682,
+   "v_burnout": 6.17334600527794,
+   "h_burnout": 6.733896461914351,
+   "coast_s": 0.6299999999998116,
+   "vmax": 6.4728252589920805,
+   "t_lift": 0.33600000000000024,
+   "tw_avg": 1.1718997270182063,
+   "tw_first03": 0.3446640799865398
+  },
+  "landing": {
+   "tw_avg": 1.2243728491234989,
+   "dv_spare": 4.598723141791048,
+   "apogees": {
+    "8": {
+     "best_vi": 5.088458492853403,
+     "window_m": 0.0
+    },
+    "9": {
+     "best_vi": 4.1655203025502585,
+     "window_m": 0.0
+    },
+    "10": {
+     "best_vi": 3.1161963695045807,
+     "window_m": 0.0
+    },
+    "11": {
+     "best_vi": 1.6702749333864435,
+     "window_m": 0.0023535938066180755
+    },
+    "12": {
+     "best_vi": 1.162933160924347,
+     "window_m": 0.014905969160492884
+    },
+    "13": {
+     "best_vi": 1.3858836162564896,
+     "window_m": 0.0232214323581864
+    },
+    "14": {
+     "best_vi": 1.7818723205699527,
+     "window_m": 0.025887809105921627
+    },
+    "15": {
+     "best_vi": 2.0724881490566105,
+     "window_m": 0.022905598487933485
+    },
+    "16": {
+     "best_vi": 2.4444625928499892,
+     "window_m": 0.007059499879410408
+    },
+    "17": {
+     "best_vi": 2.7977319822400797,
+     "window_m": 0.0
+    },
+    "18": {
+     "best_vi": 3.128831027673071,
+     "window_m": 0.0
+    },
+    "19": {
+     "best_vi": 3.4587159079420076,
+     "window_m": 0.0
+    },
+    "20": {
+     "best_vi": 3.749472823657046,
+     "window_m": 0.0
+    },
+    "21": {
+     "best_vi": 4.063859725350893,
+     "window_m": 0.0
+    },
+    "22": {
+     "best_vi": 4.380422774693846,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 4.692123359170954,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 4.991844185081608,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 5.302844607106065,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 5.601956917672118,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 5.8881313274370175,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 6.179841033534656,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 6.475451643459054,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 6.75712353640074,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 7.037772728122435,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 7.304588544155087,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 20,
+  "mfr": "AeroTech",
+  "desig": "E12-RCJ",
+  "common": "E12",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 34.22,
+  "avg": 11.22,
+  "max": 18.33,
+  "burn": 3.05,
+  "prop_g": 30.3,
+  "total_g": 59.4,
+  "type": "reload",
+  "delays": "100,1000,P",
+  "case": "RMS-R/C-24/20-40",
+  "plugged": true,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_E12-RCJ",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E12-RCJ.eng",
+  "ascent": {
+   "apogee": 1.9169355368137297,
+   "v_burnout": -4.9884820689519245,
+   "h_burnout": 1.9169355368137297,
+   "coast_s": 0.0009999999997751807,
+   "vmax": 2.336062809078538,
+   "t_lift": 0.04500000000000003,
+   "tw_avg": 0.8172559888058565,
+   "tw_first03": 1.2537410838563627
+  }
+ },
+ {
+  "id": 21,
+  "mfr": "AeroTech",
+  "desig": "E15W",
+  "common": "E15",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 35.0,
+  "avg": 21.8,
+  "max": 34.9,
+  "burn": 1.6,
+  "prop_g": 20.1,
+  "total_g": 50.1,
+  "type": "SU",
+  "delays": "0,4,6,7,8,10,P",
+  "case": "SU 24.0x70.0",
+  "plugged": true,
+  "booster": true,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "AeroTech_E15W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E15W.eng",
+  "ascent": {
+   "apogee": 13.20530602850381,
+   "v_burnout": 2.976169089684196,
+   "h_burnout": 12.755551989442088,
+   "coast_s": 0.3049999999997892,
+   "vmax": 6.606121725053864,
+   "t_lift": 0.015000000000000006,
+   "tw_avg": 1.1098529414699883,
+   "tw_first03": 1.703326678471096
+  },
+  "landing": {
+   "tw_avg": 1.1595478492970024,
+   "dv_spare": 4.096201120895522,
+   "apogees": {
+    "8": {
+     "best_vi": 0.1974792694782104,
+     "window_m": 0.12173278608429694
+    },
+    "9": {
+     "best_vi": 0.5652221190963296,
+     "window_m": 0.16516987583590365
+    },
+    "10": {
+     "best_vi": 0.9048205000110414,
+     "window_m": 0.2026359854818272
+    },
+    "11": {
+     "best_vi": 1.2739282987256288,
+     "window_m": 0.23993628696480038
+    },
+    "12": {
+     "best_vi": 1.6160680242024363,
+     "window_m": 0.2532342370863877
+    },
+    "13": {
+     "best_vi": 1.9605263006240057,
+     "window_m": 0.23454258719339086
+    },
+    "14": {
+     "best_vi": 2.298272518887203,
+     "window_m": 0.1591091476306649
+    },
+    "15": {
+     "best_vi": 2.626443193076145,
+     "window_m": 0.0
+    },
+    "16": {
+     "best_vi": 2.946403428129342,
+     "window_m": 0.0
+    },
+    "17": {
+     "best_vi": 3.262609291684386,
+     "window_m": 0.0
+    },
+    "18": {
+     "best_vi": 3.573305900237794,
+     "window_m": 0.0
+    },
+    "19": {
+     "best_vi": 3.880875442973439,
+     "window_m": 0.0
+    },
+    "20": {
+     "best_vi": 4.183596633470968,
+     "window_m": 0.0
+    },
+    "21": {
+     "best_vi": 4.480340742188258,
+     "window_m": 0.0
+    },
+    "22": {
+     "best_vi": 4.776202466999262,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 5.065288141421822,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 5.353403371270646,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 5.634330481613137,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 5.9130438429733125,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 6.184701351304089,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 6.453186078465312,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 6.721296701266389,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 6.9819436487801045,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 7.241914150769613,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 7.500665557697821,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 25,
+  "mfr": "AeroTech",
+  "desig": "E23T",
+  "common": "E23",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 35.32,
+  "avg": 22.5,
+  "max": 38.22,
+  "burn": 1.57,
+  "prop_g": 17.4,
+  "total_g": 103.9,
+  "type": "reload",
+  "delays": "4,5,6,8",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_E23T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E23T.eng",
+  "ascent": {
+   "apogee": 18.143590608966534,
+   "v_burnout": 9.847833043034619,
+   "h_burnout": 13.246806451163224,
+   "coast_s": 0.9999999999998279,
+   "vmax": 12.06941710259742,
+   "t_lift": 0.02100000000000001,
+   "tw_avg": 1.6387188417256018,
+   "tw_first03": 2.268046557745021
+  },
+  "landing": {
+   "tw_avg": 1.7120943122506285,
+   "dv_spare": 10.963717708955224,
+   "apogees": {
+    "8": {
+     "best_vi": 0.7173111896697619,
+     "window_m": 0.05926206596407796
+    },
+    "9": {
+     "best_vi": 1.2719396269058012,
+     "window_m": 0.05172158414036871
+    },
+    "10": {
+     "best_vi": 0.8841565093452329,
+     "window_m": 0.05828667846095835
+    },
+    "11": {
+     "best_vi": 1.1762663798500028,
+     "window_m": 0.0648454376151456
+    },
+    "12": {
+     "best_vi": 1.1730760661492048,
+     "window_m": 0.07092942197507326
+    },
+    "13": {
+     "best_vi": 0.8806088842269287,
+     "window_m": 0.0765395281975957
+    },
+    "14": {
+     "best_vi": 1.0457317683842504,
+     "window_m": 0.1361279140084425
+    },
+    "15": {
+     "best_vi": 0.5682097902113528,
+     "window_m": 0.23086750727409383
+    },
+    "16": {
+     "best_vi": 0.491087834398402,
+     "window_m": 0.2744059405850702
+    },
+    "17": {
+     "best_vi": 0.7151051929965154,
+     "window_m": 0.28837147498000404
+    },
+    "18": {
+     "best_vi": 1.0596755002781295,
+     "window_m": 0.3351376510497481
+    },
+    "19": {
+     "best_vi": 1.393022866036968,
+     "window_m": 0.3506196826310472
+    },
+    "20": {
+     "best_vi": 1.7463577879436298,
+     "window_m": 0.3287789246891564
+    },
+    "21": {
+     "best_vi": 2.089974134146182,
+     "window_m": 0.3039856207031251
+    },
+    "22": {
+     "best_vi": 2.434905446963793,
+     "window_m": 0.15754594518911047
+    },
+    "23": {
+     "best_vi": 2.766949687734197,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 3.096135583258237,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 3.4193059490914357,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 3.7413137724025605,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 4.05089490593533,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 4.360805463687662,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 4.665123842748984,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 4.971121682136603,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 5.263569031781455,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 5.556653836563502,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 745,
+  "mfr": "Ellis Mountain",
+  "desig": "E12",
+  "common": "E12",
+  "dia": 24.0,
+  "length": 101.0,
+  "impulse": 35.8,
+  "avg": 12.0,
+  "max": null,
+  "burn": 2.98333333333333,
+  "prop_g": 28.0,
+  "total_g": 53.199999999999996,
+  "type": "SU",
+  "delays": "0,4,6,8,10",
+  "case": "SU 24x102",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "user",
+  "key": "Ellis_E12",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Ellis_E12.eng",
+  "ascent": {
+   "apogee": 13.710897770177803,
+   "v_burnout": 1.0723972184882635,
+   "h_burnout": 13.652809975132525,
+   "coast_s": 0.11099999999977728,
+   "vmax": 6.763029785160776,
+   "t_lift": 0.005,
+   "tw_avg": 1.0313102466323347,
+   "tw_first03": 1.9165809012494681
+  },
+  "landing": {
+   "tw_avg": 1.077488317377066,
+   "dv_spare": 2.218910358208948,
+   "apogees": {
+    "8": {
+     "best_vi": 0.31958541416935726,
+     "window_m": 0.12925909017873963
+    },
+    "9": {
+     "best_vi": 0.5275419713070768,
+     "window_m": 0.17363437540420057
+    },
+    "10": {
+     "best_vi": 0.8734581708928942,
+     "window_m": 0.2115676796525883
+    },
+    "11": {
+     "best_vi": 1.2390837443889118,
+     "window_m": 0.23835624880737968
+    },
+    "12": {
+     "best_vi": 1.5963311780338312,
+     "window_m": 0.2497708202946499
+    },
+    "13": {
+     "best_vi": 1.9470836318114666,
+     "window_m": 0.24455923817351868
+    },
+    "14": {
+     "best_vi": 2.289319995348309,
+     "window_m": 0.16693099549348675
+    },
+    "15": {
+     "best_vi": 2.6274342703754483,
+     "window_m": 0.0
+    },
+    "16": {
+     "best_vi": 2.957715575893711,
+     "window_m": 0.0
+    },
+    "17": {
+     "best_vi": 3.281971649460646,
+     "window_m": 0.0
+    },
+    "18": {
+     "best_vi": 3.6023135302253197,
+     "window_m": 0.0
+    },
+    "19": {
+     "best_vi": 3.9147517091690793,
+     "window_m": 0.0
+    },
+    "20": {
+     "best_vi": 4.223036801955723,
+     "window_m": 0.0
+    },
+    "21": {
+     "best_vi": 4.525232049859238,
+     "window_m": 0.0
+    },
+    "22": {
+     "best_vi": 4.826764910700887,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 5.121715664323447,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 5.409812061401821,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 5.695749727364588,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 5.977476180632512,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 6.25619146975939,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 6.52924354091243,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 6.802235549019646,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 7.068227251054617,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 7.3337819652160725,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 7.5938817259031435,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 969,
+  "mfr": "Piotr Tendera Rocket Motors",
+  "desig": "E20",
+  "common": "E20",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 36.0,
+  "avg": 20.0,
+  "max": null,
+  "burn": 2.0,
+  "prop_g": 27.6,
+  "total_g": 64.0,
+  "type": "SU",
+  "delays": "0,2,4,6,8",
+  "case": "SU 24.0x95.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "user",
+  "key": "Piotr_E20",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Piotr_E20.eng",
+  "ascent": {
+   "apogee": 14.74320671476848,
+   "v_burnout": 7.470064920031837,
+   "h_burnout": 11.916224151501995,
+   "coast_s": 0.7609999999997847,
+   "vmax": 8.40926026644592,
+   "t_lift": 0.057000000000000044,
+   "tw_avg": 1.3259441993093928,
+   "tw_first03": 1.6376342463892302
+  },
+  "landing": {
+   "tw_avg": 1.3853148350993654,
+   "dv_spare": 8.316803648507449,
+   "apogees": {
+    "8": {
+     "best_vi": 0.6321138639262609,
+     "window_m": 0.06918058642724147
+    },
+    "9": {
+     "best_vi": 0.6567835970386405,
+     "window_m": 0.07466332327592551
+    },
+    "10": {
+     "best_vi": 0.5303547556170611,
+     "window_m": 0.09739641850822126
+    },
+    "11": {
+     "best_vi": 0.7464531554487196,
+     "window_m": 0.12310189958451116
+    },
+    "12": {
+     "best_vi": 0.7119365742299845,
+     "window_m": 0.15005499388627988
+    },
+    "13": {
+     "best_vi": 0.23658706804171403,
+     "window_m": 0.1655527467343712
+    },
+    "14": {
+     "best_vi": 0.6410076182408837,
+     "window_m": 0.17932230257521964
+    },
+    "15": {
+     "best_vi": 0.7313357170543195,
+     "window_m": 0.17631414714505814
+    },
+    "16": {
+     "best_vi": 1.1659206813041345,
+     "window_m": 0.1692343762455636
+    },
+    "17": {
+     "best_vi": 1.3594957404544956,
+     "window_m": 0.1403762069266279
+    },
+    "18": {
+     "best_vi": 1.641809892092132,
+     "window_m": 0.14912059805735164
+    },
+    "19": {
+     "best_vi": 1.9421566302274147,
+     "window_m": 0.1127569906016318
+    },
+    "20": {
+     "best_vi": 2.2404799136911757,
+     "window_m": 0.07092942197507326
+    },
+    "21": {
+     "best_vi": 2.531724087010235,
+     "window_m": 0.0
+    },
+    "22": {
+     "best_vi": 2.82190459660887,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 3.1007558330097926,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 3.3862440235496782,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 3.673197754285602,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 3.9436080596801517,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 4.2110179631749,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 4.485729085726454,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 4.7465888305665915,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 5.015170511192996,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 5.269937638362941,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 5.524749696812948,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 23,
+  "mfr": "AeroTech",
+  "desig": "E18W",
+  "common": "E18",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 36.54,
+  "avg": 17.07,
+  "max": 30.08,
+  "burn": 2.14,
+  "prop_g": 20.7,
+  "total_g": 57.0,
+  "type": "reload",
+  "delays": "4,5,7,8,10",
+  "case": "RMS-24/40",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_E18W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E18W.eng",
+  "ascent": {
+   "apogee": 18.210387987498635,
+   "v_burnout": 6.368316219197636,
+   "h_burnout": 16.153393877300765,
+   "coast_s": 0.6489999999998037,
+   "vmax": 10.875964385412734,
+   "t_lift": 0.03300000000000002,
+   "tw_avg": 1.2985665118102574,
+   "tw_first03": 1.8982260094158656
+  },
+  "landing": {
+   "tw_avg": 1.356711280995791,
+   "dv_spare": 7.486025343283583,
+   "apogees": {
+    "8": {
+     "best_vi": 1.0695147002408707,
+     "window_m": 0.04924085542667629
+    },
+    "9": {
+     "best_vi": 0.5229149847430298,
+     "window_m": 0.058009845770227844
+    },
+    "10": {
+     "best_vi": 0.8526449310088793,
+     "window_m": 0.06677252785813567
+    },
+    "11": {
+     "best_vi": 0.8918696178474176,
+     "window_m": 0.07490282300546591
+    },
+    "12": {
+     "best_vi": 0.6255198730132165,
+     "window_m": 0.08240149663733182
+    },
+    "13": {
+     "best_vi": 0.9030931996429568,
+     "window_m": 0.15567543680858426
+    },
+    "14": {
+     "best_vi": 0.35708762424197743,
+     "window_m": 0.19101576741855067
+    },
+    "15": {
+     "best_vi": 0.30478086198557613,
+     "window_m": 0.2543524412204554
+    },
+    "16": {
+     "best_vi": 0.6627382874076665,
+     "window_m": 0.29605737750472494
+    },
+    "17": {
+     "best_vi": 1.027545001681427,
+     "window_m": 0.34070428824716376
+    },
+    "18": {
+     "best_vi": 1.3657556396511594,
+     "window_m": 0.38828818866298637
+    },
+    "19": {
+     "best_vi": 1.7066126695830477,
+     "window_m": 0.34392158702085474
+    },
+    "20": {
+     "best_vi": 2.0441402615697912,
+     "window_m": 0.32738966085591975
+    },
+    "21": {
+     "best_vi": 2.3752608510290587,
+     "window_m": 0.17027954524057082
+    },
+    "22": {
+     "best_vi": 2.701885807355769,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 3.0240436174967895,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 3.3401844451463245,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 3.64993144275117,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 3.954305451821465,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 4.261101012591095,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 4.554223596693508,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 4.84728090392149,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 5.140300202469576,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 5.421328946072288,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 5.705203964030641,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 30,
+  "mfr": "AeroTech",
+  "desig": "E6-RCT",
+  "common": "E6",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 37.5,
+  "avg": 5.27,
+  "max": 11.9,
+  "burn": 7.12,
+  "prop_g": 21.5,
+  "total_g": 52.7,
+  "type": "reload",
+  "delays": "1000,P",
+  "case": "RMS-R/C-24/20-40",
+  "plugged": true,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_E6-RCT",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E6-RCT.eng",
+  "ascent": {
+   "apogee": 0.0,
+   "v_burnout": 0.0,
+   "h_burnout": 0.0,
+   "coast_s": 22.88000000001368,
+   "vmax": 0.0,
+   "t_lift": null,
+   "tw_avg": 0.38357829921631054,
+   "tw_first03": 0.8366285948334866
+  }
+ },
+ {
+  "id": 22,
+  "mfr": "AeroTech",
+  "desig": "E16W",
+  "common": "E16",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 37.67,
+  "avg": 18.84,
+  "max": 37.2,
+  "burn": 2.0,
+  "prop_g": 19.0,
+  "total_g": 107.0,
+  "type": "reload",
+  "delays": "4,5,7,10",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_E16W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E16W.eng",
+  "ascent": {
+   "apogee": 19.085368678130372,
+   "v_burnout": 7.469011519915332,
+   "h_burnout": 16.259092195513876,
+   "coast_s": 0.7609999999998069,
+   "vmax": 11.676960381623442,
+   "t_lift": 0.057000000000000044,
+   "tw_avg": 1.3719172522144232,
+   "tw_first03": 2.5765315227058028
+  },
+  "landing": {
+   "tw_avg": 1.433346382910591,
+   "dv_spare": 8.4993526119403,
+   "apogees": {
+    "8": {
+     "best_vi": 0.7878515661191793,
+     "window_m": 0.0517468692867911
+    },
+    "9": {
+     "best_vi": 0.6619612156277144,
+     "window_m": 0.06114014877653046
+    },
+    "10": {
+     "best_vi": 0.36368749586031546,
+     "window_m": 0.06990034692649216
+    },
+    "11": {
+     "best_vi": 1.0098267635403277,
+     "window_m": 0.07865294489219457
+    },
+    "12": {
+     "best_vi": 0.18374373749646605,
+     "window_m": 0.08614840381033359
+    },
+    "13": {
+     "best_vi": 0.06897082817480307,
+     "window_m": 0.11743604276883479
+    },
+    "14": {
+     "best_vi": 0.7988063752369743,
+     "window_m": 0.15074239484807678
+    },
+    "15": {
+     "best_vi": 0.5156452144280437,
+     "window_m": 0.21344713063380713
+    },
+    "16": {
+     "best_vi": 0.29291765836002925,
+     "window_m": 0.2823656738900735
+    },
+    "17": {
+     "best_vi": 0.6237549021429724,
+     "window_m": 0.32684324550446686
+    },
+    "18": {
+     "best_vi": 0.99900569805296,
+     "window_m": 0.34392158702085474
+    },
+    "19": {
+     "best_vi": 1.3238729394641928,
+     "window_m": 0.3592758999736757
+    },
+    "20": {
+     "best_vi": 1.6655068252150833,
+     "window_m": 0.3413327254593554
+    },
+    "21": {
+     "best_vi": 2.0000985072721322,
+     "window_m": 0.31903862678340594
+    },
+    "22": {
+     "best_vi": 2.330602036392547,
+     "window_m": 0.22150387487269052
+    },
+    "23": {
+     "best_vi": 2.6560722886235792,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 2.9765369572189577,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 3.2929961358714293,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 3.6029267736026602,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 3.906671428208095,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 4.207782337740223,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 4.506933720246944,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 4.799222987093325,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 5.088929210603998,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 5.374325027954821,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 968,
+  "mfr": "Piotr Tendera Rocket Motors",
+  "desig": "E12",
+  "common": "E12",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 39.0,
+  "avg": 12.0,
+  "max": null,
+  "burn": 3.3,
+  "prop_g": 27.6,
+  "total_g": 64.0,
+  "type": "SU",
+  "delays": "0,2,4,6,8",
+  "case": "SU 24.0x95.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "user",
+  "key": "Piotr_E12",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Piotr_E12.eng",
+  "ascent": {
+   "apogee": -0.0011327678150794638,
+   "v_burnout": null,
+   "h_burnout": null,
+   "coast_s": 0.0,
+   "vmax": 1.4669917206736849,
+   "t_lift": 0.44000000000000034,
+   "tw_avg": 0.7940237261992154,
+   "tw_first03": 0.11774080416277295
+  }
+ },
+ {
+  "id": 1007,
+  "mfr": "Roadrunner Rocketry",
+  "desig": "E25",
+  "common": "E25",
+  "dia": 29.0,
+  "length": 76.0,
+  "impulse": 39.0,
+  "avg": 25.0,
+  "max": 40.0,
+  "burn": 1.5,
+  "prop_g": 20.0,
+  "total_g": 78.0,
+  "type": "SU",
+  "delays": "4,7,P",
+  "case": "SU 29x76",
+  "plugged": true,
+  "booster": false,
+  "reload": false,
+  "curve_source": "mfr",
+  "key": "Roadrunner_E25",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Roadrunner_E25.eng",
+  "ascent": {
+   "apogee": 22.806893497603106,
+   "v_burnout": 12.77292540217412,
+   "h_burnout": 14.615666085662681,
+   "coast_s": 1.290999999999803,
+   "vmax": 14.475691318542715,
+   "t_lift": 0.010000000000000002,
+   "tw_avg": 1.8694711149195091,
+   "tw_first03": 2.2922637772764984
+  },
+  "landing": {
+   "tw_avg": 1.9531787767815765,
+   "dv_spare": 14.07732092089552,
+   "apogees": {
+    "8": {
+     "best_vi": 0.8317431532067828,
+     "window_m": 0.04608985732035875
+    },
+    "9": {
+     "best_vi": 1.0863704678849944,
+     "window_m": 0.05359793038984594
+    },
+    "10": {
+     "best_vi": 1.2331972031091336,
+     "window_m": 0.040263722006083774
+    },
+    "11": {
+     "best_vi": 1.0159455330938987,
+     "window_m": 0.06718618126920232
+    },
+    "12": {
+     "best_vi": 1.476800001319144,
+     "window_m": 0.049000972024158373
+    },
+    "13": {
+     "best_vi": 1.4466224284761808,
+     "window_m": 0.05305055100202826
+    },
+    "14": {
+     "best_vi": 0.9757400069187219,
+     "window_m": 0.08540954774844682
+    },
+    "15": {
+     "best_vi": 0.9605851770478788,
+     "window_m": 0.09100299792993227
+    },
+    "16": {
+     "best_vi": 1.3496293867577847,
+     "window_m": 0.06423774487308287
+    },
+    "17": {
+     "best_vi": 1.163520287894873,
+     "window_m": 0.0676472611681209
+    },
+    "18": {
+     "best_vi": 1.2643420568210775,
+     "window_m": 0.0710522699438936
+    },
+    "19": {
+     "best_vi": 0.743251306324575,
+     "window_m": 0.1482872292301896
+    },
+    "20": {
+     "best_vi": 0.5007637116753546,
+     "window_m": 0.19269156158452683
+    },
+    "21": {
+     "best_vi": 0.7408350836154615,
+     "window_m": 0.24001743912252713
+    },
+    "22": {
+     "best_vi": 0.357386722901175,
+     "window_m": 0.2902586377240173
+    },
+    "23": {
+     "best_vi": 0.6164290501333979,
+     "window_m": 0.2999449341376328
+    },
+    "24": {
+     "best_vi": 0.9380854753815464,
+     "window_m": 0.35323521249094525
+    },
+    "25": {
+     "best_vi": 1.263992497601829,
+     "window_m": 0.36427532116121036
+    },
+    "26": {
+     "best_vi": 1.5906310103680674,
+     "window_m": 0.3752993444328013
+    },
+    "27": {
+     "best_vi": 1.883378654594777,
+     "window_m": 0.33748388256276696
+    },
+    "28": {
+     "best_vi": 2.188094589700054,
+     "window_m": 0.2479296921386595
+    },
+    "29": {
+     "best_vi": 2.490953638531795,
+     "window_m": 0.05080540773168753
+    },
+    "30": {
+     "best_vi": 2.789614318157174,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 3.080606199726034,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 3.3695063512003833,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 28,
+  "mfr": "AeroTech",
+  "desig": "E28T",
+  "common": "E28",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 39.69,
+  "avg": 32.53,
+  "max": 50.52,
+  "burn": 1.22,
+  "prop_g": 18.4,
+  "total_g": 54.5,
+  "type": "reload",
+  "delays": "2,4,5,7,8",
+  "case": "RMS-24/40",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_E28T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E28T.eng",
+  "ascent": {
+   "apogee": 27.335904124902758,
+   "v_burnout": 16.23304439121868,
+   "h_burnout": 14.219193083629696,
+   "coast_s": 1.630999999999797,
+   "vmax": 17.488918669937583,
+   "t_lift": 0.005,
+   "tw_avg": 2.3695250120088307,
+   "tw_first03": 3.3647964342951933
+  }
+ },
+ {
+  "id": 31,
+  "mfr": "AeroTech",
+  "desig": "E6",
+  "common": "E6",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 40.0,
+  "avg": 6.0,
+  "max": null,
+  "burn": 6.67,
+  "prop_g": 21.5,
+  "total_g": 46.300000000000004,
+  "type": "SU",
+  "delays": "2,4,6,8,100,P",
+  "case": "RMS 24/20-40 R/C",
+  "plugged": true,
+  "booster": false,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "AeroTech_E6",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_E6.eng",
+  "ascent": {
+   "apogee": -0.000477975653591871,
+   "v_burnout": null,
+   "h_burnout": null,
+   "coast_s": 0.0,
+   "vmax": 0.7802489037673416,
+   "t_lift": 0.009000000000000001,
+   "tw_avg": 0.4627315453883853,
+   "tw_first03": 1.3129574610814383
+  }
+ },
+ {
+  "id": 391,
+  "mfr": "Cesaroni Technology",
+  "desig": "41F36-11A",
+  "common": "F36",
+  "dia": 29.0,
+  "length": 98.0,
+  "impulse": 41.2,
+  "avg": 38.5,
+  "max": 72.7,
+  "burn": 1.07,
+  "prop_g": 35.0,
+  "total_g": 104.0,
+  "type": "reload",
+  "delays": "2,4,6,8,11",
+  "case": "Pro29-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_41F36-11A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_41F36-11A.eng",
+  "ascent": {
+   "apogee": 30.51699637594601,
+   "v_burnout": 19.727795025810053,
+   "h_burnout": 11.35920667698465,
+   "coast_s": 1.9669999999997787,
+   "vmax": 20.21365627811493,
+   "t_lift": 0.011000000000000003,
+   "tw_avg": 2.90202909999535,
+   "tw_first03": 3.6054251816005327
+  }
+ },
+ {
+  "id": 35,
+  "mfr": "AeroTech",
+  "desig": "F12J",
+  "common": "F12",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 43.2,
+  "avg": 14.74,
+  "max": 23.54,
+  "burn": 2.93,
+  "prop_g": 30.3,
+  "total_g": 66.69999999999999,
+  "type": "reload",
+  "delays": "2,3,5",
+  "case": "RMS-24/40",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_F12J",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F12J.eng",
+  "ascent": {
+   "apogee": 16.475670601102514,
+   "v_burnout": 2.3806384612080578,
+   "h_burnout": 16.18805411768981,
+   "coast_s": 0.2439999999997613,
+   "vmax": 8.56985530747059,
+   "t_lift": 0.025000000000000015,
+   "tw_avg": 1.073790841483218,
+   "tw_first03": 1.6205267625040358
+  },
+  "landing": {
+   "tw_avg": 1.1218710284153022,
+   "dv_spare": 3.5017793059701496,
+   "apogees": {
+    "8": {
+     "best_vi": 0.46877502473484084,
+     "window_m": 0.05270952608637203
+    },
+    "9": {
+     "best_vi": 0.3123886717037828,
+     "window_m": 0.06587906362480282
+    },
+    "10": {
+     "best_vi": 0.7671504325541274,
+     "window_m": 0.06728140852485388
+    },
+    "11": {
+     "best_vi": 0.25198836311726786,
+     "window_m": 0.09000880522102554
+    },
+    "12": {
+     "best_vi": 0.237569841961006,
+     "window_m": 0.12840864800856755
+    },
+    "13": {
+     "best_vi": 0.3673324962358156,
+     "window_m": 0.17243829005830014
+    },
+    "14": {
+     "best_vi": 0.3204199891226184,
+     "window_m": 0.20407070332410998
+    },
+    "15": {
+     "best_vi": 0.668811928900246,
+     "window_m": 0.2383535933813128
+    },
+    "16": {
+     "best_vi": 0.9616507368922002,
+     "window_m": 0.25460570437511143
+    },
+    "17": {
+     "best_vi": 1.2851250333056445,
+     "window_m": 0.25095121435368084
+    },
+    "18": {
+     "best_vi": 1.582288084007417,
+     "window_m": 0.2659353888066711
+    },
+    "19": {
+     "best_vi": 1.8839005257564214,
+     "window_m": 0.2340920146477923
+    },
+    "20": {
+     "best_vi": 2.1834471413955967,
+     "window_m": 0.17204866423738957
+    },
+    "21": {
+     "best_vi": 2.4774893413874377,
+     "window_m": 0.07747396486420291
+    },
+    "22": {
+     "best_vi": 2.7676897134711003,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 3.0568339742679256,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 3.3378698884216735,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 3.616548297869384,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 3.894261542217154,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 4.164616335369908,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 4.435846640137021,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 4.700635015326544,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 4.962484369244063,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 5.2236196785830575,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 5.482802608329253,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 44,
+  "mfr": "AeroTech",
+  "desig": "F24W",
+  "common": "F24",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 47.31,
+  "avg": 22.21,
+  "max": 40.95,
+  "burn": 2.13,
+  "prop_g": 25.3,
+  "total_g": 62.0,
+  "type": "reload",
+  "delays": "4,7,10",
+  "case": "RMS-24/40",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_F24W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F24W.eng",
+  "ascent": {
+   "apogee": 34.794875256632544,
+   "v_burnout": 13.435377581265207,
+   "h_burnout": 25.74606184522731,
+   "coast_s": 1.356999999999727,
+   "vmax": 16.86739677587255,
+   "t_lift": 0.028000000000000018,
+   "tw_avg": 1.6532756247819531,
+   "tw_first03": 2.6841358621324263
+  },
+  "landing": {
+   "tw_avg": 1.7273028915632342,
+   "dv_spare": 15.192022440298505,
+   "apogees": {
+    "8": {
+     "best_vi": 1.3597027363054255,
+     "window_m": 0.030570082869153296
+    },
+    "9": {
+     "best_vi": 1.3487205717608537,
+     "window_m": 0.035575612633971763
+    },
+    "10": {
+     "best_vi": 1.232933243054486,
+     "window_m": 0.040263722006083774
+    },
+    "11": {
+     "best_vi": 0.6625935042947535,
+     "window_m": 0.06718618126920232
+    },
+    "12": {
+     "best_vi": 1.050217362724158,
+     "window_m": 0.049000972024158373
+    },
+    "13": {
+     "best_vi": 0.7564614478054491,
+     "window_m": 0.07980930190352988
+    },
+    "14": {
+     "best_vi": 1.1782363589247262,
+     "window_m": 0.057095171164632204
+    },
+    "15": {
+     "best_vi": 0.9556232079345668,
+     "window_m": 0.09146879830781793
+    },
+    "16": {
+     "best_vi": 1.244777088177846,
+     "window_m": 0.06454788132610378
+    },
+    "17": {
+     "best_vi": 0.8783648094525536,
+     "window_m": 0.10216776464704541
+    },
+    "18": {
+     "best_vi": 0.9318576634505585,
+     "window_m": 0.10727432952046768
+    },
+    "19": {
+     "best_vi": 1.2861619393484056,
+     "window_m": 0.07476142449129294
+    },
+    "20": {
+     "best_vi": 0.8912648032573214,
+     "window_m": 0.11700312804232027
+    },
+    "21": {
+     "best_vi": 0.808430415442207,
+     "window_m": 0.12162608218679277
+    },
+    "22": {
+     "best_vi": 1.0415260482131952,
+     "window_m": 0.12624237429599866
+    },
+    "23": {
+     "best_vi": 1.4463446980906185,
+     "window_m": 0.08708098293973149
+    },
+    "24": {
+     "best_vi": 1.1851483830399228,
+     "window_m": 0.13499410550897267
+    },
+    "25": {
+     "best_vi": 1.0729062490657206,
+     "window_m": 0.139130485646949
+    },
+    "26": {
+     "best_vi": 1.1664603517725245,
+     "window_m": 0.14326072745791202
+    },
+    "27": {
+     "best_vi": 0.4478876805183711,
+     "window_m": 0.1469267604398114
+    },
+    "28": {
+     "best_vi": 1.0594349568028338,
+     "window_m": 0.25097938565689115
+    },
+    "29": {
+     "best_vi": 0.8816021631010186,
+     "window_m": 0.308029928067819
+    },
+    "30": {
+     "best_vi": 0.20403358648544434,
+     "window_m": 0.3673543882382737
+    },
+    "31": {
+     "best_vi": 0.467549191916551,
+     "window_m": 0.3758607219076876
+    },
+    "32": {
+     "best_vi": 0.6400370598181784,
+     "window_m": 0.4386554105307735
+    }
+   }
+  }
+ },
+ {
+  "id": 62,
+  "mfr": "AeroTech",
+  "desig": "F62FJ",
+  "common": "F62",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 47.57,
+  "avg": 56.91,
+  "max": 73.1,
+  "burn": 0.84,
+  "prop_g": 32.2,
+  "total_g": 87.0,
+  "type": "reload",
+  "delays": "4,6,8,10",
+  "case": "RMS-24/60",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F62FJ",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F62FJ.eng",
+  "ascent": {
+   "apogee": 43.13608587245984,
+   "v_burnout": 25.922330063172254,
+   "h_burnout": 10.83414831300972,
+   "coast_s": 2.5429999999997452,
+   "vmax": 26.082849962339456,
+   "t_lift": 0.001,
+   "tw_avg": 4.384240863020569,
+   "tw_first03": 4.273297680031158
+  }
+ },
+ {
+  "id": 63,
+  "mfr": "AeroTech",
+  "desig": "F63R",
+  "common": "F63",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 49.5,
+  "avg": 58.06,
+  "max": 69.94,
+  "burn": 0.85,
+  "prop_g": 27.599999999999998,
+  "total_g": 81.0,
+  "type": "reload",
+  "delays": "4,6,8,10",
+  "case": "RMS-24/60",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F63R",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F63R.eng",
+  "ascent": {
+   "apogee": 48.3517115624042,
+   "v_burnout": 27.45688504304744,
+   "h_burnout": 12.34796163149341,
+   "coast_s": 2.6819999999997277,
+   "vmax": 27.628887129307977,
+   "t_lift": 0.001,
+   "tw_avg": 4.510586884919928,
+   "tw_first03": 4.741170532240878
+  }
+ },
+ {
+  "id": 785,
+  "mfr": "Estes Industries",
+  "desig": "F15",
+  "common": "F15",
+  "dia": 29.0,
+  "length": 114.0,
+  "impulse": 49.61,
+  "avg": 14.38,
+  "max": 25.26,
+  "burn": 3.45,
+  "prop_g": 60.0,
+  "total_g": 103.0,
+  "type": "SU",
+  "delays": "0,2,4,6,8",
+  "case": "SU 29.0x114.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "Estes_F15",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Estes_F15.eng",
+  "ascent": {
+   "apogee": 10.631582150009736,
+   "v_burnout": 3.5919788921100344,
+   "h_burnout": 9.976336182366133,
+   "coast_s": 0.36699999999969046,
+   "vmax": 3.959403324776434,
+   "t_lift": 0.25200000000000017,
+   "tw_avg": 1.0473462471419048,
+   "tw_first03": 0.8808891342682189
+  },
+  "landing": {
+   "tw_avg": 1.0942423477601988,
+   "dv_spare": 3.1884959328358136,
+   "apogees": {
+    "8": {
+     "best_vi": 4.066253527153337,
+     "window_m": 0.0
+    },
+    "9": {
+     "best_vi": 3.641594904321831,
+     "window_m": 0.0
+    },
+    "10": {
+     "best_vi": 3.192046999404956,
+     "window_m": 0.0
+    },
+    "11": {
+     "best_vi": 2.7374597964313065,
+     "window_m": 0.0
+    },
+    "12": {
+     "best_vi": 2.301846109915935,
+     "window_m": 0.0009414381367939474
+    },
+    "13": {
+     "best_vi": 1.940847555131093,
+     "window_m": 0.005648615660508782
+    },
+    "14": {
+     "best_vi": 1.6498524751783172,
+     "window_m": 0.01223862392371082
+    },
+    "15": {
+     "best_vi": 1.9237854039227158,
+     "window_m": 0.01804400196981145
+    },
+    "16": {
+     "best_vi": 2.1308269230057175,
+     "window_m": 0.01757311700054152
+    },
+    "17": {
+     "best_vi": 2.402853159405283,
+     "window_m": 0.00988472371707374
+    },
+    "18": {
+     "best_vi": 2.611161613538415,
+     "window_m": 0.0
+    },
+    "19": {
+     "best_vi": 2.8480354860483037,
+     "window_m": 0.0
+    },
+    "20": {
+     "best_vi": 3.0910456337685095,
+     "window_m": 0.0
+    },
+    "21": {
+     "best_vi": 3.3026396049764664,
+     "window_m": 0.0
+    },
+    "22": {
+     "best_vi": 3.5310460715957,
+     "window_m": 0.0
+    },
+    "23": {
+     "best_vi": 3.7778031865233372,
+     "window_m": 0.0
+    },
+    "24": {
+     "best_vi": 3.9888802138838018,
+     "window_m": 0.0
+    },
+    "25": {
+     "best_vi": 4.204887699345215,
+     "window_m": 0.0
+    },
+    "26": {
+     "best_vi": 4.428385305502662,
+     "window_m": 0.0
+    },
+    "27": {
+     "best_vi": 4.649528060754565,
+     "window_m": 0.0
+    },
+    "28": {
+     "best_vi": 4.8827724488351905,
+     "window_m": 0.0
+    },
+    "29": {
+     "best_vi": 5.092944625632655,
+     "window_m": 0.0
+    },
+    "30": {
+     "best_vi": 5.302332597274169,
+     "window_m": 0.0
+    },
+    "31": {
+     "best_vi": 5.511966588709061,
+     "window_m": 0.0
+    },
+    "32": {
+     "best_vi": 5.7214336630558975,
+     "window_m": 0.0
+    }
+   }
+  }
+ },
+ {
+  "id": 53,
+  "mfr": "AeroTech",
+  "desig": "F39T",
+  "common": "F39",
+  "dia": 24.0,
+  "length": 70.0,
+  "impulse": 49.66,
+  "avg": 37.34,
+  "max": 59.47,
+  "burn": 1.33,
+  "prop_g": 22.700000000000003,
+  "total_g": 59.0,
+  "type": "reload",
+  "delays": "3,4,5,6,7,9",
+  "case": "RMS-24/40",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_F39T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F39T.eng",
+  "ascent": {
+   "apogee": 44.286817725599654,
+   "v_burnout": 22.041587848354265,
+   "h_burnout": 20.559232768196797,
+   "coast_s": 2.1859999999997237,
+   "vmax": 23.440946079693997,
+   "t_lift": 0.004,
+   "tw_avg": 2.7195213108174805,
+   "tw_first03": 4.022161346782905
+  }
+ },
+ {
+  "id": 395,
+  "mfr": "Cesaroni Technology",
+  "desig": "50F51-13A",
+  "common": "F51",
+  "dia": 24.0,
+  "length": 101.001,
+  "impulse": 49.9,
+  "avg": 49.6,
+  "max": 69.4,
+  "burn": 1.0,
+  "prop_g": 28.0,
+  "total_g": 73.0,
+  "type": "reload",
+  "delays": "0,4,6,8,10,13",
+  "case": "Pro24-2G",
+  "plugged": false,
+  "booster": true,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_50F51-13A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_50F51-13A.eng",
+  "ascent": {
+   "apogee": 46.54946176595163,
+   "v_burnout": 25.117264925669904,
+   "h_burnout": 16.114389233572062,
+   "coast_s": 2.470999999999724,
+   "vmax": 25.731631672690458,
+   "t_lift": 0.005,
+   "tw_avg": 3.4702946961384917,
+   "tw_first03": 3.774042541103668
+  }
+ },
+ {
+  "id": 52,
+  "mfr": "AeroTech",
+  "desig": "F37W",
+  "common": "F37",
+  "dia": 29.0,
+  "length": 99.0,
+  "impulse": 50.67,
+  "avg": 31.67,
+  "max": 46.47,
+  "burn": 1.6,
+  "prop_g": 28.2,
+  "total_g": 108.6,
+  "type": "reload",
+  "delays": "4,6,8,10,14",
+  "case": "RMS-29/60",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F37W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F37W.eng",
+  "ascent": {
+   "apogee": 40.393530001708214,
+   "v_burnout": 20.471668069898787,
+   "h_burnout": 19.812841567715882,
+   "coast_s": 2.0379999999997103,
+   "vmax": 21.486424562379575,
+   "t_lift": 0.05400000000000004,
+   "tw_avg": 2.306694150143015,
+   "tw_first03": 1.6743740217097585
+  }
+ },
+ {
+  "id": 61,
+  "mfr": "AeroTech",
+  "desig": "F62T",
+  "common": "F62",
+  "dia": 29.0,
+  "length": 99.0,
+  "impulse": 51.0,
+  "avg": 62.0,
+  "max": 56.5,
+  "burn": 1.13,
+  "prop_g": 25.0,
+  "total_g": 109.0,
+  "type": "reload",
+  "delays": "4,6,8,9,10,11,13,14,16,18",
+  "case": "RMS-29/60",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F62T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F62T.eng",
+  "ascent": {
+   "apogee": 62.537016337987446,
+   "v_burnout": 31.04915454619414,
+   "h_burnout": 17.261456696652726,
+   "coast_s": 2.9994999999996708,
+   "vmax": 31.195978952090503,
+   "t_lift": 0.002,
+   "tw_avg": 4.204054205576811,
+   "tw_first03": 4.387863143401478
+  }
+ },
+ {
+  "id": 392,
+  "mfr": "Cesaroni Technology",
+  "desig": "51F36-14A",
+  "common": "F36",
+  "dia": 29.0,
+  "length": 98.0,
+  "impulse": 51.5,
+  "avg": 36.4,
+  "max": 46.3,
+  "burn": 1.42,
+  "prop_g": 32.0,
+  "total_g": 101.0,
+  "type": "reload",
+  "delays": "5,7,9,11,14",
+  "case": "Pro29-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_51F36-14A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_51F36-14A.eng",
+  "ascent": {
+   "apogee": 44.972686647223505,
+   "v_burnout": 22.35463417494647,
+   "h_burnout": 20.6018136966277,
+   "coast_s": 2.214999999999702,
+   "vmax": 23.938070402643586,
+   "t_lift": 0.012000000000000004,
+   "tw_avg": 2.5322952622285215,
+   "tw_first03": 2.5674997505337127
+  }
+ },
+ {
+  "id": 390,
+  "mfr": "Cesaroni Technology",
+  "desig": "53F32-12A",
+  "common": "F32",
+  "dia": 29.0,
+  "length": 98.0008,
+  "impulse": 52.8,
+  "avg": 31.6,
+  "max": 49.3,
+  "burn": 1.67,
+  "prop_g": 37.0,
+  "total_g": 107.0,
+  "type": "reload",
+  "delays": "0,3,5,7,9,12",
+  "case": "Pro29-1G",
+  "plugged": false,
+  "booster": true,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_53F32-12A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_53F32-12A.eng",
+  "ascent": {
+   "apogee": 42.20249856090465,
+   "v_burnout": 20.823548275645162,
+   "h_burnout": 20.939612775561987,
+   "coast_s": 2.070999999999693,
+   "vmax": 21.596686984030946,
+   "t_lift": 0.010000000000000002,
+   "tw_avg": 2.2334039589075028,
+   "tw_first03": 2.0236705267781123
+  }
+ },
+ {
+  "id": 397,
+  "mfr": "Cesaroni Technology",
+  "desig": "53F70-14A",
+  "common": "F70",
+  "dia": 24.0,
+  "length": 101.001,
+  "impulse": 52.9,
+  "avg": 69.1,
+  "max": 97.0,
+  "burn": 0.77,
+  "prop_g": 29.0,
+  "total_g": 73.0,
+  "type": "reload",
+  "delays": "0,5,7,9,11,14",
+  "case": "Pro24-2G",
+  "plugged": false,
+  "booster": true,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_53F70-14A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_53F70-14A.eng",
+  "ascent": {
+   "apogee": 56.03743403516407,
+   "v_burnout": 29.517052934947618,
+   "h_burnout": 14.824434292223371,
+   "coast_s": 2.864999999999706,
+   "vmax": 30.15597464861883,
+   "t_lift": 0.002,
+   "tw_avg": 4.714373168518632,
+   "tw_first03": 5.136266862646411
+  }
+ },
+ {
+  "id": 387,
+  "mfr": "Cesaroni Technology",
+  "desig": "55F29-12A",
+  "common": "F29",
+  "dia": 29.0,
+  "length": 98.0,
+  "impulse": 54.8,
+  "avg": 28.9,
+  "max": 36.0,
+  "burn": 1.9,
+  "prop_g": 37.6,
+  "total_g": 105.80000000000001,
+  "type": "reload",
+  "delays": "3,5,7,9,12",
+  "case": "Pro29-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_55F29-12A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_55F29-12A.eng",
+  "ascent": {
+   "apogee": 41.17841658014784,
+   "v_burnout": 19.09671496828677,
+   "h_burnout": 23.189963239435492,
+   "coast_s": 1.9069999999996807,
+   "vmax": 20.229197779353445,
+   "t_lift": 0.02100000000000001,
+   "tw_avg": 1.9750175354770196,
+   "tw_first03": 1.5575983061056968
+  },
+  "landing": {
+   "tw_avg": 2.0634511564685276,
+   "dv_spare": 20.857786567164172,
+   "apogees": {
+    "8": {
+     "best_vi": 1.11022276382611,
+     "window_m": 0.03857523790252246
+    },
+    "9": {
+     "best_vi": 0.9675587816816291,
+     "window_m": 0.04562037432532501
+    },
+    "10": {
+     "best_vi": 0.3759331845811211,
+     "window_m": 0.052190714392721924
+    },
+    "11": {
+     "best_vi": 0.9046736194984792,
+     "window_m": 0.05875537976175647
+    },
+    "12": {
+     "best_vi": 0.8066444551096361,
+     "window_m": 0.0648454376151456
+    },
+    "13": {
+     "best_vi": 1.2354901697078087,
+     "window_m": 0.04713036658536161
+    },
+    "14": {
+     "best_vi": 1.1575104302232517,
+     "window_m": 0.050870600850923486
+    },
+    "15": {
+     "best_vi": 1.4292096339341465,
+     "window_m": 0.05460678136775287
+    },
+    "16": {
+     "best_vi": 1.0813370273875478,
+     "window_m": 0.05802780147063501
+    },
+    "17": {
+     "best_vi": 1.0825596595482607,
+     "window_m": 0.06144494315851953
+    },
+    "18": {
+     "best_vi": 1.3720340171975782,
+     "window_m": 0.06485798219522511
+    },
+    "19": {
+     "best_vi": 0.8750894625799429,
+     "window_m": 0.0679569970113828
+    },
+    "20": {
+     "best_vi": 0.44138031602483724,
+     "window_m": 0.10681038633871054
+    },
+    "21": {
+     "best_vi": 0.5806548238182875,
+     "window_m": 0.11144713377183212
+    },
+    "22": {
+     "best_vi": 1.1121957217696254,
+     "window_m": 0.07723092696390732
+    },
+    "23": {
+     "best_vi": 1.6434674678440984,
+     "window_m": 0.08031398162391634
+    },
+    "24": {
+     "best_vi": 1.2953156418692373,
+     "window_m": 0.08308497288070188
+    },
+    "25": {
+     "best_vi": 1.1247511573654285,
+     "window_m": 0.08585228116338839
+    },
+    "26": {
+     "best_vi": 1.1763768450319279,
+     "window_m": 0.08861578869988411
+    },
+    "27": {
+     "best_vi": 1.4434510591322787,
+     "window_m": 0.09137537838434691
+    },
+    "28": {
+     "best_vi": 0.37011778662464545,
+     "window_m": 0.09382496380019911
+    },
+    "29": {
+     "best_vi": 1.3056621151901027,
+     "window_m": 0.0965768360252981
+    },
+    "30": {
+     "best_vi": 0.7685768422475824,
+     "window_m": 0.09901937844837724
+    },
+    "31": {
+     "best_vi": 1.7482107797988544,
+     "window_m": 0.05080540773168753
+    },
+    "32": {
+     "best_vi": 1.6176741736457567,
+     "window_m": 0.10419825935194332
+    }
+   }
+  }
+ },
+ {
+  "id": 58,
+  "mfr": "AeroTech",
+  "desig": "F51NT",
+  "common": "F51",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 55.11,
+  "avg": 55.89,
+  "max": 76.53,
+  "burn": 0.99,
+  "prop_g": 26.5,
+  "total_g": 82.0,
+  "type": "reload",
+  "delays": "4,5,6,7,8,9,10",
+  "case": "RMS-24/60",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F51NT",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F51NT.eng",
+  "ascent": {
+   "apogee": 54.08900082465862,
+   "v_burnout": 27.050888058178476,
+   "h_burnout": 19.077227878100352,
+   "coast_s": 2.645999999999704,
+   "vmax": 28.382011979436694,
+   "t_lift": 0.001,
+   "tw_avg": 3.6665692733630597,
+   "tw_first03": 5.070201998498105
+  }
+ },
+ {
+  "id": 389,
+  "mfr": "Cesaroni Technology",
+  "desig": "56F31-12A",
+  "common": "F31",
+  "dia": 29.0,
+  "length": 98.0008,
+  "impulse": 55.5,
+  "avg": 31.1,
+  "max": 65.0,
+  "burn": 1.78,
+  "prop_g": 32.0,
+  "total_g": 102.0,
+  "type": "reload",
+  "delays": "0,3,5,7,9,12,13",
+  "case": "Pro29-1G",
+  "plugged": false,
+  "booster": true,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_56F31-12A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_56F31-12A.eng",
+  "ascent": {
+   "apogee": 46.633516321670896,
+   "v_burnout": 21.5357727958458,
+   "h_burnout": 23.946426618579206,
+   "coast_s": 2.137999999999674,
+   "vmax": 22.189179748760004,
+   "t_lift": 0.005,
+   "tw_avg": 2.2149697664741654,
+   "tw_first03": 2.3739721806849725
+  }
+ },
+ {
+  "id": 385,
+  "mfr": "Cesaroni Technology",
+  "desig": "56F120-14A",
+  "common": "F120",
+  "dia": 29.0,
+  "length": 98.0,
+  "impulse": 56.0,
+  "avg": 123.4,
+  "max": 143.6,
+  "burn": 0.45,
+  "prop_g": 31.4,
+  "total_g": 106.2,
+  "type": "reload",
+  "delays": "5,7,9,11,14",
+  "case": "Pro29-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "Cesaroni_56F120-14A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_56F120-14A.eng",
+  "ascent": {
+   "apogee": 65.53768937247366,
+   "v_burnout": 35.45706394835425,
+   "h_burnout": 7.852041416324248,
+   "coast_s": 3.3719999999996895,
+   "vmax": 35.47683678195435,
+   "t_lift": 0.003,
+   "tw_avg": 8.917455821495428,
+   "tw_first03": 8.513589851617766
+  }
+ },
+ {
+  "id": 396,
+  "mfr": "Cesaroni Technology",
+  "desig": "57F59-12A",
+  "common": "F59",
+  "dia": 29.0,
+  "length": 98.0,
+  "impulse": 57.0,
+  "avg": 58.9,
+  "max": 70.9,
+  "burn": 0.96,
+  "prop_g": 31.0,
+  "total_g": 99.0,
+  "type": "reload",
+  "delays": "3,5,7,9,12",
+  "case": "Pro29-1G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_57F59-12A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_57F59-12A.eng",
+  "ascent": {
+   "apogee": 62.20634589118944,
+   "v_burnout": 31.166501357634914,
+   "h_burnout": 16.629682443462965,
+   "coast_s": 3.007999999999673,
+   "vmax": 31.439439332573198,
+   "t_lift": 0.009000000000000001,
+   "tw_avg": 4.294371886613235,
+   "tw_first03": 4.306480078022858
+  }
+ },
+ {
+  "id": 51,
+  "mfr": "AeroTech",
+  "desig": "F35W",
+  "common": "F35",
+  "dia": 24.0,
+  "length": 95.0,
+  "impulse": 57.1,
+  "avg": 34.9,
+  "max": 55.2,
+  "burn": 1.63,
+  "prop_g": 30.0,
+  "total_g": 85.0,
+  "type": "reload",
+  "delays": "4,5,6,7,8,9,11",
+  "case": "RMS-24/60",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "mfr",
+  "key": "AeroTech_F35W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F35W.eng",
+  "ascent": {
+   "apogee": 58.92691652667484,
+   "v_burnout": 24.745189608153808,
+   "h_burnout": 29.343567741731707,
+   "coast_s": 2.4369999999996828,
+   "vmax": 27.474959912198436,
+   "t_lift": 0.003,
+   "tw_avg": 2.622570366791922,
+   "tw_first03": 3.8720544851588583
+  }
+ },
+ {
+  "id": 393,
+  "mfr": "Cesaroni Technology",
+  "desig": "60F50-13A",
+  "common": "F50",
+  "dia": 24.0,
+  "length": 133.0,
+  "impulse": 59.7,
+  "avg": 50.0,
+  "max": 69.9,
+  "burn": 1.19,
+  "prop_g": 38.2,
+  "total_g": 93.9,
+  "type": "reload",
+  "delays": "4,6,8,10,13",
+  "case": "Pro24-3G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_60F50-13A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_60F50-13A.eng",
+  "ascent": {
+   "apogee": 66.2945027589629,
+   "v_burnout": 29.396277084815573,
+   "h_burnout": 25.413928543404644,
+   "coast_s": 2.853999999999721,
+   "vmax": 30.88664224066373,
+   "t_lift": 0.004,
+   "tw_avg": 3.3501744228173647,
+   "tw_first03": 4.604109747685791
+  }
+ },
+ {
+  "id": 1009,
+  "mfr": "Roadrunner Rocketry",
+  "desig": "F45",
+  "common": "F45",
+  "dia": 29.0,
+  "length": 93.0,
+  "impulse": 61.0,
+  "avg": 45.0,
+  "max": 62.0,
+  "burn": 1.4,
+  "prop_g": 30.0,
+  "total_g": 93.0,
+  "type": "SU",
+  "delays": "5,8,14,1000,P",
+  "case": "SU 29x93",
+  "plugged": true,
+  "booster": false,
+  "reload": false,
+  "curve_source": "mfr",
+  "key": "Roadrunner_F45",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Roadrunner_F45.eng",
+  "ascent": {
+   "apogee": 68.34573154116104,
+   "v_burnout": 29.188138131472023,
+   "h_burnout": 27.98544409476145,
+   "coast_s": 2.8369999999997564,
+   "vmax": 30.431242055763416,
+   "t_lift": 0.006,
+   "tw_avg": 3.1493459489942266,
+   "tw_first03": 4.023168923517157
+  }
+ },
+ {
+  "id": 40,
+  "mfr": "AeroTech",
+  "desig": "F22J",
+  "common": "F22",
+  "dia": 29.0,
+  "length": 125.0,
+  "impulse": 65.0,
+  "avg": 19.64,
+  "max": 31.15,
+  "burn": 3.31,
+  "prop_g": 46.3,
+  "total_g": 134.2,
+  "type": "reload",
+  "delays": "4,5,7",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F22J",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F22J.eng",
+  "ascent": {
+   "apogee": 52.0762247128353,
+   "v_burnout": 13.623873915713443,
+   "h_burnout": 42.77819461788348,
+   "coast_s": 1.3749999999998992,
+   "vmax": 19.215975983874866,
+   "t_lift": 0.03000000000000002,
+   "tw_avg": 1.4302650288868288,
+   "tw_first03": 1.5903566894476127
+  },
+  "landing": {
+   "tw_avg": 1.494306746598179,
+   "dv_spare": 16.045202679104477,
+   "apogees": {
+    "8": {
+     "best_vi": 0.9880277136893172,
+     "window_m": 0.033405694759758506
+    },
+    "9": {
+     "best_vi": 1.238442607729026,
+     "window_m": 0.04045444810312847
+    },
+    "10": {
+     "best_vi": 1.240501211339089,
+     "window_m": 0.047028746331377526
+    },
+    "11": {
+     "best_vi": 0.9457346696465233,
+     "window_m": 0.053128887777049064
+    },
+    "12": {
+     "best_vi": 1.1747215800113984,
+     "window_m": 0.059224048480378974
+    },
+    "13": {
+     "best_vi": 0.9006625653396808,
+     "window_m": 0.0648454376151456
+    },
+    "14": {
+     "best_vi": 1.0920240488111088,
+     "window_m": 0.07046165167836861
+    },
+    "15": {
+     "best_vi": 0.5724955861937866,
+     "window_m": 0.07560492210937578
+    },
+    "16": {
+     "best_vi": 0.5118528272908208,
+     "window_m": 0.0807431295108309
+    },
+    "17": {
+     "best_vi": 0.9648493011272015,
+     "window_m": 0.08587593419865606
+    },
+    "18": {
+     "best_vi": 0.23176710336093848,
+     "window_m": 0.09053714732226192
+    },
+    "19": {
+     "best_vi": 1.4588382685724275,
+     "window_m": 0.063617365884817
+    },
+    "20": {
+     "best_vi": 0.33375241669103456,
+     "window_m": 0.09984432870401311
+    },
+    "21": {
+     "best_vi": 1.0116679657687406,
+     "window_m": 0.10448979424497808
+    },
+    "22": {
+     "best_vi": 0.3279944265251664,
+     "window_m": 0.10866580412189755
+    },
+    "23": {
+     "best_vi": 1.4307218960683878,
+     "window_m": 0.0753790497598018
+    },
+    "24": {
+     "best_vi": 1.4458456633336956,
+     "window_m": 0.07815629573127131
+    },
+    "25": {
+     "best_vi": 0.3660456861637221,
+     "window_m": 0.12116408253810751
+    },
+    "26": {
+     "best_vi": 1.027990064191216,
+     "window_m": 0.12531966053276988
+    },
+    "27": {
+     "best_vi": 1.5195092150841476,
+     "window_m": 0.08615952739518026
+    },
+    "28": {
+     "best_vi": 1.2508649331342256,
+     "window_m": 0.08861578869988411
+    },
+    "29": {
+     "best_vi": 1.0436736713822652,
+     "window_m": 0.13683324337863678
+    },
+    "30": {
+     "best_vi": 1.012427256235016,
+     "window_m": 0.14050792352086733
+    },
+    "31": {
+     "best_vi": 1.141307022197888,
+     "window_m": 0.09596567230170537
+    },
+    "32": {
+     "best_vi": 1.3463608975253871,
+     "window_m": 0.09840906222549614
+    }
+   }
+  }
+ },
+ {
+  "id": 970,
+  "mfr": "Piotr Tendera Rocket Motors",
+  "desig": "F35",
+  "common": "F35",
+  "dia": 29.0,
+  "length": 95.0,
+  "impulse": 65.0,
+  "avg": 35.0,
+  "max": null,
+  "burn": 2.0,
+  "prop_g": 42.3,
+  "total_g": 91.5,
+  "type": "SU",
+  "delays": "0,2,4,6,8",
+  "case": "SU 29.0x95.0",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "user",
+  "key": "Piotr_F35",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Piotr_F35.eng",
+  "ascent": {
+   "apogee": 66.75815514028653,
+   "v_burnout": 26.041236037499328,
+   "h_burnout": 34.189460709233344,
+   "coast_s": 2.5539999999999226,
+   "vmax": 26.73825084348193,
+   "t_lift": 0.03800000000000003,
+   "tw_avg": 2.2181900448163887,
+   "tw_first03": 2.5522633559017036
+  }
+ },
+ {
+  "id": 398,
+  "mfr": "Cesaroni Technology",
+  "desig": "68F79-13A",
+  "common": "F79",
+  "dia": 24.0,
+  "length": 133.0,
+  "impulse": 67.8,
+  "avg": 78.8,
+  "max": 98.3,
+  "burn": 0.86,
+  "prop_g": 40.1,
+  "total_g": 107.5,
+  "type": "reload",
+  "delays": "4,6,7,8,9,10,11,13",
+  "case": "Pro24-3G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_68F79-13A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_68F79-13A.eng",
+  "ascent": {
+   "apogee": 90.86554330621193,
+   "v_burnout": 38.36949317628764,
+   "h_burnout": 24.45168267706079,
+   "coast_s": 3.6079999999998726,
+   "vmax": 40.07750541938584,
+   "t_lift": 0.002,
+   "tw_avg": 4.991930423367418,
+   "tw_first03": 6.1370475698653895
+  }
+ },
+ {
+  "id": 746,
+  "mfr": "Ellis Mountain",
+  "desig": "F23",
+  "common": "F23",
+  "dia": 24.0,
+  "length": 139.0,
+  "impulse": 67.9,
+  "avg": 23.0,
+  "max": 39.2,
+  "burn": 3.58,
+  "prop_g": 47.6,
+  "total_g": 75.6,
+  "type": "SU",
+  "delays": "0,4,6,8,10",
+  "case": "SU 24x140",
+  "plugged": false,
+  "booster": true,
+  "reload": false,
+  "curve_source": "user",
+  "key": "Ellis_F23",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Ellis_F23.eng",
+  "ascent": {
+   "apogee": 59.24323811390992,
+   "v_burnout": 12.68811793476811,
+   "h_burnout": 51.161277655888476,
+   "coast_s": 1.2829999999999586,
+   "vmax": 19.921308002616136,
+   "t_lift": 0.006,
+   "tw_avg": 1.3799281168430717,
+   "tw_first03": 2.493024048550146
+  },
+  "landing": {
+   "tw_avg": 1.4417159429703732,
+   "dv_spare": 15.507678074626867,
+   "apogees": {
+    "8": {
+     "best_vi": 0.289891408003309,
+     "window_m": 0.05988812691281426
+    },
+    "9": {
+     "best_vi": 1.314081003774888,
+     "window_m": 0.052190714392721924
+    },
+    "10": {
+     "best_vi": 1.1727472714883809,
+     "window_m": 0.05875537976175647
+    },
+    "11": {
+     "best_vi": 0.6140423695723022,
+     "window_m": 0.0648454376151456
+    },
+    "12": {
+     "best_vi": 0.715050932520761,
+     "window_m": 0.07092942197507326
+    },
+    "13": {
+     "best_vi": 1.298980606265628,
+     "window_m": 0.07700676783636343
+    },
+    "14": {
+     "best_vi": 1.4114298190618972,
+     "window_m": 0.05491793754385953
+    },
+    "15": {
+     "best_vi": 1.0257412008957663,
+     "window_m": 0.08774100299518915
+    },
+    "16": {
+     "best_vi": 0.9347951735051048,
+     "window_m": 0.09286589554000309
+    },
+    "17": {
+     "best_vi": 1.2073834292377295,
+     "window_m": 0.09798458836921099
+    },
+    "18": {
+     "best_vi": 0.7483167285889237,
+     "window_m": 0.10263228407244991
+    },
+    "19": {
+     "best_vi": 0.5690969142701352,
+     "window_m": 0.10727432952046768
+    },
+    "20": {
+     "best_vi": 0.8107354635731121,
+     "window_m": 0.11191047588417546
+    },
+    "21": {
+     "best_vi": 1.2162649857245216,
+     "window_m": 0.11654047562333417
+    },
+    "22": {
+     "best_vi": 0.8535554447517129,
+     "window_m": 0.12070201651190399
+    },
+    "23": {
+     "best_vi": 0.6301013776305556,
+     "window_m": 0.12485820067702177
+    },
+    "24": {
+     "best_vi": 0.7243446426656288,
+     "window_m": 0.1290088505434239
+    },
+    "25": {
+     "best_vi": 1.0474944599417373,
+     "window_m": 0.13315378950780984
+    },
+    "26": {
+     "best_vi": 1.4076158377015549,
+     "window_m": 0.09137537838434691
+    },
+    "27": {
+     "best_vi": 1.0562053064630612,
+     "window_m": 0.14096691680286455
+    },
+    "28": {
+     "best_vi": 0.7641549456666902,
+     "window_m": 0.144636080716796
+    },
+    "29": {
+     "best_vi": 0.6297268263748643,
+     "window_m": 0.1483002124782621
+    },
+    "30": {
+     "best_vi": 0.7415332063405994,
+     "window_m": 0.15195919154708765
+    },
+    "31": {
+     "best_vi": 0.9550952346426016,
+     "window_m": 0.15561289808939843
+    },
+    "32": {
+     "best_vi": 1.3026708209575864,
+     "window_m": 0.10602224761681915
+    }
+   }
+  }
+ },
+ {
+  "id": 386,
+  "mfr": "Cesaroni Technology",
+  "desig": "68F240-15A",
+  "common": "F240",
+  "dia": 24.0,
+  "length": 133.0,
+  "impulse": 68.3,
+  "avg": 236.2,
+  "max": 285.9,
+  "burn": 0.29,
+  "prop_g": 30.3,
+  "total_g": 91.80000000000001,
+  "type": "reload",
+  "delays": "3,5,6,8,9,10,12,15",
+  "case": "Pro24-3G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_68F240-15A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_68F240-15A.eng",
+  "ascent": {
+   "apogee": 97.80918425946399,
+   "v_burnout": 45.34796494750595,
+   "h_burnout": 8.800642941921543,
+   "coast_s": 4.1489999999998295,
+   "vmax": 45.74357852089087,
+   "t_lift": 0.001,
+   "tw_avg": 15.102231946497373,
+   "tw_first03": 14.43493803624762
+  }
+ },
+ {
+  "id": 59,
+  "mfr": "AeroTech",
+  "desig": "F52T",
+  "common": "F52",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 72.95,
+  "avg": 51.37,
+  "max": 78.95,
+  "burn": 1.42,
+  "prop_g": 36.6,
+  "total_g": 121.4,
+  "type": "reload",
+  "delays": "4,5,6,7,8,9,11",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F52T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F52T.eng",
+  "ascent": {
+   "apogee": 97.1551532277466,
+   "v_burnout": 36.972087073074356,
+   "h_burnout": 34.981341215882196,
+   "coast_s": 3.496999999999977,
+   "vmax": 38.217832056319544,
+   "t_lift": 0.004,
+   "tw_avg": 3.7418874214630016,
+   "tw_first03": 5.245280595553115
+  }
+ },
+ {
+  "id": 388,
+  "mfr": "Cesaroni Technology",
+  "desig": "73F30-6A",
+  "common": "F30",
+  "dia": 24.0,
+  "length": 133.0,
+  "impulse": 73.1,
+  "avg": 31.0,
+  "max": 56.8,
+  "burn": 2.36,
+  "prop_g": 40.0,
+  "total_g": 102.2,
+  "type": "reload",
+  "delays": "2,3,5,6",
+  "case": "Pro24-3G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_73F30-6A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_73F30-6A.eng",
+  "ascent": {
+   "apogee": 85.86036160209268,
+   "v_burnout": 25.422280779983645,
+   "h_burnout": 54.736118200962025,
+   "coast_s": 2.4980000000000366,
+   "vmax": 29.451027430738222,
+   "t_lift": 0.004,
+   "tw_avg": 2.0622361844207835,
+   "tw_first03": 3.646068156374939
+  }
+ },
+ {
+  "id": 399,
+  "mfr": "Cesaroni Technology",
+  "desig": "74F85-15A",
+  "common": "F85",
+  "dia": 24.0,
+  "length": 133.0,
+  "impulse": 73.6,
+  "avg": 85.0,
+  "max": 105.6,
+  "burn": 0.87,
+  "prop_g": 42.0,
+  "total_g": 96.0,
+  "type": "reload",
+  "delays": "6,8,10,12,15",
+  "case": "Pro24-3G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_74F85-15A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_74F85-15A.eng",
+  "ascent": {
+   "apogee": 103.84674009794827,
+   "v_burnout": 43.206531497098126,
+   "h_burnout": 22.05167315080661,
+   "coast_s": 3.985999999999957,
+   "vmax": 43.56925796835821,
+   "t_lift": 0.002,
+   "tw_avg": 6.104740942593713,
+   "tw_first03": 6.875276324884499
+  }
+ },
+ {
+  "id": 394,
+  "mfr": "Cesaroni Technology",
+  "desig": "75F51-12A",
+  "common": "F51",
+  "dia": 24.0,
+  "length": 133.0,
+  "impulse": 75.0,
+  "avg": 50.0,
+  "max": 85.1,
+  "burn": 1.5,
+  "prop_g": 40.0,
+  "total_g": 95.0,
+  "type": "reload",
+  "delays": "3,5,7,9,12",
+  "case": "Pro24-3G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_75F51-12A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_75F51-12A.eng",
+  "ascent": {
+   "apogee": 101.43844562080905,
+   "v_burnout": 36.845525798049515,
+   "h_burnout": 39.66168773694731,
+   "coast_s": 3.4860000000000255,
+   "vmax": 38.351296608909564,
+   "t_lift": 0.004,
+   "tw_avg": 3.4757729623365714,
+   "tw_first03": 5.538734284534329
+  }
+ },
+ {
+  "id": 975,
+  "mfr": "Public Missiles, Ltd.",
+  "desig": "F50T",
+  "common": "F50",
+  "dia": 29.0,
+  "length": 98.0,
+  "impulse": 76.83,
+  "avg": 53.73,
+  "max": 79.59,
+  "burn": 1.43,
+  "prop_g": 37.900000000000006,
+  "total_g": 84.9,
+  "type": "SU",
+  "delays": "4,6,9,P",
+  "case": "SU 29x98",
+  "plugged": true,
+  "booster": false,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "Public_F50T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Public_F50T.eng",
+  "ascent": {
+   "apogee": 105.77500235861616,
+   "v_burnout": 39.168660993998465,
+   "h_burnout": 36.87325054365122,
+   "coast_s": 3.674000000000036,
+   "vmax": 40.48680253981586,
+   "t_lift": 0.004,
+   "tw_avg": 3.9129737457647042,
+   "tw_first03": 4.463880559183237
+  }
+ },
+ {
+  "id": 54,
+  "mfr": "AeroTech",
+  "desig": "F40W",
+  "common": "F40",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 78.09,
+  "avg": 37.91,
+  "max": 68.07,
+  "burn": 2.06,
+  "prop_g": 40.0,
+  "total_g": 126.0,
+  "type": "reload",
+  "delays": "4,5,6,7,8,10",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_F40W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F40W.eng",
+  "ascent": {
+   "apogee": 103.97521649210596,
+   "v_burnout": 33.62693153987428,
+   "h_burnout": 51.6104250118233,
+   "coast_s": 3.2190000000000976,
+   "vmax": 36.38586564221819,
+   "t_lift": 0.012000000000000004,
+   "tw_avg": 2.7612200375537017,
+   "tw_first03": 3.976774870696343
+  }
+ },
+ {
+  "id": 34,
+  "mfr": "AeroTech",
+  "desig": "F115SN-12A",
+  "common": "F115",
+  "dia": 29.0,
+  "length": 123.0,
+  "impulse": 79.15,
+  "avg": 114.16,
+  "max": 146.7,
+  "burn": 0.69,
+  "prop_g": 38.5,
+  "total_g": 92.5,
+  "type": "SU",
+  "delays": "4,6,8,10,12,P",
+  "case": "SU 29.0x123.0",
+  "plugged": true,
+  "booster": false,
+  "reload": false,
+  "curve_source": "cert",
+  "key": "AeroTech_F115SN-12A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_F115SN-12A.eng",
+  "ascent": {
+   "apogee": 122.11569357537137,
+   "v_burnout": 48.85851732017199,
+   "h_burnout": 21.206639815458363,
+   "coast_s": 4.401000000000045,
+   "vmax": 49.0612007929897,
+   "t_lift": 0.004,
+   "tw_avg": 8.006999613317136,
+   "tw_first03": 8.057934619652494
+  }
+ },
+ {
+  "id": 83,
+  "mfr": "AeroTech",
+  "desig": "G54W",
+  "common": "G54",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 81.05,
+  "avg": 53.68,
+  "max": 81.64,
+  "burn": 1.51,
+  "prop_g": 46.0,
+  "total_g": 136.5,
+  "type": "reload",
+  "delays": "4,6,8,10,14",
+  "case": "RMS-29/100",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_G54W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G54W.eng",
+  "ascent": {
+   "apogee": 117.18419173132936,
+   "v_burnout": 41.651608587990914,
+   "h_burnout": 40.47011281794658,
+   "coast_s": 3.8670000000001306,
+   "vmax": 42.898952109783686,
+   "t_lift": 0.02100000000000001,
+   "tw_avg": 3.9095706159772328,
+   "tw_first03": 4.379982887497104
+  }
+ },
+ {
+  "id": 68,
+  "mfr": "AeroTech",
+  "desig": "G104T",
+  "common": "G104",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 81.5,
+  "avg": 104.0,
+  "max": 113.8,
+  "burn": 1.0,
+  "prop_g": 40.800000000000004,
+  "total_g": 136.0,
+  "type": "reload",
+  "delays": "4,6,8,9,10,11,13,14,16,18",
+  "case": "RMS-29/100",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_G104T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G104T.eng",
+  "ascent": {
+   "apogee": 142.96633349909905,
+   "v_burnout": 52.74664328038666,
+   "h_burnout": 28.430391016346213,
+   "coast_s": 4.670100000000195,
+   "vmax": 52.96489121623897,
+   "t_lift": 0.001,
+   "tw_avg": 7.088907847076516,
+   "tw_first03": 8.79684412399458
+  }
+ },
+ {
+  "id": 67,
+  "mfr": "AeroTech",
+  "desig": "G101T",
+  "common": "G101",
+  "dia": 29.0,
+  "length": 114.3,
+  "impulse": 85.0,
+  "avg": 101.0,
+  "max": 102.3,
+  "burn": 1.0,
+  "prop_g": 46.0,
+  "total_g": 136.0,
+  "type": "reload",
+  "delays": "4,5,6,8,10,12,14",
+  "case": "RMS-29/100",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_G101T",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G101T.eng",
+  "ascent": {
+   "apogee": 132.20340518513962,
+   "v_burnout": 49.05406002461898,
+   "h_burnout": 30.707881273136888,
+   "coast_s": 4.41400000000016,
+   "vmax": 49.91485561924996,
+   "t_lift": 0.004,
+   "tw_avg": 5.868858737429701,
+   "tw_first03": 6.232489307749463
+  }
+ },
+ {
+  "id": 82,
+  "mfr": "AeroTech",
+  "desig": "G53FJ",
+  "common": "G53",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 90.9,
+  "avg": 53.1,
+  "max": 87.3,
+  "burn": 1.71,
+  "prop_g": 60.0,
+  "total_g": 152.0,
+  "type": "reload",
+  "delays": "4,5,6,7,8,10",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_G53FJ",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G53FJ.eng",
+  "ascent": {
+   "apogee": 144.55252221402034,
+   "v_burnout": 43.39260665061358,
+   "h_burnout": 62.29589849325897,
+   "coast_s": 3.9951000000003365,
+   "vmax": 46.823907064079705,
+   "t_lift": 0.10900000000000008,
+   "tw_avg": 3.313978299475382,
+   "tw_first03": 3.440330826607647
+  }
+ },
+ {
+  "id": 426,
+  "mfr": "Cesaroni Technology",
+  "desig": "93G80-14A",
+  "common": "G80",
+  "dia": 29.0,
+  "length": 142.0,
+  "impulse": 92.9,
+  "avg": 80.5,
+  "max": 112.2,
+  "burn": 1.15,
+  "prop_g": 56.4,
+  "total_g": 143.2,
+  "type": "reload",
+  "delays": "5,7,9,11,14",
+  "case": "Pro29-2G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "mfr",
+  "key": "Cesaroni_93G80-14A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_93G80-14A.eng",
+  "ascent": {
+   "apogee": 156.5284380343204,
+   "v_burnout": 54.67563184827112,
+   "h_burnout": 35.358005946265614,
+   "coast_s": 4.792000000000328,
+   "vmax": 55.65154751066398,
+   "t_lift": 0.002,
+   "tw_avg": 5.835923532260261,
+   "tw_first03": 5.51375123731637
+  }
+ },
+ {
+  "id": 97,
+  "mfr": "AeroTech",
+  "desig": "G77R",
+  "common": "G77",
+  "dia": 29.0,
+  "length": 150.0,
+  "impulse": 105.0,
+  "avg": 77.0,
+  "max": null,
+  "burn": 1.36363636363636,
+  "prop_g": 55.4,
+  "total_g": 155.0,
+  "type": "reload",
+  "delays": "4,6,8,9,10,12,13,15,17",
+  "case": "RMS-29/120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_G77R",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G77R.eng",
+  "ascent": {
+   "apogee": 168.5539256473896,
+   "v_burnout": 56.204490010314714,
+   "h_burnout": 41.86634962800825,
+   "coast_s": 4.892000000000436,
+   "vmax": 57.10828050268422,
+   "t_lift": 0.013000000000000005,
+   "tw_avg": 5.2137947807594545,
+   "tw_first03": 3.4920493871453537
+  }
+ },
+ {
+  "id": 89,
+  "mfr": "AeroTech",
+  "desig": "G71R",
+  "common": "G71",
+  "dia": 29.0,
+  "length": 120.0,
+  "impulse": 107.0,
+  "avg": 71.0,
+  "max": 117.0,
+  "burn": 1.51,
+  "prop_g": 56.9,
+  "total_g": 147.0,
+  "type": "reload",
+  "delays": "4,5,6,7,8,10",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "mfr",
+  "key": "AeroTech_G71R",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G71R.eng",
+  "ascent": {
+   "apogee": 200.78548921912437,
+   "v_burnout": 55.882311157890314,
+   "h_burnout": 75.28800783983876,
+   "coast_s": 4.87000000000054,
+   "vmax": 60.916399596963096,
+   "t_lift": 0.003,
+   "tw_avg": 4.603352836485438,
+   "tw_first03": 7.656495483021363
+  }
+ },
+ {
+  "id": 427,
+  "mfr": "Cesaroni Technology",
+  "desig": "107G83-14A",
+  "common": "G83",
+  "dia": 29.0,
+  "length": 142.0,
+  "impulse": 107.4,
+  "avg": 83.1,
+  "max": 99.0,
+  "burn": 1.29,
+  "prop_g": 58.0,
+  "total_g": 145.0,
+  "type": "reload",
+  "delays": "5,7,9,11,14",
+  "case": "Pro29-2G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_107G83-14A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_107G83-14A.eng",
+  "ascent": {
+   "apogee": 190.70531281005415,
+   "v_burnout": 60.79022504687971,
+   "h_burnout": 47.365901597670074,
+   "coast_s": 5.176000000000507,
+   "vmax": 61.74002968272077,
+   "t_lift": 0.011000000000000003,
+   "tw_avg": 5.839545638551906,
+   "tw_first03": 6.102111306233
+  }
+ },
+ {
+  "id": 418,
+  "mfr": "Cesaroni Technology",
+  "desig": "108G57-12A",
+  "common": "G57",
+  "dia": 29.0,
+  "length": 142.0,
+  "impulse": 107.8,
+  "avg": 57.2,
+  "max": 85.4,
+  "burn": 1.89,
+  "prop_g": 59.0,
+  "total_g": 146.0,
+  "type": "reload",
+  "delays": "3,5,7,9,12",
+  "case": "Pro29-2G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_108G57-12A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_108G57-12A.eng",
+  "ascent": {
+   "apogee": 189.2945140112975,
+   "v_burnout": 54.54967132331352,
+   "h_burnout": 68.61994442875492,
+   "coast_s": 4.783000000000577,
+   "vmax": 56.01658143256908,
+   "t_lift": 0.011000000000000003,
+   "tw_avg": 4.079430941593234,
+   "tw_first03": 5.034848801578521
+  }
+ },
+ {
+  "id": 422,
+  "mfr": "Cesaroni Technology",
+  "desig": "108G68-13A",
+  "common": "G68",
+  "dia": 29.0,
+  "length": 142.0,
+  "impulse": 107.8,
+  "avg": 67.0,
+  "max": 94.1,
+  "burn": 1.61,
+  "prop_g": 59.9,
+  "total_g": 155.9,
+  "type": "reload",
+  "delays": "4,5,6,7,8,9,10,11,13",
+  "case": "Pro29-2G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_108G68-13A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_108G68-13A.eng",
+  "ascent": {
+   "apogee": 189.50617237784792,
+   "v_burnout": 56.52071783369034,
+   "h_burnout": 61.76207907469234,
+   "coast_s": 4.9100000000005615,
+   "vmax": 59.00295501296923,
+   "t_lift": 0.004,
+   "tw_avg": 4.4714199208180885,
+   "tw_first03": 5.284136307982372
+  }
+ },
+ {
+  "id": 100,
+  "mfr": "AeroTech",
+  "desig": "G79W",
+  "common": "G79",
+  "dia": 29.0,
+  "length": 149.86,
+  "impulse": 108.56,
+  "avg": 79.0,
+  "max": 100.74,
+  "burn": 1.42,
+  "prop_g": 60.9,
+  "total_g": 154.0,
+  "type": "reload",
+  "delays": "4,6,8,10,14",
+  "case": "RMS-29/120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_G79W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G79W.eng",
+  "ascent": {
+   "apogee": 191.11227355567573,
+   "v_burnout": 59.968545357922245,
+   "h_burnout": 50.851911278586556,
+   "coast_s": 5.1250000000005205,
+   "vmax": 61.38250617525939,
+   "t_lift": 0.02000000000000001,
+   "tw_avg": 5.491160932648863,
+   "tw_first03": 5.653878974461
+  }
+ },
+ {
+  "id": 413,
+  "mfr": "Cesaroni Technology",
+  "desig": "110G250-14A",
+  "common": "G250",
+  "dia": 29.0,
+  "length": 142.0,
+  "impulse": 110.0,
+  "avg": 243.7,
+  "max": 288.3,
+  "burn": 0.45,
+  "prop_g": 57.5,
+  "total_g": 141.3,
+  "type": "reload",
+  "delays": "5,7,9,11,14",
+  "case": "Pro29-2G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "Cesaroni_110G250-14A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_110G250-14A.eng",
+  "ascent": {
+   "apogee": 209.07581914698093,
+   "v_burnout": 73.92517866870065,
+   "h_burnout": 16.90328182999845,
+   "coast_s": 5.903000000000458,
+   "vmax": 73.98527142857789,
+   "t_lift": 0.001,
+   "tw_avg": 17.584553429290388,
+   "tw_first03": 16.858280245369624
+  }
+ },
+ {
+  "id": 407,
+  "mfr": "Cesaroni Technology",
+  "desig": "116G126-13A",
+  "common": "G126",
+  "dia": 29.0,
+  "length": 142.0,
+  "impulse": 116.0,
+  "avg": 125.8,
+  "max": 167.4,
+  "burn": 0.93,
+  "prop_g": 59.0,
+  "total_g": 145.0,
+  "type": "reload",
+  "delays": "4,6,8,10,13",
+  "case": "Pro29-2G",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "Cesaroni_116G126-13A",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\Cesaroni_116G126-13A.eng",
+  "ascent": {
+   "apogee": 220.99599736859102,
+   "v_burnout": 71.37890372230362,
+   "h_burnout": 38.39201275706423,
+   "coast_s": 5.770000000000579,
+   "vmax": 72.08980357598324,
+   "t_lift": 0.003,
+   "tw_avg": 8.86539742155172,
+   "tw_first03": 9.75103628660144
+  }
+ },
+ {
+  "id": 75,
+  "mfr": "AeroTech",
+  "desig": "G25W",
+  "common": "G25",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 117.5,
+  "avg": 22.17,
+  "max": 41.18,
+  "burn": 5.3,
+  "prop_g": 62.5,
+  "total_g": 119.7,
+  "type": "reload",
+  "delays": "4,5,6,8,10,15",
+  "case": "RMS-29/120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_G25W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G25W.eng",
+  "ascent": {
+   "apogee": 171.05658520200208,
+   "v_burnout": 30.367282290906836,
+   "h_burnout": 127.69293598745087,
+   "coast_s": 2.93700000000079,
+   "vmax": 40.85795575218716,
+   "t_lift": 0.004,
+   "tw_avg": 1.843419681493915,
+   "tw_first03": 2.295526869158028
+  },
+  "landing": {
+   "tw_avg": 1.925960861262299,
+   "dv_spare": 40.08165398955224,
+   "apogees": {
+    "8": {
+     "best_vi": 0.9222832615324358,
+     "window_m": 0.04421177450790624
+    },
+    "9": {
+     "best_vi": 1.012291270135586,
+     "window_m": 0.03432467612572723
+    },
+    "10": {
+     "best_vi": 0.7479263524613413,
+     "window_m": 0.03901402661931216
+    },
+    "11": {
+     "best_vi": 1.5097366005716542,
+     "window_m": 0.04369850938935914
+    },
+    "12": {
+     "best_vi": 1.6458084818762628,
+     "window_m": 0.04806578907536642
+    },
+    "13": {
+     "best_vi": 1.1514855804118365,
+     "window_m": 0.052116459308042415
+    },
+    "14": {
+     "best_vi": 1.242590143017928,
+     "window_m": 0.05616225693790262
+    },
+    "15": {
+     "best_vi": 1.9240574784071902,
+     "window_m": 0.030023754437397132
+    },
+    "16": {
+     "best_vi": 1.7759377119573638,
+     "window_m": 0.03188623911775596
+    },
+    "17": {
+     "best_vi": 2.0211848910236894,
+     "window_m": 0.03374619195620783
+    },
+    "18": {
+     "best_vi": 1.4306552346822838,
+     "window_m": 0.035448801303913716
+    },
+    "19": {
+     "best_vi": 1.0331246551736215,
+     "window_m": 0.074452550183985
+    },
+    "20": {
+     "best_vi": 1.134599525795118,
+     "window_m": 0.07784788212236521
+    },
+    "21": {
+     "best_vi": 1.7358732339356024,
+     "window_m": 0.04054203479799697
+    },
+    "22": {
+     "best_vi": 0.7965784208963186,
+     "window_m": 0.08431534937696844
+    },
+    "23": {
+     "best_vi": 2.0958954831007874,
+     "window_m": 0.0437707782102523
+    },
+    "24": {
+     "best_vi": 2.055504352541172,
+     "window_m": 0.04530461579074026
+    },
+    "25": {
+     "best_vi": 2.214295409010556,
+     "window_m": 0.04683598300657056
+    },
+    "26": {
+     "best_vi": 1.2354760965816842,
+     "window_m": 0.048212035642079175
+    },
+    "27": {
+     "best_vi": 2.092109443612157,
+     "window_m": 0.049738490665748376
+    },
+    "28": {
+     "best_vi": 1.5118997238718,
+     "window_m": 0.05110999449423026
+    },
+    "29": {
+     "best_vi": 1.1312958926962604,
+     "window_m": 0.05247925510079018
+    },
+    "30": {
+     "best_vi": 0.949712011257591,
+     "window_m": 0.05384621610556929
+    },
+    "31": {
+     "best_vi": 1.1662497980330482,
+     "window_m": 0.05521082152548739
+    },
+    "32": {
+     "best_vi": 1.5811979341549074,
+     "window_m": 0.05657301578286299
+    }
+   }
+  }
+ },
+ {
+  "id": 96,
+  "mfr": "AeroTech",
+  "desig": "G76G",
+  "common": "G76",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 118.0,
+  "avg": 76.0,
+  "max": 196.0,
+  "burn": 1.5,
+  "prop_g": 60.0,
+  "total_g": 144.0,
+  "type": "reload",
+  "delays": "4,5,6,7,8,10",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "cert",
+  "key": "AeroTech_G76G",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G76G.eng",
+  "ascent": {
+   "apogee": 215.83245057116352,
+   "v_burnout": 54.75376864679023,
+   "h_burnout": 94.44471595482422,
+   "coast_s": 4.796000000000604,
+   "vmax": 62.224455913098694,
+   "t_lift": 0.007,
+   "tw_avg": 4.170111207336713,
+   "tw_first03": 7.7871973284779905
+  }
+ },
+ {
+  "id": 86,
+  "mfr": "AeroTech",
+  "desig": "G64W",
+  "common": "G64",
+  "dia": 29.0,
+  "length": 124.0,
+  "impulse": 118.8,
+  "avg": 56.84,
+  "max": 98.31,
+  "burn": 2.09,
+  "prop_g": 62.5,
+  "total_g": 151.2,
+  "type": "reload",
+  "delays": "4,5,6,7,8,10",
+  "case": "RMS-29/40-120",
+  "plugged": false,
+  "booster": false,
+  "reload": true,
+  "curve_source": "user",
+  "key": "AeroTech_G64W",
+  "eng": "C:\\Users\\troop\\OneDrive\\Documents\\Inventor\\SpaceX Rocket\\motor-chute-study-2026-11-04\\motors\\AeroTech_G64W.eng",
+  "ascent": {
+   "apogee": 221.99917341467938,
+   "v_burnout": 51.649600597216065,
+   "h_burnout": 111.66689264787504,
+   "coast_s": 4.587000000000682,
+   "vmax": 61.41076875268307,
+   "t_lift": 0.011000000000000003,
+   "tw_avg": 3.523097575223504,
+   "tw_first03": 6.526274809149186
+  }
+ }
+]

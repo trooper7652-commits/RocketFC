@@ -1,0 +1,24 @@
+  balance point              {'cg_from_nose_m': 0.66, 'inertia_kgm2': 0.11338, 'landed_cg_height_m': 0.6}
+  ran f_loc_b80_m1.0_balance | 600 flights, 0 errors, 23.8 s
+  nose (0.10 m)              {'cg_from_nose_m': 0.615, 'inertia_kgm2': 0.13651, 'landed_cg_height_m': 0.6484}
+  ran f_loc_b80_m1.0_nose | 600 flights, 0 errors, 25.5 s
+  low (1.10 m, motor mount)  {'cg_from_nose_m': 0.6954, 'inertia_kgm2': 0.12766, 'landed_cg_height_m': 0.562}
+  ran f_loc_b80_m1.0_low | 600 flights, 0 errors, 25.6 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| winner, ballast as uniform mass (sweep) | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| 80 g at balance point | 84.2 % (505/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % | 2 rescued / 1 lost, p=1 |
+| 80 g at nose (0.10 m) | 83.2 % (499/600) | 1.73 / 3.03 | 11 % | 6 % | 0.0 % | 4 rescued / 9 lost, p=0.267 |
+| 80 g at low (1.10 m, motor mount) | 84.8 % (509/600) | 1.71 / 2.94 | 8 % | 8 % | 0.0 % | 12 rescued / 7 lost, p=0.359 |
+
+  ran f_wind_b80_m1.0_w0 | 600 flights, 0 errors, 25.2 s
+  ran f_wind_b80_m1.0_w3 | 600 flights, 0 errors, 27.6 s
+  ran f_wind_b80_m1.0_w5 | 600 flights, 0 errors, 27.7 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing aboard, wind 0 | 92.2 % (553/600) | 2.19 / 2.83 | 6 % | 4 % | 0.0 % |  |
+| fix, wind 0 | 81.8 % (491/600) | 1.76 / 3.19 | 14 % | 4 % | 0.0 % | 5 rescued / 67 lost, p=6.39e-15 |
+| casing aboard, wind 3 | 83.0 % (498/600) | 2.24 / 3.06 | 13 % | 17 % | 0.0 % | 21 rescued / 76 lost, p=1.72e-08 |
+| fix, wind 3 | 86.3 % (518/600) | 1.72 / 2.78 | 6 % | 7 % | 0.0 % | 7 rescued / 42 lost, p=3.62e-07 |
+| casing aboard, wind 5 | 27.3 % (164/600) | 2.68 / 3.88 | 41 % | 33 % | 53.3 % | 9 rescued / 398 lost, p=4.78e-105 |
+| fix, wind 5 | 82.7 % (496/600) | 1.76 / 2.65 | 4 % | 16 % | 0.0 % | 21 rescued / 78 lost, p=6.88e-09 |

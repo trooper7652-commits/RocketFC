@@ -1,0 +1,14 @@
+  ran verify_rfc_F15 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\verify_rfc_F15.json: 2000 flights, 0 errors, 256.5 s
+== F15 ascent: ported RocketFC vs study copy (S3 + margin): 0 of 2000 flights differ
+RocketFC before (today)  F15             succ  0.00% [0.00-0.19] (k=0) apo  48.3 vfire 18.3 pwr  73% vz 14.6 vh 1.41 late  71% lift  96% hop   4% crash  90% tip 100% abort 27.1%
+        calm(<1 m/s): succ 0.0% (k=0/505)
+RocketFC after (ported)  F15             succ  0.00% [0.00-0.19] (k=0) apo  48.3 vfire 18.3 pwr  73% vz 14.6 vh 0.51 late  61% lift  81% hop  19% crash  87% tip  84% abort 27.1%
+        calm(<1 m/s): succ 0.0% (k=0/505)
+        paired: rescued 0 lost 0 p=1 | aborts +0.0 pt, crashes -1.8 pt
+  ran verify_rfc_F10 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\verify_rfc_F10.json: 2000 flights, 0 errors, 156.5 s
+== F10 ascent: ported RocketFC vs study copy (S3 + margin): 0 of 2000 flights differ
+RocketFC before (today)  F10             succ  6.05% [5.09-7.18] (k=121) apo  73.2 vfire 19.9 pwr 100% vz  3.8 vh 1.18 late   0% lift  68% hop   0% crash  71% tip  87% abort  0.0%
+        calm(<1 m/s): succ 5.7% (k=29/505)
+RocketFC after (ported)  F10             succ 18.15% [16.52-19.90] (k=363) apo  73.2 vfire 19.7 pwr 100% vz  3.6 vh 0.44 late   0% lift  37% hop   0% crash  65% tip  56% abort  0.0%
+        calm(<1 m/s): succ 21.4% (k=108/505)
+        paired: rescued 361 lost 119 p=2.23e-29 | aborts +0.0 pt, crashes -5.5 pt

@@ -1,0 +1,86 @@
+  ran r_knobs_default | 600 flights, 0 errors, 21.7 s
+check: knob workspace defaults vs base: 600/600 identical
+  ran r_land3 | 600 flights, 0 errors, 23.8 s
+  ran r_land5 | 600 flights, 0 errors, 24.4 s
+  ran r_asc3 | 600 flights, 0 errors, 25.3 s
+  ran r_both3 | 600 flights, 0 errors, 25.4 s
+  ran r_d400 | 600 flights, 0 errors, 24.8 s
+  ran r_d800 | 600 flights, 0 errors, 24.7 s
+  ran r_d1000 | 600 flights, 0 errors, 24.6 s
+  ran r_dsc10 | 600 flights, 0 errors, 26.4 s
+  ran r_dsc15 | 600 flights, 0 errors, 26.9 s
+  ran r_ej_late01 | 600 flights, 0 errors, 25.2 s
+  ran r_ej_late03 | 600 flights, 0 errors, 26.1 s
+  ran r_kick_p02 | 600 flights, 0 errors, 24.7 s
+  ran r_kick_m02 | 600 flights, 0 errors, 26.1 s
+  ran r_stuck | 600 flights, 0 errors, 27.9 s
+  ran r_band050 | 600 flights, 0 errors, 25.1 s
+  ran r_band100 | 600 flights, 0 errors, 24.9 s
+  ran r_band125 | 600 flights, 0 errors, 25.3 s
+  ran r_band150 | 600 flights, 0 errors, 25.3 s
+  ran r_gust4 | 600 flights, 0 errors, 26.8 s
+  ran r_gust6 | 600 flights, 0 errors, 25.6 s
+  ran r_b_nomass | 600 flights, 0 errors, 25.5 s
+  ran r_b_nodelay | 600 flights, 0 errors, 24.9 s
+  ran r_b_nodrag | 600 flights, 0 errors, 25.4 s
+  ran r_b_noairframe | 600 flights, 0 errors, 25.7 s
+  ran r_b_nowind | 600 flights, 0 errors, 25.9 s
+  ran r_b_nosensors | 600 flights, 0 errors, 25.9 s
+  ran r_b_perfect | 600 flights, 0 errors, 24.5 s
+
+== Motor unknowns
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| fix (80 g, casing out) | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| E12 landing thrust spread +-3 % | 67.3 % (404/600) | 2.02 / 4.20 | 24 % | 13 % | 0.0 % | 32 rescued / 132 lost, p=1.25e-15 |
+| E12 landing thrust spread +-5 % | 51.0 % (306/600) | 2.67 / 5.61 | 42 % | 18 % | 0.0 % | 33 rescued / 231 lost, p=9.18e-38 |
+| E12 ascent thrust spread +-3 % | 84.0 % (504/600) | 1.84 / 2.96 | 9 % | 7 % | 0.2 % | 24 rescued / 24 lost, p=1 |
+| both spread +-3 % | 68.3 % (410/600) | 2.09 / 4.09 | 24 % | 11 % | 0.2 % | 39 rescued / 133 lost, p=3.3e-13 |
+
+== E12 ignition delay
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| fix (80 g, casing out) | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| E12 delay 400 ms (table built for it) | 84.8 % (509/600) | 1.71 / 2.86 | 8 % | 8 % | 0.0 % | 21 rescued / 16 lost, p=0.511 |
+| E12 delay 800 ms (table built for it) | 82.7 % (496/600) | 1.76 / 3.01 | 10 % | 7 % | 0.0 % | 13 rescued / 21 lost, p=0.229 |
+| E12 delay 1000 ms (table built for it) | 80.5 % (483/600) | 1.79 / 3.26 | 14 % | 5 % | 0.0 % | 22 rescued / 43 lost, p=0.0125 |
+| delay scatter +-10 % | 45.2 % (271/600) | 2.69 / 4.54 | 40 % | 27 % | 0.0 % | 0 rescued / 233 lost, p=1.45e-70 |
+| delay scatter +-15 % | 29.3 % (176/600) | 3.56 / 6.03 | 62 % | 34 % | 0.0 % | 0 rescued / 328 lost, p=3.66e-99 |
+
+== Casing eject
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| fix (80 g, casing out) | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| casing leaves 0.1 s late | 85.3 % (512/600) | 1.71 / 2.82 | 5 % | 10 % | 0.0 % | 30 rescued / 22 lost, p=0.332 |
+| casing leaves 0.3 s late | 77.8 % (467/600) | 1.71 / 2.62 | 4 % | 22 % | 0.0 % | 53 rescued / 90 lost, p=0.00249 |
+| eject kick +0.2 N*s | 71.5 % (429/600) | 2.15 / 3.96 | 27 % | 1 % | 0.0 % | 32 rescued / 107 lost, p=1.21e-10 |
+| eject kick -0.2 N*s | 76.8 % (461/600) | 1.71 / 2.62 | 4 % | 23 % | 0.0 % | 56 rescued / 99 lost, p=0.000692 |
+| casing stuck (never leaves) | 42.8 % (257/600) | 2.76 / 3.88 | 42 % | 57 % | 0.0 % | 57 rescued / 304 lost, p=7.24e-42 |
+
+== Leg band cut time (base 0.75 s)
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| fix (80 g, casing out) | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| band cut 0.50 s | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % | 0 rescued / 0 lost, p=1 |
+| band cut 1.00 s | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % | 0 rescued / 0 lost, p=1 |
+| band cut 1.25 s | 84.0 % (504/600) | 1.71 / 2.97 | 10 % | 6 % | 0.0 % | 0 rescued / 0 lost, p=1 |
+| band cut 1.50 s | 68.8 % (413/600) | 1.66 / 2.97 | 10 % | 9 % | 0.0 % | 0 rescued / 91 lost, p=8.08e-28 |
+
+== Gusts
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| fix (80 g, casing out) | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| random 1 s gust up to 4 m/s | 83.3 % (500/600) | 1.71 / 2.99 | 10 % | 7 % | 0.2 % | 3 rescued / 7 lost, p=0.344 |
+| random 1 s gust up to 6 m/s | 81.7 % (490/600) | 1.74 / 2.99 | 10 % | 9 % | 1.2 % | 7 rescued / 21 lost, p=0.0125 |
+
+== Error budget (one source removed)
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| fix (80 g, casing out) | 84.0 % (504/600) | 1.71 / 3.00 | 10 % | 6 % | 0.0 % |  |
+| - mass spread | 86.3 % (518/600) | 1.68 / 2.84 | 8 % | 6 % | 0.0 % | 38 rescued / 24 lost, p=0.098 |
+| - delay spread | 100.0 % (600/600) | 1.36 / 1.93 | 0 % | 0 % | 0.0 % | 96 rescued / 0 lost, p=2.52e-29 |
+| - drag spread | 84.5 % (507/600) | 1.73 / 2.95 | 9 % | 7 % | 0.0 % | 13 rescued / 10 lost, p=0.678 |
+| - airframe guesses | 83.8 % (503/600) | 1.73 / 2.98 | 10 % | 6 % | 0.0 % | 3 rescued / 4 lost, p=1 |
+| - wind | 81.8 % (491/600) | 1.76 / 3.19 | 14 % | 4 % | 0.0 % | 14 rescued / 27 lost, p=0.0596 |
+| - sensor noise/bias | 86.3 % (518/600) | 1.70 / 2.79 | 6 % | 8 % | 0.0 % | 34 rescued / 20 lost, p=0.0759 |
+| perfect knowledge | 100.0 % (600/600) | 1.48 / 1.51 | 0 % | 0 % | 0.0 % | 96 rescued / 0 lost, p=2.52e-29 |

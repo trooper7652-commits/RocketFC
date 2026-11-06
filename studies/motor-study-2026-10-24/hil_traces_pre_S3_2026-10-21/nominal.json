@@ -1,0 +1,112 @@
+{
+  "name": "nominal",
+  "created": "2026-10-21T00:17:12",
+  "source": "tools/sim run.simulate, seed 1, wind 0.0 m/s",
+  "mode": 1,
+  "mode_name": "FULL_LANDING",
+  "pad_accel": [
+    0.03090924359214783,
+    -0.017636977662029294,
+    9.846185757903362
+  ],
+  "baro_var": 0.023139105677077342,
+  "dt": 0.002,
+  "launch_s": 2.998,
+  "fire_s": 9.756000000000796,
+  "sim_summary": {
+    "apogee_h": 48.29511692382856,
+    "fire_t": 12.358000000000796,
+    "touchdown_speed_mps": 3.344572246723476,
+    "abort_reason": null,
+    "abort_state": null,
+    "legs_on_t": 13.35800000000113
+  },
+  "sim_events": [
+    [
+      "ARM",
+      -6.502887117676436e-14
+    ],
+    [
+      "LAUNCH",
+      3.3579999999995653
+    ],
+    [
+      "BURNOUT",
+      6.595999999999742
+    ],
+    [
+      "APOGEE",
+      8.400000000000343
+    ],
+    [
+      "FIRE_LANDING",
+      9.756000000000796
+    ],
+    [
+      "IGNITION_CONFIRMED",
+      10.45400000000103
+    ],
+    [
+      "LEGS_BURN_ON",
+      10.75600000000113
+    ],
+    [
+      "LANDING_BURNOUT",
+      13.85000000000176
+    ],
+    [
+      "TOUCHDOWN",
+      14.758000000001259
+    ],
+    [
+      "LEGS_BURN_OFF",
+      14.758000000001259
+    ]
+  ],
+  "version": 1,
+  "frames": 9118,
+  "crc32": "ecf10768",
+  "ref_events": [
+    [
+      "ARM",
+      -1.0
+    ],
+    [
+      "LAUNCH",
+      3.358
+    ],
+    [
+      "BURNOUT",
+      6.596
+    ],
+    [
+      "APOGEE",
+      8.4
+    ],
+    [
+      "FIRE_LANDING",
+      9.756
+    ],
+    [
+      "IGNITION_CONFIRMED",
+      10.454
+    ],
+    [
+      "LEGS_BURN_ON",
+      10.756
+    ],
+    [
+      "LANDING_BURNOUT",
+      13.85
+    ],
+    [
+      "TOUCHDOWN",
+      14.758
+    ],
+    [
+      "LEGS_BURN_OFF",
+      14.758
+    ]
+  ],
+  "ref_go_ms": 2000
+}

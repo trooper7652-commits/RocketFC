@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Bench session recordings
+recordings/
+bench_*.csv
+
+# Build artifacts
+build/
+*.o
+*.exe
+*.hex
+*.elf
+
+# Editor / OS noise
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini

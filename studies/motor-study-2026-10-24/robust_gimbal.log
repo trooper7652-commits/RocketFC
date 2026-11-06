@@ -1,0 +1,27 @@
+F10 gimbal +-0.5 / today                 succ  6.00% [4.37-8.19] (k=36) apo  73.1 vfire 19.8 pwr 100% vz  4.0 vh 1.22 late   1% lift  68% hop   0% crash  72% tip  87% abort  0.0%
+        calm(<1 m/s): succ 9.1% (k=13/143)
+F10 gimbal +-0.5 / S3                    succ 12.50% [10.09-15.39] (k=75) apo  73.1 vfire 19.8 pwr 100% vz  4.1 vh 0.45 late   1% lift  72% hop   0% crash  74% tip  74% abort  0.0%
+        calm(<1 m/s): succ 18.2% (k=26/143)
+        vs previous step: rescued 51 lost 12 p=0.0000
+F10 gimbal +-0.5 / S3M                   succ 17.33% [14.51-20.57] (k=104) apo  73.1 vfire 19.7 pwr 100% vz  3.8 vh 0.46 late   1% lift  41% hop   0% crash  70% tip  57% abort  0.0%
+        calm(<1 m/s): succ 20.3% (k=29/143)
+        vs previous step: rescued 104 lost 75 p=0.0361
+  ran rbg_F10_g0.5_S3MW wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\rbg_F10_g0.5_S3MW.json: 600 flights, 0 errors, 88.9 s
+F10 gimbal +-0.5 / S3MW                  succ 16.83% [14.05-20.04] (k=101) apo  72.7 vfire 19.6 pwr 100% vz  3.7 vh 0.43 late   0% lift  41% hop   0% crash  69% tip  59% abort  0.0%
+        calm(<1 m/s): succ 23.1% (k=33/143)
+        vs previous step: rescued 8 lost 11 p=0.6476
+  ran rbg_F10_g1.0_today wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\rbg_F10_g1.0_today.json: 600 flights, 0 errors, 127.7 s
+F10 gimbal +-1.0 / today                 succ  6.33% [4.65-8.57] (k=38) apo  73.0 vfire 19.9 pwr 100% vz  4.0 vh 1.27 late   3% lift  69% hop   0% crash  73% tip  88% abort  0.0%
+        calm(<1 m/s): succ 8.4% (k=12/143)
+  ran rbg_F10_g1.0_S3 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\rbg_F10_g1.0_S3.json: 600 flights, 0 errors, 128.5 s
+F10 gimbal +-1.0 / S3                    succ 11.83% [9.49-14.66] (k=71) apo  73.0 vfire 19.9 pwr 100% vz  4.1 vh 0.47 late   3% lift  73% hop   0% crash  75% tip  74% abort  0.0%
+        calm(<1 m/s): succ 15.4% (k=22/143)
+        vs previous step: rescued 44 lost 11 p=0.0000
+  ran rbg_F10_g1.0_S3M wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\rbg_F10_g1.0_S3M.json: 600 flights, 0 errors, 89.4 s
+F10 gimbal +-1.0 / S3M                   succ 16.67% [13.90-19.86] (k=100) apo  73.0 vfire 19.7 pwr 100% vz  3.8 vh 0.48 late   3% lift  42% hop   0% crash  71% tip  58% abort  0.0%
+        calm(<1 m/s): succ 23.1% (k=33/143)
+        vs previous step: rescued 100 lost 71 p=0.0320
+  ran rbg_F10_g1.0_S3MW wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\rbg_F10_g1.0_S3MW.json: 600 flights, 0 errors, 90.9 s
+F10 gimbal +-1.0 / S3MW                  succ 14.17% [11.60-17.19] (k=85) apo  72.6 vfire 19.7 pwr 100% vz  4.1 vh 0.51 late  12% lift  49% hop   0% crash  74% tip  70% abort  0.0%
+        calm(<1 m/s): succ 23.8% (k=34/143)
+        vs previous step: rescued 8 lost 23 p=0.0107

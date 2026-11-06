@@ -1,0 +1,95 @@
+  ran dev_F15_today wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15_today.json: 600 flights, 0 errors, 36.3 s
+F15 / today                              succ  0.00% [0.00-0.64] (k=0) apo  48.2 vfire 18.6 pwr  70% vz 15.3 vh 1.44 late  73% lift  96% hop   4% crash  90% tip 100% abort 29.8%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+  ran dev_F15_S3 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15_S3.json: 600 flights, 0 errors, 40.5 s
+F15 / S3                                 succ  0.00% [0.00-0.64] (k=0) apo  48.2 vfire 18.6 pwr  70% vz 15.3 vh 0.54 late  72% lift  96% hop   4% crash  90% tip  90% abort 29.8%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+        vs today: rescued 0 lost 0 p=1.0000
+  ran dev_F15_S3D2 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15_S3D2.json: 600 flights, 0 errors, 40.9 s
+F15 / S3D2                               succ  0.00% [0.00-0.64] (k=0) apo  48.2 vfire 16.1 pwr  70% vz  8.6 vh 0.48 late  68% lift  95% hop   5% crash  88% tip  87% abort 29.8%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+        vs today: rescued 0 lost 0 p=1.0000
+  ran dev_F15_S3D2M wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15_S3D2M.json: 600 flights, 0 errors, 65.2 s
+F15 / S3D2M                              succ  0.00% [0.00-0.64] (k=0) apo  48.2 vfire 16.1 pwr  70% vz  8.6 vh 0.49 late  58% lift  79% hop  21% crash  86% tip  83% abort 29.8%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+        vs today: rescued 0 lost 0 p=1.0000
+  ran dev_F15_S3D2MW wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15_S3D2MW.json: 600 flights, 0 errors, 36.8 s
+F15 / S3D2MW                             succ  0.00% [0.00-0.64] (k=0) apo  48.0 vfire 14.8 pwr 100% vz  4.6 vh 0.42 late   7% lift  54% hop  46% crash  73% tip  68% abort  0.2%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+        vs today: rescued 0 lost 0 p=1.0000
+  ran dev_F15x110_today wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15x110_today.json: 600 flights, 0 errors, 32.7 s
+F15x110 / today                          succ  0.00% [0.00-0.64] (k=0) apo  64.5 vfire 19.1 pwr  32% vz  7.9 vh 1.60 late  55% lift  91% hop   4% crash  85% tip  99% abort 67.5%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+  ran dev_F15x110_S3 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15x110_S3.json: 600 flights, 0 errors, 35.0 s
+F15x110 / S3                             succ  0.83% [0.36-1.94] (k=5) apo  64.5 vfire 19.1 pwr  32% vz  8.0 vh 0.42 late  55% lift  91% hop   5% crash  85% tip  84% abort 67.5%
+        calm(<1 m/s): succ 2.8% (k=4/143)
+        vs today: rescued 5 lost 0 p=0.0625
+  ran dev_F15x110_S3D2 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15x110_S3D2.json: 600 flights, 0 errors, 32.1 s
+F15x110 / S3D2                           succ  2.00% [1.15-3.46] (k=12) apo  64.5 vfire 18.3 pwr  32% vz  3.5 vh 0.47 late   1% lift  81% hop  10% crash  65% tip  73% abort 67.5%
+        calm(<1 m/s): succ 5.6% (k=8/143)
+        vs today: rescued 12 lost 0 p=0.0005
+  ran dev_F15x110_S3D2M wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15x110_S3D2M.json: 600 flights, 0 errors, 31.7 s
+F15x110 / S3D2M                          succ  3.83% [2.57-5.69] (k=23) apo  64.5 vfire 18.1 pwr  32% vz  3.5 vh 0.49 late   1% lift  44% hop  36% crash  66% tip  61% abort 67.5%
+        calm(<1 m/s): succ 14.0% (k=20/143)
+        vs today: rescued 23 lost 0 p=0.0000
+  ran dev_F15x110_S3D2MW wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F15x110_S3D2MW.json: 600 flights, 0 errors, 36.3 s
+F15x110 / S3D2MW                         succ 10.50% [8.29-13.21] (k=63) apo  64.3 vfire 18.1 pwr  98% vz  3.4 vh 0.42 late   0% lift  49% hop  32% crash  61% tip  64% abort  2.3%
+        calm(<1 m/s): succ 16.8% (k=24/143)
+        vs today: rescued 63 lost 0 p=0.0000
+  ran dev_F10_today wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F10_today.json: 600 flights, 0 errors, 46.2 s
+F10 / today                              succ  6.50% [4.79-8.76] (k=39) apo  73.1 vfire 19.8 pwr 100% vz  3.9 vh 1.15 late   0% lift  68% hop   0% crash  72% tip  88% abort  0.0%
+        calm(<1 m/s): succ 7.0% (k=10/143)
+  ran dev_F10_S3 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F10_S3.json: 600 flights, 0 errors, 52.4 s
+F10 / S3                                 succ 13.00% [10.54-15.93] (k=78) apo  73.1 vfire 19.8 pwr 100% vz  4.1 vh 0.44 late   0% lift  71% hop   0% crash  74% tip  71% abort  0.0%
+        calm(<1 m/s): succ 16.1% (k=23/143)
+        vs today: rescued 52 lost 13 p=0.0000
+  ran dev_F10_S3D2 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F10_S3D2.json: 600 flights, 0 errors, 165.3 s
+F10 / S3D2                               succ 13.00% [10.54-15.93] (k=78) apo  73.1 vfire 19.8 pwr 100% vz  4.1 vh 0.44 late   0% lift  71% hop   0% crash  74% tip  71% abort  0.0%
+        calm(<1 m/s): succ 16.1% (k=23/143)
+        vs today: rescued 52 lost 13 p=0.0000
+  ran dev_F10_S3D2M wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F10_S3D2M.json: 600 flights, 0 errors, 80.8 s
+F10 / S3D2M                              succ 17.50% [14.67-20.74] (k=105) apo  73.1 vfire 19.7 pwr 100% vz  3.7 vh 0.45 late   0% lift  41% hop   0% crash  70% tip  56% abort  0.0%
+        calm(<1 m/s): succ 21.7% (k=31/143)
+        vs today: rescued 105 lost 39 p=0.0000
+  ran dev_F10_S3D2MW wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_F10_S3D2MW.json: 600 flights, 0 errors, 92.5 s
+F10 / S3D2MW                             succ 18.33% [15.44-21.63] (k=110) apo  72.8 vfire 19.6 pwr 100% vz  3.7 vh 0.42 late   0% lift  41% hop   0% crash  70% tip  57% abort  0.0%
+        calm(<1 m/s): succ 22.4% (k=32/143)
+        vs today: rescued 110 lost 39 p=0.0000
+  ran dev_E28T_today wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_E28T_today.json: 600 flights, 0 errors, 25.3 s
+E28T / today                             succ  0.00% [0.00-0.64] (k=0) apo  58.0 vfire 18.5 pwr   6% vz  9.5 vh 1.14 late  68% lift  95% hop   3% crash  92% tip  92% abort 93.7%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+  ran dev_E28T_S3 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_E28T_S3.json: 600 flights, 0 errors, 27.1 s
+E28T / S3                                succ  0.33% [0.09-1.21] (k=2) apo  58.0 vfire 18.5 pwr   6% vz  9.5 vh 0.21 late  68% lift  92% hop   3% crash  92% tip  61% abort 93.7%
+        calm(<1 m/s): succ 1.4% (k=2/143)
+        vs today: rescued 2 lost 0 p=0.5000
+  ran dev_E28T_S3D2 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_E28T_S3D2.json: 600 flights, 0 errors, 26.8 s
+E28T / S3D2                              succ  0.50% [0.17-1.46] (k=3) apo  58.0 vfire 17.3 pwr   6% vz  3.6 vh 0.27 late   0% lift  76% hop   8% crash  58% tip  55% abort 93.7%
+        calm(<1 m/s): succ 2.1% (k=3/143)
+        vs today: rescued 3 lost 0 p=0.2500
+  ran dev_E28T_S3D2M wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_E28T_S3D2M.json: 600 flights, 0 errors, 26.0 s
+E28T / S3D2M                             succ  0.17% [0.03-0.94] (k=1) apo  58.0 vfire 17.1 pwr   6% vz  3.6 vh 0.28 late   0% lift  45% hop  50% crash  63% tip  55% abort 93.7%
+        calm(<1 m/s): succ 0.7% (k=1/143)
+        vs today: rescued 1 lost 0 p=1.0000
+  ran dev_E28T_S3D2MW wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_E28T_S3D2MW.json: 600 flights, 0 errors, 27.6 s
+E28T / S3D2MW                            succ  0.33% [0.09-1.21] (k=2) apo  58.5 vfire 17.1 pwr   8% vz  3.7 vh 0.24 late   2% lift  60% hop  36% crash  68% tip  56% abort 91.7%
+        calm(<1 m/s): succ 1.4% (k=2/143)
+        vs today: rescued 2 lost 0 p=0.5000
+  ran dev_41F3611A_today wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_41F3611A_today.json: 600 flights, 0 errors, 26.2 s
+41F3611A / today                         succ  0.00% [0.00-0.64] (k=0) apo  58.9 vfire 18.8 pwr   4% vz 10.3 vh 1.06 late  82% lift  95% hop   0% crash  95% tip  77% abort 96.3%
+        calm(<1 m/s): succ 0.0% (k=0/143)
+  ran dev_41F3611A_S3 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_41F3611A_S3.json: 600 flights, 0 errors, 46.2 s
+41F3611A / S3                            succ  0.17% [0.03-0.94] (k=1) apo  58.9 vfire 18.8 pwr   4% vz 10.3 vh 0.20 late  82% lift  95% hop   0% crash  95% tip  50% abort 96.3%
+        calm(<1 m/s): succ 0.7% (k=1/143)
+        vs today: rescued 1 lost 0 p=1.0000
+  ran dev_41F3611A_S3D2 wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_41F3611A_S3D2.json: 600 flights, 0 errors, 38.8 s
+41F3611A / S3D2                          succ  0.67% [0.26-1.70] (k=4) apo  58.9 vfire 17.2 pwr   4% vz  4.2 vh 0.25 late   0% lift  68% hop   0% crash  64% tip  64% abort 96.3%
+        calm(<1 m/s): succ 2.8% (k=4/143)
+        vs today: rescued 4 lost 0 p=0.1250
+  ran dev_41F3611A_S3D2M wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_41F3611A_S3D2M.json: 600 flights, 0 errors, 36.1 s
+41F3611A / S3D2M                         succ  0.67% [0.26-1.70] (k=4) apo  58.9 vfire 17.0 pwr   4% vz  4.3 vh 0.25 late   0% lift  45% hop   5% crash  77% tip  50% abort 96.3%
+        calm(<1 m/s): succ 2.8% (k=4/143)
+        vs today: rescued 4 lost 0 p=0.1250
+  ran dev_41F3611A_S3D2MW wrote C:\Users\troop\AppData\Local\Temp\claude\C--Users-troop\3686f4b3-d039-440c-b2d7-d9daf3d08953\scratchpad\ms\results\dev_41F3611A_S3D2MW.json: 600 flights, 0 errors, 41.3 s
+41F3611A / S3D2MW                        succ  0.33% [0.09-1.21] (k=2) apo  59.1 vfire 17.1 pwr   4% vz  3.8 vh 0.30 late   0% lift  64% hop   5% crash  68% tip  59% abort 96.3%
+        calm(<1 m/s): succ 1.4% (k=2/143)
+        vs today: rescued 2 lost 0 p=0.5000

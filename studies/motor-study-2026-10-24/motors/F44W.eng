@@ -1,0 +1,26 @@
+; AeroTech F44W exported from the OpenRocket motor database (ThrustCurve.org simfile 5f4294d20002e900000007ef, source mfr)
+; masses from the database listing, [MEASURE] the real motor before trusting them
+F44W 24 70 P 0.0197 0.0480 AeroTech
+   0.020 2.676
+   0.026 6.020
+   0.034 11.204
+   0.063 24.917
+   0.135 59.031
+   0.150 61.372
+   0.200 63.212
+   0.299 65.218
+   0.400 65.051
+   0.500 63.379
+   0.600 58.529
+   0.668 55.017
+   0.686 53.680
+   0.687 54.014
+   0.700 49.165
+   0.719 43.813
+   0.774 22.074
+   0.795 13.211
+   0.812 7.860
+   0.825 4.515
+   0.854 2.007
+   0.899 0.167
+   0.998 0.000

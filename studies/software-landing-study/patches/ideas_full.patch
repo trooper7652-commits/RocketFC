@@ -1,0 +1,2449 @@
+diff -ruN --binary patchcheck/src/config.h patchcheck_ideas/src/config.h
+--- patchcheck/src/config.h	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/src/config.h	2026-10-20 16:45:57.130603600 -0500
+@@ -167,6 +167,83 @@
+ constexpr float KF_UNHEALTHY_ABORT_MS = 500.0f;
+ 
+ // ---------------------------------------------------------------------------
++// Landing-burn solver (src/core/landing_solver.h): WHEN to fire the F15.
++// TABLE = the original burn_table.h rule. RISK = Kalman state predicted
++// forward by its lag, fire altitude from landing_table.h (chosen offline to
++// minimize the EXPECTED touchdown speed, hops included), plus the extra fall
++// a tilted ignition costs. Regenerate landing_table.h with
++// tools/landing_table.py after measuring mass, ignition delay and thrust.
++// ---------------------------------------------------------------------------
++enum class LandingSolverMode : uint8_t { TABLE = 0, RISK = 1 };
++constexpr LandingSolverMode LANDING_SOLVER = LandingSolverMode::TABLE;  // study verdict: keep TABLE
++constexpr float LAG_TAU_S = 0.017f;      // [MEASURE] how far the Kalman altitude lags truth in the fall (s)
++constexpr bool  LANDING_TILT_COMP = false; // fire higher by the thrust a tilted ignition loses (no measurable effect)
++constexpr float TILT_RATE_LPF_HZ = 5.0f;  // tilt-rate filter for the tilt-at-thrust-onset prediction
++// Fire even though tilt >= TILT_IGNITE_MAX_DEG if it is falling fast enough to be
++// below that when thrust starts (IGNITION_DELAY_MS later) and is under the hard
++// cap now. Off: relaxes the 'never light beyond 15 deg' interlock.
++constexpr bool  TILT_PREDICT_INTERLOCK = false;
++constexpr float TILT_IGNITE_HARD_MAX_DEG = 25.0f;
++
++// ---- Software-landing study candidates (all OFF = today's behaviour) ----
++// S3 drift cancelling: during the landing burn, lean the TVC target against
++// the sideways velocity dead-reckoned from launch (world-frame accel).
++constexpr float DRIFT_GAIN = 0.0f;           // 1/s; 0 = off
++constexpr float DRIFT_MAX_TILT_DEG = 5.0f;   // cap on the commanded lean
++constexpr float DRIFT_START_S = 0.0f;        // S3 option: only lean after this long into the burn
++// GPS aid for the S3 sideways-velocity estimate: each GPS velocity sample pulls
++// the dead-reckoned estimate this fraction of the way toward it. 0 = off.
++constexpr float GPS_VEL_GAIN = 0.0f;
++// Artificial throttling (ATH): during the landing burn, lean up to this far
++// off vertical (losing 1 - cos(lean) of the upward thrust) whenever the rocket
++// falls slower than the braking curve v_des = sqrt(2 * THR_RESERVE * a_full * h)
++// -- i.e. it has thrust to spare and would stop high. The lean direction circles
++// once per THR_CONE_PERIOD_S so the sideways push cancels, and the allowed lean
++// fades to 0 between THR_STRAIGHT_H + THR_RAMP_H and THR_STRAIGHT_H (m).
++constexpr float THR_TILT_MAX_DEG = 0.0f;     // 0 = off
++constexpr float THR_K = 6.0f;                // deg of lean per m/s of surplus
++constexpr float THR_RESERVE = 0.85f;         // fraction of upright braking the curve assumes
++constexpr float THR_CONE_PERIOD_S = 1.5f;
++constexpr float THR_STRAIGHT_H = 2.0f;
++constexpr float THR_RAMP_H = 3.0f;
++constexpr float THR_AFULL_CAP = 5.4f;   // m/s^2: braking the F15's ~14 N sustain gives at
++                                        // ~0.92 kg; ignores the brief ignition spike
++constexpr float THR_RATE_DPS = 60.0f;   // max change of the commanded lean (deg/s)
++// S4b coast grace: no tilt abort in COAST/APOGEE (TVC is off there anyway),
++// nor for this long into DESCENT, so the airframe can weathervane tail-first.
++constexpr bool  COAST_TILT_GRACE = false;
++constexpr float DESCENT_TILT_GRACE_MS = 0.0f;
++// S6: centre the gimbal once |accel| exceeds this after ignition (ground
++// impact), instead of steering into the ground until touchdown is debounced.
++constexpr float IMPACT_CENTER_G = 0.0f;      // 0 = off
++
++// ---- New-ideas study (2026-10-19), all OFF = today's behaviour ----
++// B1 boost drift nulling: during BOOST, lean the TVC target against the
++// dead-reckoned sideways velocity (relative to the wind estimate when
++// WIND_MATCH), so the rocket reaches burnout moving with the air -- no
++// crossflow in the unpowered coast for the fin-less airframe to diverge on.
++constexpr float BOOST_DRIFT_GAIN = 0.0f;         // 1/s; 0 = off
++constexpr float BOOST_DRIFT_MAX_TILT_DEG = 5.0f; // cap on the commanded lean
++constexpr float BOOST_DRIFT_START_S = 0.3f;      // lean only after this long into BOOST
++constexpr float BOOST_DRIFT_END_S = 0.6f;        // ...and stand upright this long before ASCENT_BURN_MS
++constexpr bool  WIND_MATCH = false;              // target the wind estimate instead of 0
++// B3 in-flight wind estimate (needs WIND_MATCH): during BOOST the accelerometer's
++// sideways reading, minus the gimbal's share of the thrust, is the airframe's
++// normal force = 0.5 rho |V| (CN_alpha A_ref) * crossflow. That gives the air's
++// sideways velocity relative to the rocket; plus the dead-reckoned rocket
++// velocity, the wind. Samples are weighted by how much force a 1 m/s crossflow
++// makes at that airspeed. WIND_EST_SCALE < 1 biases it low on purpose: the sim
++// says an underestimate costs little and an overestimate costs a lot.
++constexpr bool  WIND_EST = false;
++constexpr float AERO_CNA_AREF_M2 = 0.00884f;     // [ESTIMATE] CN_alpha (2/rad) * A_ref (75 mm tube)
++constexpr float WIND_EST_SCALE = 0.8f;
++constexpr float WIND_EST_MIN_SPEED = 4.0f;       // m/s airspeed before samples count
++// Prior spread of the wind (m/s): while the estimate is still noisy it is pulled
++// toward 0 by its own uncertainty, so the boost doesn't lean on vibration noise.
++// The noise itself is measured in flight (successive-sample differences). 0 = off.
++constexpr float WIND_EST_PRIOR_MPS = 0.0f;
++
++// ---------------------------------------------------------------------------
+ // Parachute release servo. The chute is pushed out by a spring; this servo
+ // holds the latch. FlightStateMachine decides WHEN (apogee in CHUTE_TEST, any
+ // abort in either mode); ChuteDeploy (src/core/chute_deploy.h) then confirms
+diff -ruN --binary patchcheck/src/core/ahrs.h patchcheck_ideas/src/core/ahrs.h
+--- patchcheck/src/core/ahrs.h	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/src/core/ahrs.h	2026-10-20 16:45:57.182825300 -0500
+@@ -68,6 +68,18 @@
+     return q_.rotateInv(rWorld);
+   }
+ 
++  // Tilt error toward an arbitrary world-frame target direction (unit
++  // vector), same convention as tiltErrorBody() (which is target = up).
++  Vec3 tiltErrorBodyTo(const Vec3& target) const {
++    const Vec3 zbWorld = q_.rotate(Vec3{0, 0, 1});
++    const Vec3 axis = zbWorld.cross(target);
++    const float s = axis.norm();
++    if (s < 1e-6f) return {0, 0, 0};
++    const float ang = std::atan2(s, zbWorld.x * target.x + zbWorld.y * target.y +
++                                        zbWorld.z * target.z);
++    return q_.rotateInv(axis * (ang / s));
++  }
++
+   // Vertical (world-Z) component of specific force, for the altitude KF:
+   // a_world = R(q)*f_body - g. Returns m/s^2, +up.
+   float worldVerticalAccel(const Vec3& accelBody, float g0) const {
+diff -ruN --binary patchcheck/src/core/burn_table_liftoff.h patchcheck_ideas/src/core/burn_table_liftoff.h
+--- patchcheck/src/core/burn_table_liftoff.h	1969-12-31 18:00:00.000000000 -0600
++++ patchcheck_ideas/src/core/burn_table_liftoff.h	2026-10-20 16:45:57.242693300 -0500
+@@ -0,0 +1,27 @@
++#pragma once
++// GENERATED by tools/burn_table_liftoff.py on 2026-10-17 -- study candidate S2b.
++// Fire altitude minimising the WORST impact, counting lift-offs.
++namespace burntable_lo {
++
++constexpr float V_MIN = 2.0f;
++constexpr float V_STEP = 0.5f;
++constexpr int N = 47;
++
++constexpr float H_IGNITE[N] = {
++       6.75f,    7.50f,    8.30f,    9.10f,    9.95f,   10.85f,   11.80f,   12.75f,   13.75f,   14.80f,
++      15.85f,   16.95f,   18.10f,   19.25f,   20.50f,   21.65f,   22.90f,   24.20f,   25.50f,   26.85f,
++      28.20f,   29.60f,   31.05f,   32.50f,   33.95f,   35.45f,   37.00f,   38.50f,   40.10f,   41.65f,
++      43.25f,   44.90f,   46.55f,   48.20f,   49.85f,   51.50f,   53.15f,   54.80f,   56.45f,   58.05f,
++      59.70f,   61.30f,   62.90f,   64.50f,   66.10f,   67.70f,   69.30f,
++};
++
++inline float hIgnite(float vDown) {
++  if (vDown <= V_MIN) return H_IGNITE[0];
++  const float idx = (vDown - V_MIN) / V_STEP;
++  const int i = (int)idx;
++  if (i >= N - 1) return H_IGNITE[N - 1];
++  const float f = idx - (float)i;
++  return H_IGNITE[i] * (1.0f - f) + H_IGNITE[i + 1] * f;
++}
++
++}  // namespace burntable_lo
+diff -ruN --binary patchcheck/src/core/flight_core.h patchcheck_ideas/src/core/flight_core.h
+--- patchcheck/src/core/flight_core.h	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/src/core/flight_core.h	2026-10-20 16:45:57.297034900 -0500
+@@ -65,6 +65,18 @@
+   const TvcControl& control() const { return ctl_; }
+   const Ahrs& ahrs() const { return ahrs_; }
+ 
++  // GPS ground velocity (m/s, world x/y): complementary correction of the
++  // dead-reckoned sideways velocity used by the drift loop.
++  void gpsVelocity(float vx, float vy) {
++    if (cfg::GPS_VEL_GAIN <= 0.0f) return;
++    velHx_ += cfg::GPS_VEL_GAIN * (vx - velHx_);
++    velHy_ += cfg::GPS_VEL_GAIN * (vy - velHy_);
++  }
++
++  // Horizontal wind estimate (m/s, world x/y) for WIND_MATCH. The sim can feed
++  // the truth here (an oracle upper bound) or an estimator can set it.
++  void windEstimate(float wx, float wy) { windX_ = wx; windY_ = wy; }
++
+   void step(const CoreInput& in, CoreOutput& out) {
+     // --- attitude ---
+     if (!ahrs_.initialized()) ahrs_.initFromAccel(in.accel);
+@@ -80,6 +92,15 @@
+ 
+     // --- altitude / velocity estimation ---
+     kf_.predict(ahrs_.worldVerticalAccel(in.accel, cfg::G0), in.dt);
++    // Sideways velocity, dead-reckoned from launch: gravity is vertical, so
++    // the world-frame horizontal specific force IS the horizontal accel.
++    if (onPad) {
++      velHx_ = velHy_ = 0.0f;
++    } else {
++      const Vec3 aw = ahrs_.quat().rotate(in.accel);
++      velHx_ += aw.x * in.dt;
++      velHy_ += aw.y * in.dt;
++    }
+     if (in.baroNew) {
+       kf_.setRInflation(fsm_.state() == FlightState::BOOST
+                             ? cfg::KF_R_BOOST_INFLATE : 1.0f);
+@@ -105,7 +126,80 @@
+     if (fo.tvcActive) {
+       ctl_.setGains(fo.useLandingGains ? cfg::GAINS_LANDING
+                                        : cfg::GAINS_BOOST);
+-      const Vec3 e = ahrs_.tiltErrorBody();
++      Vec3 e = ahrs_.tiltErrorBody();
++      if (fo.useLandingGains) {
++        if (!wasLanding_) burnMs_ = in.ms;
++        const float aT = in.accel.norm();   // ~thrust/mass while burning
++        float hx = 0.0f, hy = 0.0f;
++        bool lean = false;
++        if (cfg::DRIFT_GAIN > 0.0f && aT > 3.0f &&
++            (in.ms - burnMs_) * 0.001f >= cfg::DRIFT_START_S) {
++          // Want horizontal accel = -K v: lean the thrust axis by -K v / aT.
++          hx = -cfg::DRIFT_GAIN * velHx_ / aT;
++          hy = -cfg::DRIFT_GAIN * velHy_ / aT;
++          const float hn = std::sqrt(hx * hx + hy * hy);
++          const float cap = std::tan(cfg::DRIFT_MAX_TILT_DEG * cfg::DEG2RAD);
++          if (hn > cap) { hx *= cap / hn; hy *= cap / hn; }
++          lean = true;
++        }
++        if (cfg::THR_TILT_MAX_DEG > 0.0f && aT > 3.0f) {
++          // Artificial throttling: shed spare thrust by leaning, coning.
++          float aFull = aT - cfg::G0;                // upright braking available
++          if (aFull > cfg::THR_AFULL_CAP) aFull = cfg::THR_AFULL_CAP;
++          const float h = kf_.altitude();
++          const float vDown = -kf_.velocity();
++          float thMax = cfg::THR_TILT_MAX_DEG;
++          const float ramp = (h - cfg::THR_STRAIGHT_H) / cfg::THR_RAMP_H;
++          if (ramp < 1.0f) thMax *= (ramp > 0.0f ? ramp : 0.0f);
++          float thDeg = 0.0f;
++          if (aFull > 0.5f && h > 0.0f) {
++            const float vDes = std::sqrt(2.0f * cfg::THR_RESERVE * aFull * h);
++            thDeg = cfg::THR_K * (vDes - vDown);
++          }
++          // Ease the lean in and out (a lean switched on and off abruptly leaves
++          // a net sideways push), but always obey the touchdown ramp.
++          const float step = cfg::THR_RATE_DPS * in.dt;
++          if (thDeg > thrDeg_ + step) thDeg = thrDeg_ + step;
++          if (thDeg < thrDeg_ - step) thDeg = thrDeg_ - step;
++          if (thDeg < 0.0f) thDeg = 0.0f;
++          if (thDeg > thMax) thDeg = thMax;
++          thrDeg_ = thDeg;
++          if (thDeg > 0.0f) {
++            const float psi = 2.0f * cfg::PI_F * (in.ms - burnMs_) * 0.001f /
++                              cfg::THR_CONE_PERIOD_S;
++            const float t = std::tan(thDeg * cfg::DEG2RAD);
++            hx += t * std::cos(psi);
++            hy += t * std::sin(psi);
++            lean = true;
++          }
++        }
++        if (lean) {
++          const float n = std::sqrt(hx * hx + hy * hy + 1.0f);
++          e = ahrs_.tiltErrorBodyTo(Vec3{hx / n, hy / n, 1.0f / n});
++        }
++      }
++      if (cfg::WIND_EST && fo.state == FlightState::BOOST) windEstStep(in);
++      if (!fo.useLandingGains && cfg::BOOST_DRIFT_GAIN > 0.0f &&
++          fo.state == FlightState::BOOST) {
++        // B1: arrive at burnout moving with the air (or at rest, without
++        // WIND_MATCH), upright for the last BOOST_DRIFT_END_S.
++        if (!wasActive_) boostMs_ = in.ms;
++        const float tb = (in.ms - boostMs_) * 0.001f;
++        const float aT = in.accel.norm();
++        if (aT > 3.0f && tb >= cfg::BOOST_DRIFT_START_S &&
++            tb <= cfg::ASCENT_BURN_MS * 0.001f - cfg::BOOST_DRIFT_END_S) {
++          const float tx = cfg::WIND_MATCH ? windX_ : 0.0f;
++          const float ty = cfg::WIND_MATCH ? windY_ : 0.0f;
++          float hx = -cfg::BOOST_DRIFT_GAIN * (velHx_ - tx) / aT;
++          float hy = -cfg::BOOST_DRIFT_GAIN * (velHy_ - ty) / aT;
++          const float hn = std::sqrt(hx * hx + hy * hy);
++          const float cap = std::tan(cfg::BOOST_DRIFT_MAX_TILT_DEG * cfg::DEG2RAD);
++          if (hn > cap) { hx *= cap / hn; hy *= cap / hn; }
++          const float n = std::sqrt(hx * hx + hy * hy + 1.0f);
++          e = ahrs_.tiltErrorBodyTo(Vec3{hx / n, hy / n, 1.0f / n});
++        }
++      }
++      wasLanding_ = fo.useLandingGains;
+       ctl_.update(e.x, e.y, in.gyro.x, in.gyro.y, in.dt, true);
+     } else if (wasActive_) {
+       ctl_.reset();  // clean integrators/slew state for the next burn phase
+@@ -133,9 +227,69 @@
+   }
+ 
+  private:
++  // B3: one boost sample of the aerodynamic wind estimate (see config.h).
++  void windEstStep(const CoreInput& in) {
++    const float az = in.accel.z;                    // ~thrust / mass
++    if (az < 3.0f) return;
++    // Sideways specific force left after removing the gimbal's thrust share
++    // (body: fx = -T sin(gimbalY), fy = +T sin(gimbalX)), i.e. aero normal force / m.
++    const float nx = in.accel.x + az * std::sin(ctl_.gimbalY());
++    const float ny = in.accel.y - az * std::sin(ctl_.gimbalX());
++    const float vUp = kf_.velocity();
++    const float dwx = velHx_ - windX_, dwy = velHy_ - windY_;
++    const float speed = std::sqrt(vUp * vUp + dwx * dwx + dwy * dwy);
++    if (speed < cfg::WIND_EST_MIN_SPEED) return;
++    const float k = 0.5f * 1.225f * cfg::AERO_CNA_AREF_M2 / cfg::MASS_DESCENT_KG * speed;
++    // Body-frame air-relative velocity of the rocket: n = -k * v_t.
++    const float vtx = -nx / k, vty = -ny / k;
++    float vax2 = speed * speed - vtx * vtx - vty * vty;
++    const Vec3 vrelW = ahrs_.quat().rotate(Vec3{vtx, vty, vax2 > 0.0f ? std::sqrt(vax2) : 0.0f});
++    const float wx = velHx_ - vrelW.x, wy = velHy_ - vrelW.y;
++    const float wgt = k * k;
++    windSx_ += wgt * wx;
++    windSy_ += wgt * wy;
++    windSw_ += wgt;
++    float shrink = 1.0f;
++    if (cfg::WIND_EST_PRIOR_MPS > 0.0f) {
++      // Per-sample sideways-force noise variance from successive differences.
++      if (windNn_ > 0) {
++        const float ddx = nx - windPnx_, ddy = ny - windPny_;
++        windNv_ += 0.25f * (ddx * ddx + ddy * ddy);
++        ++windNn_;
++      } else {
++        windNn_ = 1;
++      }
++      windPnx_ = nx;
++      windPny_ = ny;
++      const float nv = windNn_ > 1 ? windNv_ / (float)(windNn_ - 1) : 1.0f;
++      const float pv = cfg::WIND_EST_PRIOR_MPS * cfg::WIND_EST_PRIOR_MPS;
++      shrink = windSw_ / (windSw_ + nv / pv);
++    }
++    windX_ = cfg::WIND_EST_SCALE * shrink * windSx_ / windSw_;
++    windY_ = cfg::WIND_EST_SCALE * shrink * windSy_ / windSw_;
++  }
++
+   Ahrs ahrs_;
+   AltitudeKf kf_;
+   TvcControl ctl_;
+   FlightStateMachine fsm_;
+   bool wasActive_ = false;
++  bool wasLanding_ = false;
++  uint32_t burnMs_ = 0;
++  uint32_t boostMs_ = 0;
++  float windX_ = 0.0f, windY_ = 0.0f;
++  float windSx_ = 0.0f, windSy_ = 0.0f, windSw_ = 0.0f;
++  float windPnx_ = 0.0f, windPny_ = 0.0f, windNv_ = 0.0f;
++  int windNn_ = 0;
++
++ public:
++  float windEstX() const { return windX_; }
++  float windEstY() const { return windY_; }
++
++ private:
++  float velHx_ = 0.0f, velHy_ = 0.0f;
++  float thrDeg_ = 0.0f;   // ATH lean commanded this tick (deg), for logs
++
++ public:
++  float throttleLeanDeg() const { return thrDeg_; }
+ };
+diff -ruN --binary patchcheck/src/core/flight_state.h patchcheck_ideas/src/core/flight_state.h
+--- patchcheck/src/core/flight_state.h	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/src/core/flight_state.h	2026-10-20 16:45:57.347828100 -0500
+@@ -24,8 +24,8 @@
+ #include <cmath>
+ 
+ #include "../config.h"
+-#include "burn_table.h"
+ #include "chute_deploy.h"
++#include "landing_solver.h"
+ 
+ enum class FlightState : uint8_t {
+   IDLE = 0,       // disarmed on the bench/pad, pyro + chute release inhibited
+@@ -246,7 +246,13 @@
+   // Abort monitoring during BOOST/COAST/DESCENT. Returns true if aborted.
+   bool checkAborts(const FsmInput& in, FsmOutput& out) {
+     AbortReason r = AbortReason::NONE;
+-    if (dbTilt_.check(in.tiltRad > cfg::TILT_ABORT_DEG * cfg::DEG2RAD,
++    const bool tiltGrace =
++        cfg::COAST_TILT_GRACE &&
++        (state_ == FlightState::COAST || state_ == FlightState::APOGEE ||
++         (state_ == FlightState::DESCENT &&
++          sinceEntry(in) < cfg::DESCENT_TILT_GRACE_MS));
++    if (!tiltGrace &&
++        dbTilt_.check(in.tiltRad > cfg::TILT_ABORT_DEG * cfg::DEG2RAD,
+                       in.dtMs, cfg::TILT_ABORT_MS))
+       r = AbortReason::TILT;
+     else if (dbKf_.check(!in.imuHealthy, in.dtMs, 200.0f))
+@@ -329,6 +335,7 @@
+       fireChuteOnce(in);
+       enter(FlightState::DESCENT_CHUTE, in.ms);
+     } else {
++      solver_.reset();
+       enter(FlightState::DESCENT, in.ms);
+     }
+   }
+@@ -343,15 +350,9 @@
+       return;
+     }
+ 
+-    const float vDown = -in.kfVel;
+-    if (vDown < cfg::BURN_MIN_SPEED_MS) return;
+-
+-    const float hIgn = burntable::hIgnite(vDown) + cfg::BURN_TABLE_MARGIN_M;
+-    const bool windowOpen = in.kfAlt <= hIgn;
+-    const bool interlocks =
+-        in.tiltRad < cfg::TILT_IGNITE_MAX_DEG * cfg::DEG2RAD &&
+-        in.kfHealthy && in.contLanding;
+-    if (windowOpen && interlocks) {
++    // Ignition window + interlocks: see landing_solver.h.
++    if (solver_.update(in.kfAlt, in.kfVel, in.tiltRad, in.dtMs, in.kfHealthy,
++                       in.contLanding)) {
+       out.fireLanding = true;
+       landFireMs_ = in.ms;
+       ignitionConfirmed_ = false;
+@@ -383,6 +384,15 @@
+       pushEvent(in.ms, FlightEvent::LANDING_BURNOUT, in.kfAlt);
+     }
+ 
++    // S6: the ground stops the rocket with a spike far above the burn's
++    // ~1.6 g -- stop steering the (still burning) motor into the ground.
++    if (cfg::IMPACT_CENTER_G > 0.0f && ignitionConfirmed_ &&
++        sinceEntry(in) > cfg::IGNITION_DELAY_MS + 300.0f &&
++        in.accelNormG > cfg::IMPACT_CENTER_G) {
++      impactSeen_ = true;
++    }
++    if (impactSeen_) out.tvcActive = false;
++
+     // Leg release: LEGS_DELAY_MS after the fire command (= state entry), and
+     // only into a confirmed burn. A late confirm fires at the confirm.
+     if (ignitionConfirmed_ && !legsOn_ &&
+@@ -440,6 +450,8 @@
+   bool landingBurnoutSeen_ = false, abortedFromBoost_ = false;
+   Debounce dbA_, dbB_, dbTilt_, dbKf_, dbKfHealth_;
+   ChuteDeploy chute_;
++  LandingSolver solver_;
++  bool impactSeen_ = false;
+ 
+   static constexpr int kMaxEvents = 16;
+   Event events_[kMaxEvents];
+diff -ruN --binary patchcheck/src/core/landing_solver.h patchcheck_ideas/src/core/landing_solver.h
+--- patchcheck/src/core/landing_solver.h	1969-12-31 18:00:00.000000000 -0600
++++ patchcheck_ideas/src/core/landing_solver.h	2026-10-20 16:45:57.402852800 -0500
+@@ -0,0 +1,166 @@
++#pragma once
++//
++// Landing-burn ignition solver: decides WHEN to send the F15 fire command.
++//
++// The F15 can't throttle or restart, so the fire time is the only control.
++// cfg::LANDING_SOLVER selects how it is chosen:
++//
++//   TABLE -- the original rule: fire when the Kalman altitude is at or below
++//            burn_table.h's h_ignite(descent speed) + BURN_TABLE_MARGIN_M.
++//
++//   RISK  -- the same physics with three corrections:
++//     1. Lag compensation. The Kalman filter follows a barometer that reports
++//        where the rocket WAS (bay venting + filtering), so during the fall it
++//        reads high and slow. Predict it forward by LAG_TAU_S using the
++//        freefall acceleration (gravity minus drag).
++//     2. Risk-aware aim. landing_table.h's fire altitudes were chosen offline
++//        (tools/landing_table.py) to minimize the EXPECTED touchdown speed
++//        over the delay / mass / thrust uncertainty, counting a hop (stopping
++//        in mid-air and falling back) at its real fall-back speed, instead of
++//        aiming a nominal rocket at exactly zero.
++//     3. Tilt loss (LANDING_TILT_COMP). Thrust acts along the body, so a tilted
++//        ignition slows the fall less until the TVC straightens the rocket:
++//        fire higher by TILT_COEF(v) * tilt^2 (tilt predicted at thrust onset).
++//
++// Optional, OFF by default: TILT_PREDICT_INTERLOCK also allows a fire while
++// the tilt is above TILT_IGNITE_MAX_DEG if it is falling fast enough to be
++// below it when thrust actually starts (IGNITION_DELAY_MS later) and is under
++// TILT_IGNITE_HARD_MAX_DEG now. It never blocks a fire the original
++// interlock would allow.
++//
++// Deterministic, allocation-free, a few dozen flops per call.
++//
++#include <cmath>
++
++#include "../config.h"
++#include "burn_table.h"
++#include "landing_table.h"
++
++class LandingSolver {
++ public:
++  // Defaults come from config.h; the replay tests override them.
++  struct Options {
++    cfg::LandingSolverMode mode = cfg::LANDING_SOLVER;
++    float lagTauS = cfg::LAG_TAU_S;
++    bool tiltComp = cfg::LANDING_TILT_COMP;
++    bool predictInterlock = cfg::TILT_PREDICT_INTERLOCK;
++    float hardMaxDeg = cfg::TILT_IGNITE_HARD_MAX_DEG;
++  };
++
++  LandingSolver() = default;
++  explicit LandingSolver(const Options& o) : opt_(o) {}
++
++  void reset() { *this = LandingSolver{opt_}; }
++
++  // Call EVERY tick of DESCENT (the tilt-rate filter needs continuity).
++  // Returns true when the fire command should be issued now.
++  bool update(float kfAlt, float kfVel, float tiltRad, float dtMs,
++              bool kfHealthy, bool contLanding) {
++    updateTiltRate(tiltRad, dtMs);
++    if (opt_.mode == cfg::LandingSolverMode::TABLE)
++      return tableRule(kfAlt, kfVel, tiltRad, kfHealthy, contLanding);
++    return riskRule(kfAlt, kfVel, tiltRad, kfHealthy, contLanding);
++  }
++
++  // Diagnostics of the last call (for logs and tests).
++  float hNow() const { return hNow_; }
++  float hReq() const { return hReq_; }
++  float vDown() const { return vDown_; }
++  float tiltOnRad() const { return tiltOn_; }
++  float tiltRateRadS() const { return tiltRate_; }
++
++ private:
++  bool tableRule(float kfAlt, float kfVel, float tiltRad, bool kfHealthy,
++                 bool contLanding) {
++    const float vDown = -kfVel;
++    hNow_ = kfAlt;
++    vDown_ = vDown;
++    tiltOn_ = tiltRad;
++    if (!std::isfinite(kfAlt) || !std::isfinite(vDown)) return false;
++    if (vDown < cfg::BURN_MIN_SPEED_MS) return false;
++    const float hIgn = burntable::hIgnite(vDown) + cfg::BURN_TABLE_MARGIN_M;
++    hReq_ = hIgn;
++    const bool windowOpen = kfAlt <= hIgn;
++    bool tiltOk = tiltRad < cfg::TILT_IGNITE_MAX_DEG * cfg::DEG2RAD;
++    // D2 (study candidate S4a): also allow it when the tilt will be under the
++    // limit by the time thrust starts, and is under the hard cap now.
++    if (!tiltOk && opt_.predictInterlock && tiltRateValid_) {
++      const float tiltOn = tiltRad + tiltRate_ * (cfg::IGNITION_DELAY_MS * 0.001f);
++      tiltOn_ = tiltOn;
++      tiltOk = tiltOn < cfg::TILT_IGNITE_MAX_DEG * cfg::DEG2RAD &&
++               tiltRad < opt_.hardMaxDeg * cfg::DEG2RAD;
++    }
++    const bool interlocks = tiltOk && kfHealthy && contLanding;
++    return windowOpen && interlocks;
++  }
++
++  bool riskRule(float kfAlt, float kfVel, float tiltRad, bool kfHealthy,
++                bool contLanding) {
++    if (!std::isfinite(kfAlt) || !std::isfinite(kfVel) ||
++        !std::isfinite(tiltRad)) {
++      hNow_ = hReq_ = vDown_ = tiltOn_ = 0.0f;
++      return false;
++    }
++    // 1. lag compensation (freefall: a = -g + k v^2, k = rho CdA / (2 m))
++    const float tau = opt_.lagTauS;
++    const float k = 0.5f * kRho * cfg::CDA_M2 / cfg::MASS_DESCENT_KG;
++    const float aFree = -cfg::G0 + k * kfVel * kfVel;
++    const float h = kfAlt + kfVel * tau;
++    const float v = kfVel + aFree * tau;
++    const float vDown = -v;
++    hNow_ = h;
++    vDown_ = vDown;
++
++    // Tilt when thrust will actually start (IGNITION_DELAY_MS from now),
++    // extrapolated from the filtered tilt rate; the current tilt until the
++    // rate filter has settled.
++    float tiltOn = tiltRad;
++    if (tiltRateValid_) {
++      tiltOn = tiltRad + tiltRate_ * (cfg::IGNITION_DELAY_MS * 0.001f);
++      if (tiltOn < 0.0f) tiltOn = 0.0f;
++    }
++    tiltOn_ = tiltOn;
++
++    if (vDown < cfg::BURN_MIN_SPEED_MS) return false;
++
++    // 2. risk-aware aim + 3. tilt loss
++    float hReq = landingtable::hFire(vDown) + cfg::BURN_TABLE_MARGIN_M;
++    if (opt_.tiltComp) hReq += landingtable::tiltCoef(vDown) * tiltOn * tiltOn;
++    hReq_ = hReq;
++
++    const float tiltMax = cfg::TILT_IGNITE_MAX_DEG * cfg::DEG2RAD;
++    bool tiltOk = tiltRad < tiltMax;
++    if (!tiltOk && opt_.predictInterlock)
++      tiltOk = tiltRateValid_ && tiltOn < tiltMax &&
++               tiltRad < opt_.hardMaxDeg * cfg::DEG2RAD;
++    return h <= hReq && tiltOk && kfHealthy && contLanding;
++  }
++
++  // First-order low-passed derivative of the tilt angle.
++  void updateTiltRate(float tiltRad, float dtMs) {
++    const float dt = dtMs * 0.001f;
++    if (!std::isfinite(tiltRad) || !(dt > 0.0f)) return;
++    if (havePrev_) {
++      const float raw = (tiltRad - prevTilt_) / dt;
++      if (rateSamples_ == 0) {
++        tiltRate_ = raw;
++      } else {
++        const float rc = 1.0f / (2.0f * cfg::PI_F * cfg::TILT_RATE_LPF_HZ);
++        tiltRate_ += dt / (rc + dt) * (raw - tiltRate_);
++      }
++      if (rateSamples_ < kRateWarmup) ++rateSamples_;
++      else tiltRateValid_ = true;
++    }
++    prevTilt_ = tiltRad;
++    havePrev_ = true;
++  }
++
++  static constexpr float kRho = 1.225f;   // kg/m^3, sea level (as the tables)
++  static constexpr int kRateWarmup = 25;  // ticks before the rate is trusted
++
++  Options opt_;
++  float prevTilt_ = 0.0f, tiltRate_ = 0.0f;
++  bool havePrev_ = false, tiltRateValid_ = false;
++  int rateSamples_ = 0;
++  float hNow_ = 0.0f, hReq_ = 0.0f, vDown_ = 0.0f, tiltOn_ = 0.0f;
++};
+diff -ruN --binary patchcheck/src/core/landing_table.h patchcheck_ideas/src/core/landing_table.h
+--- patchcheck/src/core/landing_table.h	1969-12-31 18:00:00.000000000 -0600
++++ patchcheck_ideas/src/core/landing_table.h	2026-10-20 16:45:57.456418900 -0500
+@@ -0,0 +1,58 @@
++#pragma once
++// GENERATED by tools/landing_table.py on 2026-10-12 -- DO NOT EDIT BY HAND.
++//   motor Estes_F15.eng, mass 0.950 kg, CdA 0.0040 m^2,
++//   ignition delay 500 ms
++//   uncertainty: delay +-15 %, mass +-5 %, CdA +-20 %,
++//   thrust sd 1.7 %, estimator residual h -0.01+-0.03 m,
++//   v +0.02+-0.04 m/s; hop penalty 0 m/s;
++//   2000 draws per row; tilt recovery tau 0.15 s
++// Per descent speed (m/s, downward-positive):
++//   H_FIRE    fire altitude (m) minimizing the expected touchdown speed
++//   H_NOMINAL exact stop altitude of the nominal rocket (-1 = can't stop)
++//   TILT_COEF extra fall distance per rad^2 of tilt at thrust onset (m/rad^2)
++namespace landingtable {
++
++constexpr float V_MIN = 2.0f;
++constexpr float V_STEP = 0.5f;
++constexpr int N = 47;
++
++constexpr float H_FIRE[N] = {
++     5.450f,    6.060f,    6.740f,    7.410f,    8.250f,    9.100f,    9.860f,   10.780f,
++    11.490f,   12.537f,   13.431f,   14.498f,   15.388f,   16.530f,   17.613f,   19.047f,
++    20.032f,   20.836f,   23.070f,   24.302f,   25.931f,   27.097f,   28.789f,   30.307f,
++    31.589f,   33.615f,   35.764f,   37.345f,   38.529f,   40.533f,   42.019f,   43.885f,
++    45.444f,   46.585f,   48.331f,   50.509f,   51.711f,   53.545f,   55.122f,   56.852f,
++    58.056f,   59.832f,   61.482f,   63.045f,   64.521f,   65.970f,   67.423f,
++};
++
++constexpr float H_NOMINAL[N] = {
++     6.698f,    7.455f,    8.245f,    9.069f,    9.928f,   10.821f,   11.748f,   12.710f,
++    13.707f,   14.737f,   15.801f,   16.898f,   18.028f,   19.190f,   20.383f,   21.607f,
++    22.862f,   24.146f,   25.460f,   26.802f,   28.171f,   29.567f,   30.989f,   32.437f,
++    33.909f,   35.405f,   36.924f,   38.465f,   40.029f,   41.613f,   43.219f,   44.845f,
++    46.494f,   -1.000f,   -1.000f,   -1.000f,   -1.000f,   -1.000f,   -1.000f,   -1.000f,
++    -1.000f,   -1.000f,   -1.000f,   -1.000f,   -1.000f,   -1.000f,   -1.000f,
++};
++
++constexpr float TILT_COEF[N] = {
++     0.132f,    0.142f,    0.153f,    0.165f,    0.176f,    0.187f,    0.199f,    0.210f,
++     0.222f,    0.233f,    0.244f,    0.255f,    0.266f,    0.277f,    0.287f,    0.298f,
++     0.308f,    0.318f,    0.328f,    0.338f,    0.348f,    0.357f,    0.366f,    0.375f,
++     0.383f,    0.392f,    0.400f,    0.408f,    0.416f,    0.424f,    0.431f,    0.439f,
++     0.448f,    0.000f,    0.000f,    0.000f,    0.000f,    0.000f,    0.000f,    0.000f,
++     0.000f,    0.000f,    0.000f,    0.000f,    0.000f,    0.000f,    0.000f,
++};
++
++// Linear interpolation in a table, clamped to its domain.
++inline float lookup(const float* t, float vDown) {
++  if (!(vDown > V_MIN)) return t[0];  // also catches NaN
++  const float idx = (vDown - V_MIN) / V_STEP;
++  if (idx >= (float)(N - 1)) return t[N - 1];
++  const int i = (int)idx;
++  const float f = idx - (float)i;
++  return t[i] * (1.0f - f) + t[i + 1] * f;
++}
++inline float hFire(float vDown) { return lookup(H_FIRE, vDown); }
++inline float tiltCoef(float vDown) { return lookup(TILT_COEF, vDown); }
++
++}  // namespace landingtable
+diff -ruN --binary patchcheck/tools/burn_table_liftoff.py patchcheck_ideas/tools/burn_table_liftoff.py
+--- patchcheck/tools/burn_table_liftoff.py	1969-12-31 18:00:00.000000000 -0600
++++ patchcheck_ideas/tools/burn_table_liftoff.py	2026-10-20 16:45:57.506101500 -0500
+@@ -0,0 +1,102 @@
++#!/usr/bin/env python3
++"""Study candidate S2b: a burn table that knows the ground pushes back.
++
++burn_table.py picks the fire altitude that minimises the speed of the FIRST
++ground contact. But a contact while the F15 still pushes harder than the
++weight is followed by a lift-off and a second, unpowered fall. Here the 1-D
++burn simulation keeps going after contact (the ground stops the rocket; if
++thrust beats weight it climbs again) until the motor is out and the rocket
++is down, and the cost is the WORST impact of the whole sequence.
++
++Writes src/core/burn_table_liftoff.h (namespace burntable_lo), used only when
++cfg::BURN_TABLE_LIFTOFF_AWARE is true.
++"""
++import argparse
++import datetime
++import os
++
++import burn_table as bt
++
++G, RHO = bt.G, bt.RHO
++
++
++def sim_with_ground(motor, m0, cda, delay_s, h0, v_down, dt=0.002):
++    h, v, t = h0, -abs(v_down), 0.0
++    worst = 0.0
++    while t < delay_s + motor.burn_time + 30.0:
++        tb = t - delay_s
++        T = motor.thrust(tb)
++        m = m0 - motor.mass_burned(tb)
++        a = T / m - G - 0.5 * RHO * cda * v * abs(v) / m
++        v += a * dt
++        h += v * dt
++        t += dt
++        if h <= 0.0:
++            if v < 0.0:
++                worst = max(worst, -v)
++            h, v = 0.0, 0.0
++            if tb > motor.burn_time:
++                return worst          # down, motor out
++    return worst
++
++
++def find_h(motor, m, cda, delay_s, v_down):
++    best_h, best = 0.5, 1e9
++    h = 0.5
++    while h <= 300.0:
++        c = sim_with_ground(motor, m, cda, delay_s, h, v_down, dt=0.004)
++        if c < best:
++            best_h, best = h, c
++        h += 0.5
++    h = max(0.25, best_h - 0.5)
++    while h <= best_h + 0.5:
++        c = sim_with_ground(motor, m, cda, delay_s, h, v_down)
++        if c < best:
++            best_h, best = h, c
++        h += 0.05
++    return best_h, best
++
++
++def main():
++    here = os.path.dirname(os.path.abspath(__file__))
++    ap = argparse.ArgumentParser(description=__doc__)
++    ap.add_argument("--eng", default=os.path.join(here, "motors", "Estes_F15.eng"))
++    ap.add_argument("--mass", type=float, default=0.95)
++    ap.add_argument("--cda", type=float, default=0.004)
++    ap.add_argument("--delay-ms", type=float, default=500.0)
++    ap.add_argument("--vmin", type=float, default=2.0)
++    ap.add_argument("--vstep", type=float, default=0.5)
++    ap.add_argument("--n", type=int, default=47)
++    ap.add_argument("--out", default=os.path.join(here, "..", "src", "core",
++                                                  "burn_table_liftoff.h"))
++    a = ap.parse_args()
++    motor = bt.Motor(a.eng)
++    rows = []
++    for k in range(a.n):
++        v = a.vmin + k * a.vstep
++        h, worst = find_h(motor, a.mass, a.cda, a.delay_ms / 1000.0, v)
++        h0, vi0 = bt.find_h_ignite(motor, a.mass, a.cda, a.delay_ms / 1000.0, v)
++        rows.append((v, h, worst, h0))
++        print("v {:5.1f}  fire {:6.2f} m (worst impact {:5.2f} m/s)   old table {:6.2f} m".format(
++            v, h, worst, h0))
++    with open(a.out, "w", encoding="utf-8") as f:
++        f.write("#pragma once\n// GENERATED by tools/burn_table_liftoff.py on {} -- study candidate S2b.\n"
++                "// Fire altitude minimising the WORST impact, counting lift-offs.\n"
++                "namespace burntable_lo {{\n\nconstexpr float V_MIN = {}f;\nconstexpr float V_STEP = {}f;\n"
++                "constexpr int N = {};\n\nconstexpr float H_IGNITE[N] = {{\n".format(
++                    datetime.date.today(), a.vmin, a.vstep, a.n))
++        for i in range(0, a.n, 10):
++            f.write("    " + " ".join("{:7.2f}f,".format(r[1]) for r in rows[i:i + 10]) + "\n")
++        f.write("};\n\ninline float hIgnite(float vDown) {\n"
++                "  if (vDown <= V_MIN) return H_IGNITE[0];\n"
++                "  const float idx = (vDown - V_MIN) / V_STEP;\n"
++                "  const int i = (int)idx;\n"
++                "  if (i >= N - 1) return H_IGNITE[N - 1];\n"
++                "  const float f = idx - (float)i;\n"
++                "  return H_IGNITE[i] * (1.0f - f) + H_IGNITE[i + 1] * f;\n}\n\n"
++                "}  // namespace burntable_lo\n")
++    print("wrote", a.out)
++
++
++if __name__ == "__main__":
++    main()
+diff -ruN --binary patchcheck/tools/landing_table.py patchcheck_ideas/tools/landing_table.py
+--- patchcheck/tools/landing_table.py	1969-12-31 18:00:00.000000000 -0600
++++ patchcheck_ideas/tools/landing_table.py	2026-10-20 16:45:57.566586300 -0500
+@@ -0,0 +1,328 @@
++#!/usr/bin/env python3
++"""Generate the risk-aware landing table (src/core/landing_table.h).
++
++burn_table.py answers "at what altitude must I fire so a NOMINAL rocket stops
++exactly at the ground?". Real flights aren't nominal: the ignition delay, the
++descent mass and the motor's thrust differ from flight to flight, and none of
++them can be seen before ignition. Aiming exactly at zero speed is also
++lopsided: fire a little early and the rocket stops in mid-air, climbs on the
++remaining thrust and falls back hard (a "hop"); fire a little late and it
++lands a bit fast.
++
++So for each descent speed this tool simulates thousands of plausible rockets
++(drawn from the uncertainty you specify), each one all the way to the ground
++-- including hop, climb, burnout and fall -- and picks the fire altitude with
++the lowest EXPECTED touchdown speed (optionally with an extra penalty per hop).
++Altitude never enters the physics, so one simulation per rocket scores every
++candidate altitude at once (touchdown = the first moment it has fallen that
++far).
++
++It also writes, per row, how much farther a rocket falls when it lights up
++tilted (thrust is along the body, so only cos(tilt) of it slows the fall
++until the TVC straightens the vehicle), as metres per rad^2 of tilt.
++
++The uncertainty widths are [MEASURE] inputs: the defaults reproduce the
++closed-loop simulator's Monte-Carlo dispersions plus a modest thrust spread.
++Re-run after measuring mass (scale), ignition delay (ThrustStand) and thrust.
++
++Usage:
++    python tools/landing_table.py                    # defaults from src/config.h
++    python tools/landing_table.py --delay-pct 5 --mass-pct 1
++
++Needs numpy.
++"""
++import argparse
++import datetime
++import multiprocessing
++import os
++import re
++
++import numpy as np
++
++G = 9.80665
++RHO = 1.225
++
++
++class Curve:
++    """RASP .eng thrust curve on a dense grid for vectorized lookup."""
++
++    def __init__(self, path):
++        pts = [(0.0, 0.0)]
++        header = None
++        with open(path, encoding="utf-8", errors="replace") as f:
++            for line in f:
++                s = line.strip()
++                if not s or s.startswith(";"):
++                    continue
++                if header is None:
++                    header = s.split()
++                    self.name = header[0]
++                    self.prop = float(header[4])
++                    continue
++                t, F = s.split()[:2]
++                pts.append((float(t), float(F)))
++        pts.sort()
++        t = np.array([p[0] for p in pts])
++        f = np.array([p[1] for p in pts])
++        self.burn = float(t[-1])
++        self.dt = 0.0005
++        self.grid = np.arange(0.0, self.burn + self.dt, self.dt)
++        self.F = np.interp(self.grid, t, f, left=0.0, right=0.0)
++        self.I = np.concatenate([[0.0], np.cumsum(0.5 * (self.F[1:] + self.F[:-1]) * self.dt)])
++        self.Itot = float(self.I[-1])
++
++    def thrust(self, tau):
++        return np.interp(tau, self.grid, self.F, left=0.0, right=0.0)
++
++    def burned_frac(self, tau):
++        return np.interp(tau, self.grid, self.I, left=0.0, right=self.Itot) / self.Itot
++
++
++def simulate(curve, speed, delay, mass, cda, tscale, theta_on=None, tau_r=0.15,
++             dt=0.002, tmax=14.0):
++    """Vertical flight from the fire command for J rockets at once (RK4).
++    Returns X (fall displacement, +up) and V (+up), float32 [steps, J]."""
++    J = len(speed)
++    x = np.zeros(J)
++    v = -np.abs(speed).astype(float)
++    k = 0.5 * RHO * cda
++    n = int(tmax / dt) + 1
++    X = np.empty((n, J), dtype=np.float32)
++    V = np.empty((n, J), dtype=np.float32)
++
++    def acc(t, vv):
++        tau = t - delay
++        m = mass - curve.prop * curve.burned_frac(tau)
++        T = tscale * curve.thrust(tau)
++        if theta_on is not None:
++            T = T * np.cos(theta_on * np.exp(-np.maximum(tau, 0.0) / tau_r))
++        return (T - k * vv * np.abs(vv)) / m - G
++
++    t = 0.0
++    for i in range(n):
++        X[i] = x
++        V[i] = v
++        a1 = acc(t, v)
++        v2 = v + 0.5 * dt * a1
++        a2 = acc(t + 0.5 * dt, v2)
++        v3 = v + 0.5 * dt * a2
++        a3 = acc(t + 0.5 * dt, v3)
++        v4 = v + dt * a3
++        a4 = acc(t + dt, v4)
++        x = x + dt * (v + 2 * v2 + 2 * v3 + v4) / 6.0
++        v = v + dt * (a1 + 2 * a2 + 2 * a3 + a4) / 6.0
++        t += dt
++    return X, V
++
++
++def outcome_curves(X, V, levels, hop_min=0.25):
++    """Touchdown speed and hop flag for every rocket and every contact depth
++    (m fallen at first ground contact). Returns (speed[J, L], hop[J, L])."""
++    n, J = X.shape
++    spd = np.full((J, len(levels)), np.nan)
++    hop = np.zeros((J, len(levels)), dtype=bool)
++    for j in range(J):
++        x = X[:, j].astype(float)
++        vv = V[:, j].astype(float)
++        depth = -np.minimum.accumulate(x)
++        idx = np.searchsorted(depth, levels, side="left")
++        ok = (idx > 0) & (idx < n)
++        i1 = idx[ok]
++        i0 = i1 - 1
++        d0, d1 = depth[i0], depth[i1]
++        f = np.where(d1 > d0, (levels[ok] - d0) / np.maximum(d1 - d0, 1e-12), 1.0)
++        spd[j, ok] = np.abs(vv[i0] + f * (vv[i1] - vv[i0]))
++        stop = np.argmax(vv >= 0.0)  # first moment it stopped falling
++        if vv[stop] >= 0.0:
++            hop[j] = levels > depth[stop] + hop_min
++    return spd, hop
++
++
++def stop_depth(curve, speed, delay, mass, cda, theta_on=None, tau_r=0.15,
++               slowest=False):
++    """Exact zero-uncertainty fall distance until the rocket stops. If it
++    can't stop: nan, or with slowest=True the fall distance at its slowest
++    moment (the best a timing-only solver can aim at)."""
++    X, V = simulate(curve, np.array([speed]), np.array([delay]), np.array([mass]),
++                    np.array([cda]), np.array([1.0]),
++                    None if theta_on is None else np.array([theta_on]), tau_r,
++                    dt=0.0005, tmax=delay + curve.burn + 0.5)
++    x, v = X[:, 0].astype(float), V[:, 0].astype(float)
++    i = int(np.argmax(v >= 0.0))
++    if v[i] < 0.0:
++        if not slowest:
++            return float("nan")
++        j = int(np.argmax(v))  # least negative = slowest fall
++        return float(-x[j])
++    f = -v[i - 1] / max(v[i] - v[i - 1], 1e-12)
++    return float(-(x[i - 1] + f * (x[i] - x[i - 1])))
++
++
++def solve_row(args):
++    (speed, eng, mass, cda, delay, unc, hop_penalty, tilt_ref, tau_r, J, seed,
++     h_floor) = args
++    curve = Curve(eng)
++    rng = np.random.default_rng(seed)
++    d = delay * (1.0 + rng.uniform(-unc["delay"], unc["delay"], J))
++    m = mass * (1.0 + rng.uniform(-unc["mass"], unc["mass"], J))
++    c = cda * (1.0 + rng.uniform(-unc["cda"], unc["cda"], J))
++    ts = 1.0 + unc["thrust_sd"] * rng.standard_normal(J)
++    eh = unc["eh_mean"] + unc["eh_sd"] * rng.standard_normal(J)
++    ev = unc["ev_mean"] + unc["ev_sd"] * rng.standard_normal(J)
++    true_speed = np.maximum(speed + ev, 0.0)
++    X, V = simulate(curve, true_speed, d, m, c, ts)
++    nom = stop_depth(curve, speed, delay, mass, cda)
++    ref = nom if np.isfinite(nom) else stop_depth(curve, speed, delay, mass, cda,
++                                                  slowest=True)
++    # Never aim below the missed-window floor: the flight computer aborts
++    # there, so "fire at the last moment" is not an option it can take.
++    levels = np.arange(max(h_floor, ref - 10.0), max(h_floor, ref - 10.0) + 20.0, 0.01)
++    spd, hop = outcome_curves(X, V, levels)
++    # decision H = level the solver believes; the true contact depth is H - eh
++    score = np.empty(len(levels))
++    hop_rate = np.empty(len(levels))
++    for k, H in enumerate(levels):
++        true_level = H - eh
++        jj = np.clip(np.round((true_level - levels[0]) / 0.01).astype(int), 0, len(levels) - 1)
++        s = spd[np.arange(J), jj]
++        h = hop[np.arange(J), jj]
++        score[k] = np.nanmean(s) + hop_penalty * np.mean(h)
++        hop_rate[k] = np.mean(h)
++    k = int(np.nanargmin(score))
++    H_fire = float(levels[k])
++    # tilt coefficient: extra stopping distance per rad^2 of tilt at thrust onset
++    tilt_coef = 0.0
++    if np.isfinite(nom):
++        tilted = stop_depth(curve, speed, delay, mass, cda, theta_on=tilt_ref, tau_r=tau_r)
++        if np.isfinite(tilted):
++            tilt_coef = (tilted - nom) / (tilt_ref * tilt_ref)
++    return speed, H_fire, (nom if np.isfinite(nom) else float("nan")), tilt_coef, \
++        float(hop_rate[k]), float(score[k])
++
++
++def config_defaults(path):
++    vals = {"MASS_DESCENT_KG": 0.95, "CDA_M2": 0.004, "IGNITION_DELAY_MS": 500.0}
++    try:
++        text = open(path, encoding="utf-8").read()
++    except OSError:
++        return vals
++    for name in vals:
++        m = re.search(r"constexpr\s+float\s+" + name + r"\s*=\s*([-+\d.eE]+)f?\s*;", text)
++        if m:
++            vals[name] = float(m.group(1))
++    return vals
++
++
++def main():
++    here = os.path.dirname(os.path.abspath(__file__))
++    cfg = config_defaults(os.path.join(here, "..", "src", "config.h"))
++    ap = argparse.ArgumentParser(description=__doc__,
++                                 formatter_class=argparse.RawDescriptionHelpFormatter)
++    ap.add_argument("--eng", default=os.path.join(here, "motors", "Estes_F15.eng"))
++    ap.add_argument("--mass", type=float, default=cfg["MASS_DESCENT_KG"])
++    ap.add_argument("--cda", type=float, default=cfg["CDA_M2"])
++    ap.add_argument("--delay-ms", type=float, default=cfg["IGNITION_DELAY_MS"])
++    ap.add_argument("--delay-pct", type=float, default=15.0,
++                    help="[MEASURE] ignition-delay spread, +- percent (uniform)")
++    ap.add_argument("--mass-pct", type=float, default=5.0,
++                    help="[MEASURE] descent-mass uncertainty, +- percent (uniform)")
++    ap.add_argument("--cda-pct", type=float, default=20.0,
++                    help="[MEASURE] drag uncertainty, +- percent (uniform)")
++    ap.add_argument("--thrust-sd-pct", type=float, default=1.7,
++                    help="[MEASURE] motor-to-motor thrust spread, 1-sigma percent")
++    ap.add_argument("--eh-mean", type=float, default=0.0,
++                    help="estimator altitude error left after lag compensation (m)")
++    ap.add_argument("--eh-sd", type=float, default=0.06)
++    ap.add_argument("--ev-mean", type=float, default=0.0,
++                    help="estimator descent-speed error left after lag compensation (m/s)")
++    ap.add_argument("--ev-sd", type=float, default=0.04)
++    ap.add_argument("--hop-penalty", type=float, default=0.0,
++                    help="extra cost per hop, m/s (0 = plain expected touchdown speed)")
++    ap.add_argument("--tilt-ref-deg", type=float, default=15.0)
++    ap.add_argument("--tilt-tau", type=float, default=0.15,
++                    help="[ESTIMATE] TVC tilt recovery time constant after thrust onset (s)")
++    ap.add_argument("--h-floor", type=float, default=4.5,
++                    help="lowest fire altitude allowed (m): above MISSED_WINDOW_ALT_M")
++    ap.add_argument("--vmin", type=float, default=2.0)
++    ap.add_argument("--vmax", type=float, default=25.0)
++    ap.add_argument("--vstep", type=float, default=0.5)
++    ap.add_argument("--draws", type=int, default=2000)
++    ap.add_argument("--out", default=os.path.join(here, "..", "src", "core", "landing_table.h"))
++    args = ap.parse_args()
++
++    unc = {"delay": args.delay_pct / 100.0, "mass": args.mass_pct / 100.0,
++           "cda": args.cda_pct / 100.0, "thrust_sd": args.thrust_sd_pct / 100.0,
++           "eh_mean": args.eh_mean, "eh_sd": args.eh_sd,
++           "ev_mean": args.ev_mean, "ev_sd": args.ev_sd}
++    n = int(round((args.vmax - args.vmin) / args.vstep)) + 1
++    speeds = [args.vmin + i * args.vstep for i in range(n)]
++    jobs = [(v, args.eng, args.mass, args.cda, args.delay_ms / 1000.0, unc,
++             args.hop_penalty, args.tilt_ref_deg * np.pi / 180.0, args.tilt_tau,
++             args.draws, 1000 + i, args.h_floor) for i, v in enumerate(speeds)]
++    with multiprocessing.Pool(min(len(jobs), max(1, (os.cpu_count() or 2) - 1))) as pool:
++        res = pool.map(solve_row, jobs)
++
++    print("  v_down   h_fire   h_nominal  late_by  tilt_coef  hop_rate  E[v_td]")
++    for v, hf, hn, tc, hr, sc in res:
++        print(f"  {v:6.2f}  {hf:7.3f}  {hn:9.3f}  {hn - hf:+7.3f}  {tc:9.3f}  {hr:8.3f}  {sc:7.2f}")
++
++    def rows(vals, fmt):
++        out = []
++        for i in range(0, len(vals), 8):
++            out.append("  " + " ".join(fmt.format(x) for x in vals[i:i + 8]))
++        return "\n".join(out)
++
++    hf = [r[1] for r in res]
++    hn = [r[2] if np.isfinite(r[2]) else -1.0 for r in res]
++    tc = [r[3] for r in res]
++    stamp = datetime.date.today().isoformat()
++    with open(os.path.abspath(args.out), "w", encoding="utf-8", newline="\n") as f:
++        f.write(f"""#pragma once
++// GENERATED by tools/landing_table.py on {stamp} -- DO NOT EDIT BY HAND.
++//   motor {os.path.basename(args.eng)}, mass {args.mass:.3f} kg, CdA {args.cda:.4f} m^2,
++//   ignition delay {args.delay_ms:.0f} ms
++//   uncertainty: delay +-{args.delay_pct:g} %, mass +-{args.mass_pct:g} %, CdA +-{args.cda_pct:g} %,
++//   thrust sd {args.thrust_sd_pct:g} %, estimator residual h {args.eh_mean:+.2f}+-{args.eh_sd:.2f} m,
++//   v {args.ev_mean:+.2f}+-{args.ev_sd:.2f} m/s; hop penalty {args.hop_penalty:g} m/s;
++//   {args.draws} draws per row; tilt recovery tau {args.tilt_tau:g} s
++// Per descent speed (m/s, downward-positive):
++//   H_FIRE    fire altitude (m) minimizing the expected touchdown speed
++//   H_NOMINAL exact stop altitude of the nominal rocket (-1 = can't stop)
++//   TILT_COEF extra fall distance per rad^2 of tilt at thrust onset (m/rad^2)
++namespace landingtable {{
++
++constexpr float V_MIN = {args.vmin}f;
++constexpr float V_STEP = {args.vstep}f;
++constexpr int N = {n};
++
++constexpr float H_FIRE[N] = {{
++{rows(hf, "{:8.3f}f,")}
++}};
++
++constexpr float H_NOMINAL[N] = {{
++{rows(hn, "{:8.3f}f,")}
++}};
++
++constexpr float TILT_COEF[N] = {{
++{rows(tc, "{:8.3f}f,")}
++}};
++
++// Linear interpolation in a table, clamped to its domain.
++inline float lookup(const float* t, float vDown) {{
++  if (!(vDown > V_MIN)) return t[0];  // also catches NaN
++  const float idx = (vDown - V_MIN) / V_STEP;
++  if (idx >= (float)(N - 1)) return t[N - 1];
++  const int i = (int)idx;
++  const float f = idx - (float)i;
++  return t[i] * (1.0f - f) + t[i + 1] * f;
++}}
++inline float hFire(float vDown) {{ return lookup(H_FIRE, vDown); }}
++inline float tiltCoef(float vDown) {{ return lookup(TILT_COEF, vDown); }}
++
++}}  // namespace landingtable
++""")
++    print("wrote", os.path.abspath(args.out))
++
++
++if __name__ == "__main__":
++    main()
+diff -ruN --binary patchcheck/tools/replay/main.cpp patchcheck_ideas/tools/replay/main.cpp
+--- patchcheck/tools/replay/main.cpp	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/tools/replay/main.cpp	2026-10-20 16:45:57.620110600 -0500
+@@ -1,493 +1,668 @@
+-//
+-// RocketFC PC replay harness.
+-//
+-// Compiles src/core (the EXACT files the Teensy flies) natively, runs built-in
+-// unit checks on the math, then streams synthetic flight CSVs (from
+-// tools/synth_flight.py) through FlightCore and asserts:
+-//   - the state sequence matches the scenario expectation
+-//   - the landing-motor fire command lands inside the physics-derived window
+-//   - aborts happen exactly when they should (and never when they shouldn't)
+-//   - the parachute is released when (and only when) it should be, the canopy
+-//     is confirmed, and a stuck latch gets re-cycled
+-//   - the leg-release nichrome burns from fire + LEGS_DELAY_MS to touchdown on
+-//     a good landing burn, and never otherwise
+-//   - the Kalman altitude tracks truth within bounds
+-//
+-// Build:  g++ -O2 -std=c++17 -Wall -o replay main.cpp   (see Makefile)
+-// Run:    ./replay cases/nominal_chute.csv cases/nominal_land.csv ...
+-//
+-#include <cmath>
+-#include <cstdint>
+-#include <cstdio>
+-#include <cstring>
+-#include <fstream>
+-#include <functional>
+-#include <sstream>
+-#include <string>
+-#include <vector>
+-
+-#include "../../src/core/flight_core.h"
+-
+-// ---------------------------------------------------------------------------
+-// Tiny helpers for the #META json line (format is under our control).
+-// ---------------------------------------------------------------------------
+-static std::string metaRaw(const std::string& meta, const std::string& key) {
+-  const std::string pat = "\"" + key + "\":";
+-  const size_t k = meta.find(pat);
+-  if (k == std::string::npos) return "";
+-  size_t i = k + pat.size();
+-  while (i < meta.size() && meta[i] == ' ') ++i;
+-  size_t depth = 0, j = i;
+-  for (; j < meta.size(); ++j) {
+-    const char c = meta[j];
+-    if (c == '[' || c == '{') ++depth;
+-    else if (c == ']' || c == '}') {
+-      if (depth == 0) break;
+-      --depth;
+-    } else if (c == ',' && depth == 0) break;
+-  }
+-  return meta.substr(i, j - i);
+-}
+-static std::string metaStr(const std::string& m, const std::string& k) {
+-  std::string r = metaRaw(m, k);
+-  if (r.size() >= 2 && r.front() == '"') return r.substr(1, r.size() - 2);
+-  return r;  // "null" or bare
+-}
+-static double metaNum(const std::string& m, const std::string& k, double dflt) {
+-  const std::string r = metaRaw(m, k);
+-  if (r.empty() || r == "null") return dflt;
+-  return atof(r.c_str());
+-}
+-static std::vector<std::string> metaStrArr(const std::string& m,
+-                                           const std::string& k) {
+-  std::vector<std::string> out;
+-  const std::string r = metaRaw(m, k);
+-  size_t i = 0;
+-  while ((i = r.find('"', i)) != std::string::npos) {
+-    const size_t j = r.find('"', i + 1);
+-    if (j == std::string::npos) break;
+-    out.push_back(r.substr(i + 1, j - i - 1));
+-    i = j + 1;
+-  }
+-  return out;
+-}
+-static bool metaPair(const std::string& m, const std::string& k, double& a,
+-                     double& b) {
+-  const std::string r = metaRaw(m, k);
+-  if (r.empty() || r == "null") return false;
+-  return sscanf(r.c_str(), "[%lf , %lf]", &a, &b) == 2 ||
+-         sscanf(r.c_str(), "[%lf, %lf]", &a, &b) == 2;
+-}
+-
+-// ---------------------------------------------------------------------------
+-static int failures = 0;
+-#define CHECK(cond, ...)                          \
+-  do {                                            \
+-    if (cond) {                                   \
+-      printf("  PASS: " __VA_ARGS__);             \
+-      printf("\n");                               \
+-    } else {                                      \
+-      printf("  FAIL: " __VA_ARGS__);             \
+-      printf("\n");                               \
+-      ++failures;                                 \
+-    }                                             \
+-  } while (0)
+-
+-// ---------------------------------------------------------------------------
+-// Drives ChuteDeploy alone at 500 Hz with a scripted |specific force| (g) and
+-// altitude (m, default well clear of the ground) as functions of seconds
+-// since release. Release happens at t = 0 after 1 s of pre-release history.
+-// ---------------------------------------------------------------------------
+-struct ChuteRun {
+-  int releases = 0;
+-  bool detected = false, unconfirmed = false, everLockedAfter = false;
+-  bool endReleased = false;
+-};
+-static ChuteRun runChute(
+-    const std::function<float(float)>& accelG, float seconds,
+-    const std::function<float(float)>& altM = [](float) { return 100.0f; }) {
+-  ChuteDeploy cd;
+-  ChuteRun r;
+-  const float dtMs = 2.0f;
+-  uint32_t ms = 10000;
+-  for (float t = -1.0f; t < seconds; t += dtMs / 1000.0f, ms += 2) {
+-    if (t >= 0.0f && !cd.started()) cd.start(ms);
+-    cd.update(ms, dtMs, accelG(t), altM(t));
+-    if (cd.started() && !cd.servoRelease()) r.everLockedAfter = true;
+-  }
+-  r.releases = cd.releases();
+-  r.detected = cd.detected();
+-  r.unconfirmed = cd.unconfirmed();
+-  r.endReleased = cd.servoRelease();
+-  return r;
+-}
+-
+-// ---------------------------------------------------------------------------
+-// Unit checks on the math the vehicle's life depends on.
+-// ---------------------------------------------------------------------------
+-static void unitChecks() {
+-  printf("== unit checks ==\n");
+-
+-  // Quaternion round trip
+-  {
+-    Quat q = Quat::fromRotVec({0.3f, -0.2f, 0.5f});
+-    Vec3 v{1, 2, 3};
+-    Vec3 r = q.rotateInv(q.rotate(v));
+-    CHECK(std::fabs(r.x - 1) < 1e-4f && std::fabs(r.y - 2) < 1e-4f &&
+-              std::fabs(r.z - 3) < 1e-4f,
+-          "quat rotate/rotateInv round-trip");
+-  }
+-
+-  // Tilt error sign: +5 deg rotation about body X -> correction is -5 deg
+-  // about body X.
+-  {
+-    Ahrs a;
+-    a.initFromAccel({0, 0, 9.81f});
+-    const float th = 5.0f * cfg::DEG2RAD;
+-    Ahrs t = a;
+-    // apply rotation about body X by integrating gyro for 1 s
+-    for (int i = 0; i < 1000; ++i) t.update({th / 1.0f, 0, 0}, 0.001f);
+-    const Vec3 e = t.tiltErrorBody();
+-    CHECK(std::fabs(e.x + th) < 0.15f * th && std::fabs(e.y) < 0.02f,
+-          "tilt error: +5deg about X -> correction -5deg about X (e=[%.3f %.3f])",
+-          e.x, e.y);
+-  }
+-
+-  // Roll decoupling: same tilt, then 90 deg roll about the body axis. The
+-  // needed correction must move to the OTHER body axis.
+-  {
+-    Ahrs t;
+-    t.initFromAccel({0, 0, 9.81f});
+-    const float th = 5.0f * cfg::DEG2RAD;
+-    for (int i = 0; i < 1000; ++i) t.update({th, 0, 0}, 0.001f);
+-    for (int i = 0; i < 1000; ++i)
+-      t.update({0, 0, 90.0f * cfg::DEG2RAD}, 0.001f);  // roll +90 deg
+-    const Vec3 e = t.tiltErrorBody();
+-    CHECK(std::fabs(e.y - th) < 0.15f * th && std::fabs(e.x) < 0.02f,
+-          "roll decoupling: after +90deg roll the correction moves X->Y "
+-          "(e=[%.3f %.3f], tilt %.2f deg)",
+-          e.x, e.y, t.tiltRad() * cfg::RAD2DEG);
+-  }
+-
+-  // KF: static convergence + ramp tracking
+-  {
+-    AltitudeKf kf;
+-    kf.configure(0.5f, 0.01f, 5.0f, 25);
+-    kf.reset(0);
+-    kf.setBaroVar(0.04f);
+-    // 10 s static with accel bias 0.2 m/s^2
+-    for (int i = 0; i < 5000; ++i) {
+-      kf.predict(0.2f, 0.002f);
+-      if (i % 5 == 0) kf.update(0.0f);
+-    }
+-    CHECK(std::fabs(kf.altitude()) < 0.2f && std::fabs(kf.velocity()) < 0.2f &&
+-              std::fabs(kf.bias() - 0.2f) < 0.1f,
+-          "KF absorbs accel bias at rest (h=%.3f v=%.3f b=%.3f)",
+-          kf.altitude(), kf.velocity(), kf.bias());
+-    // Constant 5 m/s climb seen only by the baro (accel input stays at the
+-    // learned bias — i.e. a dead accelerometer). The filter overshoots
+-    // through the transient, then settles; 20 s gives it time to converge.
+-    float h = 0;
+-    for (int i = 0; i < 10000; ++i) {
+-      h += 5.0f * 0.002f;
+-      kf.predict(0.2f, 0.002f);
+-      if (i % 5 == 0) kf.update(h);
+-    }
+-    CHECK(std::fabs(kf.altitude() - h) < 0.5f &&
+-              std::fabs(kf.velocity() - 5.0f) < 0.5f,
+-          "KF tracks a 5 m/s ramp (h=%.2f/%.2f v=%.2f)", kf.altitude(), h,
+-          kf.velocity());
+-    // glitch rejection
+-    const float hBefore = kf.altitude();
+-    kf.update(hBefore + 40.0f);
+-    CHECK(std::fabs(kf.altitude() - hBefore) < 1.0f,
+-          "KF gates a 40 m baro glitch");
+-  }
+-
+-  // Parachute deploy supervisor
+-  {
+-    // Clean deploy: freefall, canopy opens 0.3 s after release (2.5 g
+-    // spike, then 1 g under canopy).
+-    const ChuteRun a = runChute(
+-        [](float t) { return t < 0.3f ? 0.02f : t < 0.5f ? 2.5f : 1.0f; },
+-        6.0f);
+-    CHECK(a.detected && a.releases == 1 && !a.everLockedAfter && a.endReleased,
+-          "chute: clean deploy -> detected on the 1st release, never re-locked "
+-          "(releases=%d)", a.releases);
+-
+-    // Stuck latch, never comes free: every re-cycle is used, latch ends open.
+-    const ChuteRun b = runChute([](float) { return 0.02f; }, 20.0f);
+-    CHECK(!b.detected && b.unconfirmed &&
+-              b.releases == cfg::CHUTE_MAX_RELEASES && b.everLockedAfter &&
+-              b.endReleased,
+-          "chute: stuck latch -> %d releases (want %d), unconfirmed, held open",
+-          b.releases, cfg::CHUTE_MAX_RELEASES);
+-
+-    // Latch frees on the first re-cycle: canopy shortly after release #2.
+-    const float t2 = (cfg::CHUTE_CONFIRM_MS + cfg::CHUTE_RECYCLE_LOCK_MS) /
+-                         1000.0f + 0.3f;
+-    const ChuteRun c = runChute(
+-        [t2](float t) { return t < t2 ? 0.02f : 1.0f; }, 10.0f);
+-    CHECK(c.detected && c.releases == 2 && c.endReleased,
+-          "chute: frees on the 1st re-cycle -> detected, releases=%d (want 2)",
+-          c.releases);
+-
+-    // Post-abort drag build-up (0.3 g rising 0.12 g/s toward 1 g at terminal
+-    // velocity, never a canopy) must NOT be mistaken for one -- the baseline
+-    // is re-taken at each release.
+-    const ChuteRun d = runChute(
+-        [](float t) { return std::fmin(1.0f, 0.3f + 0.12f * (t > 0 ? t : 0)); },
+-        15.0f);
+-    CHECK(!d.detected && d.unconfirmed,
+-          "chute: slow drag build-up is not a canopy (releases=%d)",
+-          d.releases);
+-
+-    // Opening while the servo is swung back to LOCK: straight back to RELEASE.
+-    const float tl = cfg::CHUTE_CONFIRM_MS / 1000.0f + 0.1f;
+-    const ChuteRun e = runChute(
+-        [tl](float t) { return t < tl ? 0.02f : 1.0f; }, 6.0f);
+-    CHECK(e.detected && e.releases == 1 && e.endReleased,
+-          "chute: canopy during the LOCK dwell -> back to RELEASE (releases=%d)",
+-          e.releases);
+-
+-    // Latch never frees and the rocket hits the ground at 2.5 s: the impact
+-    // jolt (then 1 g lying on the ground) must NOT be logged as a canopy.
+-    const ChuteRun f = runChute(
+-        [](float t) { return t < 2.5f ? 0.02f : t < 2.6f ? 30.0f : 1.0f; },
+-        6.0f, [](float t) { return t < 2.5f ? 30.0f - 12.0f * t : 0.0f; });
+-    CHECK(!f.detected,
+-          "chute: ground impact is not mistaken for a canopy (releases=%d)",
+-          f.releases);
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-struct Row {
+-  float t, ax, ay, az, gx, gy, gz;
+-  int baroNew;
+-  float pPa, hTrue, vTrue, tiltTrue, thrust;
+-};
+-
+-static bool parseRow(const std::string& line, Row& r) {
+-  Row x{};
+-  char pbuf[32] = "";
+-  // p_pa may be empty (non-baro rows)
+-  const int n = sscanf(line.c_str(),
+-                       "%f,%f,%f,%f,%f,%f,%f,%d,%31[^,],%f,%f,%f,%f", &x.t,
+-                       &x.ax, &x.ay, &x.az, &x.gx, &x.gy, &x.gz, &x.baroNew,
+-                       pbuf, &x.hTrue, &x.vTrue, &x.tiltTrue, &x.thrust);
+-  if (n == 13) {
+-    x.pPa = atof(pbuf);
+-  } else {
+-    // empty p_pa: sscanf can't match an empty field with %[^,]; re-parse
+-    const int n2 = sscanf(line.c_str(), "%f,%f,%f,%f,%f,%f,%f,%d,,%f,%f,%f,%f",
+-                          &x.t, &x.ax, &x.ay, &x.az, &x.gx, &x.gy, &x.gz,
+-                          &x.baroNew, &x.hTrue, &x.vTrue, &x.tiltTrue,
+-                          &x.thrust);
+-    if (n2 != 12) return false;
+-    x.pPa = 0;
+-  }
+-  r = x;
+-  return true;
+-}
+-
+-static const char* abortName(AbortReason r) {
+-  switch (r) {
+-    case AbortReason::NONE: return "NONE";
+-    case AbortReason::TILT: return "TILT";
+-    case AbortReason::IMU_FAIL: return "IMU_FAIL";
+-    case AbortReason::KF_UNHEALTHY: return "KF_UNHEALTHY";
+-    case AbortReason::MISSED_WINDOW: return "MISSED_WINDOW";
+-    case AbortReason::DUD_IGNITER: return "DUD_IGNITER";
+-  }
+-  return "?";
+-}
+-
+-// ---------------------------------------------------------------------------
+-static void runCase(const std::string& path) {
+-  std::ifstream f(path);
+-  if (!f) {
+-    printf("cannot open %s\n", path.c_str());
+-    ++failures;
+-    return;
+-  }
+-  std::string meta, line;
+-  std::getline(f, meta);           // #META {...}
+-  std::getline(f, line);           // header
+-
+-  std::vector<Row> rows;
+-  rows.reserve(20000);
+-  Row r;
+-  while (std::getline(f, line))
+-    if (parseRow(line, r)) rows.push_back(r);
+-
+-  const std::string scenario = metaStr(meta, "scenario");
+-  const std::string mode = metaStr(meta, "mode");
+-  const double armT = metaNum(meta, "arm_t", 2.6);
+-  const double tdTrue = metaNum(meta, "touchdown_t", 1e9);
+-  const double maxKfErr = metaNum(meta, "max_kf_alt_err", 3.0);
+-  const std::string expectAbort = metaStr(meta, "expect_abort");
+-  const auto expectStates = metaStrArr(meta, "expect_states");
+-  const int expectReleases = (int)metaNum(meta, "expect_chute_releases", 1);
+-  const bool expectDetect = metaStr(meta, "expect_chute_detected") != "false";
+-  double fw0 = 0, fw1 = 0;
+-  const bool hasFireWindow = metaPair(meta, "fire_window", fw0, fw1);
+-
+-  printf("\n== case %s (%zu rows, mode %s) ==\n", scenario.c_str(),
+-         rows.size(), mode.c_str());
+-
+-  // --- pad calibration, exactly like the firmware's arming sequence ---
+-  Vec3 gyroBias{}, accelAvg{};
+-  int nCal = 0;
+-  double pM2 = 0, pMean = 0;
+-  int nP = 0;
+-  for (const Row& row : rows) {
+-    if (row.t >= armT - 0.2) break;
+-    gyroBias = gyroBias + Vec3{row.gx, row.gy, row.gz};
+-    accelAvg = accelAvg + Vec3{row.ax, row.ay, row.az};
+-    ++nCal;
+-    if (row.baroNew && row.pPa > 0) {
+-      ++nP;
+-      const double d = row.pPa - pMean;
+-      pMean += d / nP;
+-      pM2 += d * (row.pPa - pMean);
+-    }
+-  }
+-  gyroBias = gyroBias * (1.0f / nCal);
+-  accelAvg = accelAvg * (1.0f / nCal);
+-  const float p0 = (float)pMean;
+-  const float mPerPa = 8434.6f / p0;
+-  const float altVar = (float)(pM2 / (nP - 1)) * mPerPa * mPerPa;
+-
+-  // --- flight core, wired the same way RocketFC.ino wires it ---
+-  FlightCore core;
+-  core.begin();
+-  core.setMode(mode == "land" ? cfg::FlightMode::FULL_LANDING
+-                              : cfg::FlightMode::CHUTE_TEST);
+-
+-  std::vector<std::string> seq{"IDLE"};
+-  double fireT = -1, abortT = -1, tdT = -1, launchT = -1;
+-  double chuteT = -1, chuteDetT = -1;
+-  int chuteReleases = 0;
+-  double legsOnT = -1, legsOffT = -1;
+-  bool legsEver = false, legsGap = false;
+-  AbortReason abortReason = AbortReason::NONE;
+-  float maxErr = 0;
+-  bool armed = false;
+-
+-  CoreOutput co;
+-  for (const Row& row : rows) {
+-    const uint32_t ms = (uint32_t)(row.t * 1000.0 + 0.5);
+-    if (!armed && row.t >= armT) {
+-      core.padLevelInit(accelAvg);
+-      core.setBaroNoiseVar(altVar > 0.0025f ? altVar : 0.0025f);
+-      core.zeroAltitude();
+-      core.requestArm(ms);
+-      armed = true;
+-    }
+-
+-    CoreInput ci;
+-    ci.ms = ms;
+-    ci.dt = 0.002f;
+-    ci.accel = {row.ax, row.ay, row.az};
+-    ci.gyro = Vec3{row.gx, row.gy, row.gz} - gyroBias;
+-    ci.baroNew = row.baroNew != 0 && row.pPa > 0;
+-    if (ci.baroNew)
+-      ci.baroAlt = 44330.0f * (1.0f - powf(row.pPa / p0, 0.190295f));
+-    core.step(ci, co);
+-
+-    const char* sn = FlightStateMachine::stateName(co.state);
+-    if (seq.empty() || seq.back() != sn) seq.push_back(sn);
+-
+-    FlightStateMachine::Event ev;
+-    while (core.fsm().popEvent(ev)) {
+-      if (ev.code == FlightEvent::LAUNCH) launchT = row.t;
+-      if (ev.code == FlightEvent::FIRE_LANDING) fireT = row.t;
+-      if (ev.code == FlightEvent::ABORT_DET) {
+-        abortT = row.t;
+-        abortReason = (AbortReason)(uint8_t)ev.value;
+-      }
+-      if (ev.code == FlightEvent::TOUCHDOWN_DET && tdT < 0) tdT = row.t;
+-      if (ev.code == FlightEvent::CHUTE_RELEASE) {
+-        if (chuteT < 0) chuteT = row.t;
+-        ++chuteReleases;
+-      }
+-      if (ev.code == FlightEvent::CHUTE_DETECTED) chuteDetT = row.t;
+-      if (ev.code == FlightEvent::LEGS_BURN_ON) legsOnT = row.t;
+-      if (ev.code == FlightEvent::LEGS_BURN_OFF) legsOffT = row.t;
+-    }
+-    legsEver |= co.legsBurn;
+-    if (legsOnT > 0 && legsOffT < 0 && !co.legsBurn) legsGap = true;
+-
+-    if (launchT > 0 && tdT < 0) {
+-      const float err = std::fabs(co.kfAlt - row.hTrue);
+-      if (err > maxErr) maxErr = err;
+-    }
+-  }
+-
+-  // --- assertions ---
+-  std::string got;
+-  for (const auto& s : seq) got += s + " ";
+-  std::string want;
+-  for (const auto& s : expectStates) want += s + " ";
+-  CHECK(seq == expectStates, "state sequence [%s] (want [%s])", got.c_str(),
+-        want.c_str());
+-
+-  if (hasFireWindow)
+-    CHECK(fireT >= fw0 && fireT <= fw1,
+-          "landing fire cmd at %.2f s inside window [%.2f, %.2f]", fireT, fw0,
+-          fw1);
+-
+-  if (expectAbort != "null" && !expectAbort.empty())
+-    CHECK(abortT > 0 && expectAbort == abortName(abortReason),
+-          "abort %s at %.2f s (want %s)", abortName(abortReason), abortT,
+-          expectAbort.c_str());
+-  else
+-    CHECK(abortT < 0, "no abort (got %s at %.2f s)", abortName(abortReason),
+-          abortT);
+-
+-  bool wantChute = false;
+-  for (const auto& s : expectStates) wantChute |= s == "DESCENT_CHUTE";
+-  if (wantChute) {
+-    CHECK(chuteReleases == expectReleases && (chuteDetT > 0) == expectDetect &&
+-              co.chuteRelease,
+-          "chute released at %.2f s, %d release%s (want %d), canopy %s at "
+-          "%.2f s (want %s), latch held open",
+-          chuteT, chuteReleases, chuteReleases == 1 ? "" : "s", expectReleases,
+-          chuteDetT > 0 ? "confirmed" : "NOT confirmed", chuteDetT,
+-          expectDetect ? "confirmed" : "not confirmed");
+-  } else {
+-    CHECK(chuteReleases == 0 && !co.chuteRelease,
+-          "chute never released (got %d release%s)", chuteReleases,
+-          chuteReleases == 1 ? "" : "s");
+-  }
+-
+-  // Legs: only on a real landing burn (fire command and no abort).
+-  const bool wantLegs = hasFireWindow && abortT < 0;
+-  if (wantLegs) {
+-    const double delay = cfg::LEGS_DELAY_MS / 1000.0;
+-    CHECK(legsOnT >= fireT + delay - 0.001 && legsOnT <= fireT + delay + 0.1 &&
+-              legsOffT == tdT && !legsGap && !co.legsBurn,
+-          "legs nichrome on at %.2f s (fire + %.2f s), off at %.2f s "
+-          "(touchdown %.2f s), continuous, off at the end",
+-          legsOnT, legsOnT - fireT, legsOffT, tdT);
+-  } else {
+-    CHECK(legsOnT < 0 && !legsEver, "legs never fired (on at %.2f s)",
+-          legsOnT);
+-  }
+-
+-  CHECK(tdT > 0 && tdT < tdTrue + 8.0,
+-        "touchdown detected at %.2f s (true contact %.2f s)", tdT, tdTrue);
+-
+-  CHECK(maxErr < (float)maxKfErr, "KF altitude max error %.2f m < %.2f m",
+-        maxErr, maxKfErr);
+-}
+-
+-// ---------------------------------------------------------------------------
+-int main(int argc, char** argv) {
+-  unitChecks();
+-  for (int i = 1; i < argc; ++i) runCase(argv[i]);
+-  printf("\n%s (%d failure%s)\n", failures == 0 ? "ALL PASS" : "FAILURES",
+-         failures, failures == 1 ? "" : "s");
+-  return failures == 0 ? 0 : 1;
+-}
++//
++// RocketFC PC replay harness.
++//
++// Compiles src/core (the EXACT files the Teensy flies) natively, runs built-in
++// unit checks on the math, then streams synthetic flight CSVs (from
++// tools/synth_flight.py) through FlightCore and asserts:
++//   - the state sequence matches the scenario expectation
++//   - the landing-motor fire command lands inside the physics-derived window
++//   - aborts happen exactly when they should (and never when they shouldn't)
++//   - the parachute is released when (and only when) it should be, the canopy
++//     is confirmed, and a stuck latch gets re-cycled
++//   - the leg-release nichrome burns from fire + LEGS_DELAY_MS to touchdown on
++//     a good landing burn, and never otherwise
++//   - the Kalman altitude tracks truth within bounds
++//
++// Build:  g++ -O2 -std=c++17 -Wall -o replay main.cpp   (see Makefile)
++// Run:    ./replay cases/nominal_chute.csv cases/nominal_land.csv ...
++//
++#include <cmath>
++#include <cstdint>
++#include <cstdio>
++#include <cstring>
++#include <fstream>
++#include <functional>
++#include <sstream>
++#include <string>
++#include <vector>
++
++#include "../../src/core/flight_core.h"
++
++// ---------------------------------------------------------------------------
++// Tiny helpers for the #META json line (format is under our control).
++// ---------------------------------------------------------------------------
++static std::string metaRaw(const std::string& meta, const std::string& key) {
++  const std::string pat = "\"" + key + "\":";
++  const size_t k = meta.find(pat);
++  if (k == std::string::npos) return "";
++  size_t i = k + pat.size();
++  while (i < meta.size() && meta[i] == ' ') ++i;
++  size_t depth = 0, j = i;
++  for (; j < meta.size(); ++j) {
++    const char c = meta[j];
++    if (c == '[' || c == '{') ++depth;
++    else if (c == ']' || c == '}') {
++      if (depth == 0) break;
++      --depth;
++    } else if (c == ',' && depth == 0) break;
++  }
++  return meta.substr(i, j - i);
++}
++static std::string metaStr(const std::string& m, const std::string& k) {
++  std::string r = metaRaw(m, k);
++  if (r.size() >= 2 && r.front() == '"') return r.substr(1, r.size() - 2);
++  return r;  // "null" or bare
++}
++static double metaNum(const std::string& m, const std::string& k, double dflt) {
++  const std::string r = metaRaw(m, k);
++  if (r.empty() || r == "null") return dflt;
++  return atof(r.c_str());
++}
++static std::vector<std::string> metaStrArr(const std::string& m,
++                                           const std::string& k) {
++  std::vector<std::string> out;
++  const std::string r = metaRaw(m, k);
++  size_t i = 0;
++  while ((i = r.find('"', i)) != std::string::npos) {
++    const size_t j = r.find('"', i + 1);
++    if (j == std::string::npos) break;
++    out.push_back(r.substr(i + 1, j - i - 1));
++    i = j + 1;
++  }
++  return out;
++}
++static bool metaPair(const std::string& m, const std::string& k, double& a,
++                     double& b) {
++  const std::string r = metaRaw(m, k);
++  if (r.empty() || r == "null") return false;
++  return sscanf(r.c_str(), "[%lf , %lf]", &a, &b) == 2 ||
++         sscanf(r.c_str(), "[%lf, %lf]", &a, &b) == 2;
++}
++
++// ---------------------------------------------------------------------------
++static int failures = 0;
++#define CHECK(cond, ...)                          \
++  do {                                            \
++    if (cond) {                                   \
++      printf("  PASS: " __VA_ARGS__);             \
++      printf("\n");                               \
++    } else {                                      \
++      printf("  FAIL: " __VA_ARGS__);             \
++      printf("\n");                               \
++      ++failures;                                 \
++    }                                             \
++  } while (0)
++
++// ---------------------------------------------------------------------------
++// Drives ChuteDeploy alone at 500 Hz with a scripted |specific force| (g) and
++// altitude (m, default well clear of the ground) as functions of seconds
++// since release. Release happens at t = 0 after 1 s of pre-release history.
++// ---------------------------------------------------------------------------
++struct ChuteRun {
++  int releases = 0;
++  bool detected = false, unconfirmed = false, everLockedAfter = false;
++  bool endReleased = false;
++};
++static ChuteRun runChute(
++    const std::function<float(float)>& accelG, float seconds,
++    const std::function<float(float)>& altM = [](float) { return 100.0f; }) {
++  ChuteDeploy cd;
++  ChuteRun r;
++  const float dtMs = 2.0f;
++  uint32_t ms = 10000;
++  for (float t = -1.0f; t < seconds; t += dtMs / 1000.0f, ms += 2) {
++    if (t >= 0.0f && !cd.started()) cd.start(ms);
++    cd.update(ms, dtMs, accelG(t), altM(t));
++    if (cd.started() && !cd.servoRelease()) r.everLockedAfter = true;
++  }
++  r.releases = cd.releases();
++  r.detected = cd.detected();
++  r.unconfirmed = cd.unconfirmed();
++  r.endReleased = cd.servoRelease();
++  return r;
++}
++
++// ---------------------------------------------------------------------------
++// Unit checks on the math the vehicle's life depends on.
++// ---------------------------------------------------------------------------
++// Landing-burn solver (src/core/landing_solver.h). Feeds `ticks` 2 ms samples
++// at constant altitude/velocity with the tilt ramping at tiltRateDegS so that
++// it reaches tiltDeg on the last tick; returns the last tick's fire decision.
++// ---------------------------------------------------------------------------
++static bool solverSteady(LandingSolver& s, float h, float v, float tiltDeg,
++                         bool healthy = true, bool cont = true, int ticks = 60,
++                         float tiltRateDegS = 0.0f) {
++  bool fire = false;
++  for (int i = 0; i < ticks; ++i) {
++    const float deg = tiltDeg + tiltRateDegS * 0.002f * (float)(i - ticks + 1);
++    fire = s.update(h, v, deg * cfg::DEG2RAD, 2.0f, healthy, cont);
++  }
++  return fire;
++}
++
++static void landingSolverChecks() {
++  printf("== landing solver checks ==\n");
++  LandingSolver::Options tableOpt;
++  tableOpt.mode = cfg::LandingSolverMode::TABLE;
++  LandingSolver::Options riskOpt;
++  riskOpt.mode = cfg::LandingSolverMode::RISK;
++
++  // TABLE mode is exactly the original inline rule.
++  {
++    int bad = 0, n = 0;
++    const float tilts[] = {0.0f, 10.0f, 14.99f, 15.0f, 20.0f};
++    for (float v = 0.0f; v <= 30.0f; v += 0.37f)
++      for (float h = 0.0f; h <= 80.0f; h += 0.53f)
++        for (float deg : tilts) {
++          LandingSolver s(tableOpt);
++          const float tilt = deg * cfg::DEG2RAD;
++          const bool got = s.update(h, -v, tilt, 2.0f, true, true);
++          bool want = false;
++          if (v >= cfg::BURN_MIN_SPEED_MS)
++            want = h <= burntable::hIgnite(v) + cfg::BURN_TABLE_MARGIN_M &&
++                   tilt < cfg::TILT_IGNITE_MAX_DEG * cfg::DEG2RAD;
++          bad += got != want;
++          ++n;
++        }
++    CHECK(bad == 0, "solver TABLE mode = original rule (%d/%d mismatches)", bad, n);
++  }
++
++  // Lag compensation, analytic: h + v tau, v + (-g + k v^2) tau.
++  {
++    LandingSolver::Options o = riskOpt;
++    o.lagTauS = 0.02f;
++    LandingSolver s(o);
++    s.update(30.0f, -15.0f, 0.0f, 2.0f, true, true);
++    const float k = 0.5f * 1.225f * cfg::CDA_M2 / cfg::MASS_DESCENT_KG;
++    const float hc = 30.0f - 15.0f * 0.02f;
++    const float vc = -15.0f + (-cfg::G0 + k * 225.0f) * 0.02f;
++    CHECK(std::fabs(s.hNow() - hc) < 1e-4f && std::fabs(s.vDown() + vc) < 1e-4f,
++          "solver lag compensation: h %.4f (want %.4f), vDown %.4f (want %.4f)",
++          s.hNow(), hc, s.vDown(), -vc);
++  }
++
++  // Analytic freefall from rest at 60 m, no lag, no tilt: fires on the first
++  // tick at or below the table's fire altitude for the current speed.
++  {
++    LandingSolver::Options o = riskOpt;
++    o.lagTauS = 0.0f;
++    LandingSolver s(o);
++    float t = 0.0f, hFired = -1.0f, vFired = 0.0f;
++    for (int i = 0; i < 5000 && hFired < 0.0f; ++i, t += 0.002f) {
++      const float h = 60.0f - 0.5f * cfg::G0 * t * t;
++      const float v = -cfg::G0 * t;
++      if (s.update(h, v, 0.0f, 2.0f, true, true)) {
++        hFired = h;
++        vFired = v;
++      }
++    }
++    const float want = landingtable::hFire(-vFired);
++    // one 2 ms tick = the fall (v dt) plus the table's rise with speed (~0.06 m)
++    CHECK(hFired > 0.0f && hFired <= want && want - hFired < 0.15f,
++          "solver freefall: fired at %.3f m / %.2f m/s, table says %.3f m",
++          hFired, -vFired, want);
++  }
++
++  // Monotonic: the required fire altitude never drops as descent speed rises.
++  {
++    LandingSolver::Options o = riskOpt;
++    o.lagTauS = 0.0f;
++    float prev = -1.0f;
++    int bad = 0;
++    for (float v = 2.0f; v <= 30.0f; v += 0.05f) {
++      LandingSolver s(o);
++      s.update(500.0f, -v, 0.0f, 2.0f, true, true);
++      if (s.hReq() < prev - 1e-4f) ++bad;
++      prev = s.hReq();
++    }
++    CHECK(bad == 0, "solver fire altitude rises with descent speed (%d drops)", bad);
++  }
++
++  // Slow descent never fires; very fast descent clamps to the table end.
++  {
++    LandingSolver slow(riskOpt), lo(riskOpt), hi(riskOpt);
++    const bool slowFire = solverSteady(slow, 0.5f, -1.0f, 0.0f);
++    const bool loFire = solverSteady(lo, 10.0f, -40.0f, 0.0f);
++    const bool hiFire = solverSteady(hi, 500.0f, -40.0f, 0.0f);
++    CHECK(!slowFire && loFire && !hiFire && std::isfinite(lo.hReq()),
++          "solver: 1 m/s never fires; 40 m/s aims at the table end (%.1f m)",
++          lo.hReq());
++  }
++
++  // NaN state, unhealthy filter or no continuity: never fire.
++  {
++    const float nan = std::nanf("");
++    LandingSolver a(riskOpt), b(riskOpt), c(riskOpt), d(riskOpt), e(riskOpt),
++        f(tableOpt);
++    const bool any = solverSteady(a, nan, -15.0f, 0.0f) ||
++                     solverSteady(b, 5.0f, nan, 0.0f) ||
++                     solverSteady(c, 5.0f, -15.0f, nan) ||
++                     solverSteady(d, 5.0f, -15.0f, 0.0f, false) ||
++                     solverSteady(e, 5.0f, -15.0f, 0.0f, true, false) ||
++                     solverSteady(f, nan, nan, 0.0f);
++    CHECK(!any, "solver: NaN inputs, unhealthy KF or no continuity -> no fire");
++  }
++
++  // Tilt at the limit (predictive interlock off): 14.9 deg fires, 15.0 doesn't.
++  {
++    LandingSolver a(riskOpt), b(riskOpt);
++    CHECK(solverSteady(a, 5.0f, -15.0f, 14.9f) && !solverSteady(b, 5.0f, -15.0f, 15.0f),
++          "solver: 14.9 deg fires, 15.0 deg blocks");
++  }
++
++  // Tilt-rate estimate and the tilt predicted at thrust onset.
++  {
++    LandingSolver s(riskOpt);
++    solverSteady(s, 500.0f, -15.0f, 20.0f, true, true, 400, -8.0f);
++    const float rate = s.tiltRateRadS() * cfg::RAD2DEG;
++    const float on = s.tiltOnRad() * cfg::RAD2DEG;
++    const float wantOn = 20.0f - 8.0f * cfg::IGNITION_DELAY_MS * 0.001f;
++    CHECK(std::fabs(rate + 8.0f) < 0.3f && std::fabs(on - wantOn) < 0.3f,
++          "solver tilt rate %.2f deg/s (want -8), tilt at onset %.2f (want %.2f)",
++          rate, on, wantOn);
++  }
++
++  // Predictive interlock: allows 17 deg falling 10 deg/s (12 at onset), but
++  // not 17 deg steady, not above the hard cap, and never when switched off.
++  {
++    LandingSolver::Options o = riskOpt;
++    o.predictInterlock = true;
++    o.hardMaxDeg = 25.0f;
++    LandingSolver a(o), b(o), c(o), d(riskOpt);
++    const bool falling = solverSteady(a, 5.0f, -15.0f, 17.0f, true, true, 200, -10.0f);
++    const bool steady = solverSteady(b, 5.0f, -15.0f, 17.0f, true, true, 200, 0.0f);
++    const bool overCap = solverSteady(c, 5.0f, -15.0f, 26.0f, true, true, 200, -30.0f);
++    const bool off = solverSteady(d, 5.0f, -15.0f, 17.0f, true, true, 200, -10.0f);
++    CHECK(falling && !steady && !overCap && !off,
++          "solver predicted-tilt interlock: falling %d, steady %d, over cap %d, off %d "
++          "(want 1 0 0 0)", falling, steady, overCap, off);
++  }
++
++  // Zero lag, zero dispersion: landing_table.h's nominal column is the same
++  // physics as burn_table.py's table (within that table's 5 cm search grid).
++  {
++    float worst = 0.0f;
++    int n = 0;
++    for (int i = 0; i < landingtable::N; ++i) {
++      const float v = landingtable::V_MIN + (float)i * landingtable::V_STEP;
++      const float hn = landingtable::H_NOMINAL[i];
++      if (hn < 0.0f) continue;  // nominal rocket can't stop from this speed
++      const float d = std::fabs(hn - burntable::hIgnite(v));
++      if (d > worst) worst = d;
++      ++n;
++    }
++    CHECK(n >= 30 && worst < 0.10f,
++          "landing_table.h nominal column matches burn_table.h (%d rows, worst %.3f m)",
++          n, worst);
++  }
++}
++
++// ---------------------------------------------------------------------------
++static void unitChecks() {
++  printf("== unit checks ==\n");
++
++  // Quaternion round trip
++  {
++    Quat q = Quat::fromRotVec({0.3f, -0.2f, 0.5f});
++    Vec3 v{1, 2, 3};
++    Vec3 r = q.rotateInv(q.rotate(v));
++    CHECK(std::fabs(r.x - 1) < 1e-4f && std::fabs(r.y - 2) < 1e-4f &&
++              std::fabs(r.z - 3) < 1e-4f,
++          "quat rotate/rotateInv round-trip");
++  }
++
++  // Tilt error sign: +5 deg rotation about body X -> correction is -5 deg
++  // about body X.
++  {
++    Ahrs a;
++    a.initFromAccel({0, 0, 9.81f});
++    const float th = 5.0f * cfg::DEG2RAD;
++    Ahrs t = a;
++    // apply rotation about body X by integrating gyro for 1 s
++    for (int i = 0; i < 1000; ++i) t.update({th / 1.0f, 0, 0}, 0.001f);
++    const Vec3 e = t.tiltErrorBody();
++    CHECK(std::fabs(e.x + th) < 0.15f * th && std::fabs(e.y) < 0.02f,
++          "tilt error: +5deg about X -> correction -5deg about X (e=[%.3f %.3f])",
++          e.x, e.y);
++  }
++
++  // Roll decoupling: same tilt, then 90 deg roll about the body axis. The
++  // needed correction must move to the OTHER body axis.
++  {
++    Ahrs t;
++    t.initFromAccel({0, 0, 9.81f});
++    const float th = 5.0f * cfg::DEG2RAD;
++    for (int i = 0; i < 1000; ++i) t.update({th, 0, 0}, 0.001f);
++    for (int i = 0; i < 1000; ++i)
++      t.update({0, 0, 90.0f * cfg::DEG2RAD}, 0.001f);  // roll +90 deg
++    const Vec3 e = t.tiltErrorBody();
++    CHECK(std::fabs(e.y - th) < 0.15f * th && std::fabs(e.x) < 0.02f,
++          "roll decoupling: after +90deg roll the correction moves X->Y "
++          "(e=[%.3f %.3f], tilt %.2f deg)",
++          e.x, e.y, t.tiltRad() * cfg::RAD2DEG);
++  }
++
++  // KF: static convergence + ramp tracking
++  {
++    AltitudeKf kf;
++    kf.configure(0.5f, 0.01f, 5.0f, 25);
++    kf.reset(0);
++    kf.setBaroVar(0.04f);
++    // 10 s static with accel bias 0.2 m/s^2
++    for (int i = 0; i < 5000; ++i) {
++      kf.predict(0.2f, 0.002f);
++      if (i % 5 == 0) kf.update(0.0f);
++    }
++    CHECK(std::fabs(kf.altitude()) < 0.2f && std::fabs(kf.velocity()) < 0.2f &&
++              std::fabs(kf.bias() - 0.2f) < 0.1f,
++          "KF absorbs accel bias at rest (h=%.3f v=%.3f b=%.3f)",
++          kf.altitude(), kf.velocity(), kf.bias());
++    // Constant 5 m/s climb seen only by the baro (accel input stays at the
++    // learned bias — i.e. a dead accelerometer). The filter overshoots
++    // through the transient, then settles; 20 s gives it time to converge.
++    float h = 0;
++    for (int i = 0; i < 10000; ++i) {
++      h += 5.0f * 0.002f;
++      kf.predict(0.2f, 0.002f);
++      if (i % 5 == 0) kf.update(h);
++    }
++    CHECK(std::fabs(kf.altitude() - h) < 0.5f &&
++              std::fabs(kf.velocity() - 5.0f) < 0.5f,
++          "KF tracks a 5 m/s ramp (h=%.2f/%.2f v=%.2f)", kf.altitude(), h,
++          kf.velocity());
++    // glitch rejection
++    const float hBefore = kf.altitude();
++    kf.update(hBefore + 40.0f);
++    CHECK(std::fabs(kf.altitude() - hBefore) < 1.0f,
++          "KF gates a 40 m baro glitch");
++  }
++
++  // Parachute deploy supervisor
++  {
++    // Clean deploy: freefall, canopy opens 0.3 s after release (2.5 g
++    // spike, then 1 g under canopy).
++    const ChuteRun a = runChute(
++        [](float t) { return t < 0.3f ? 0.02f : t < 0.5f ? 2.5f : 1.0f; },
++        6.0f);
++    CHECK(a.detected && a.releases == 1 && !a.everLockedAfter && a.endReleased,
++          "chute: clean deploy -> detected on the 1st release, never re-locked "
++          "(releases=%d)", a.releases);
++
++    // Stuck latch, never comes free: every re-cycle is used, latch ends open.
++    const ChuteRun b = runChute([](float) { return 0.02f; }, 20.0f);
++    CHECK(!b.detected && b.unconfirmed &&
++              b.releases == cfg::CHUTE_MAX_RELEASES && b.everLockedAfter &&
++              b.endReleased,
++          "chute: stuck latch -> %d releases (want %d), unconfirmed, held open",
++          b.releases, cfg::CHUTE_MAX_RELEASES);
++
++    // Latch frees on the first re-cycle: canopy shortly after release #2.
++    const float t2 = (cfg::CHUTE_CONFIRM_MS + cfg::CHUTE_RECYCLE_LOCK_MS) /
++                         1000.0f + 0.3f;
++    const ChuteRun c = runChute(
++        [t2](float t) { return t < t2 ? 0.02f : 1.0f; }, 10.0f);
++    CHECK(c.detected && c.releases == 2 && c.endReleased,
++          "chute: frees on the 1st re-cycle -> detected, releases=%d (want 2)",
++          c.releases);
++
++    // Post-abort drag build-up (0.3 g rising 0.12 g/s toward 1 g at terminal
++    // velocity, never a canopy) must NOT be mistaken for one -- the baseline
++    // is re-taken at each release.
++    const ChuteRun d = runChute(
++        [](float t) { return std::fmin(1.0f, 0.3f + 0.12f * (t > 0 ? t : 0)); },
++        15.0f);
++    CHECK(!d.detected && d.unconfirmed,
++          "chute: slow drag build-up is not a canopy (releases=%d)",
++          d.releases);
++
++    // Opening while the servo is swung back to LOCK: straight back to RELEASE.
++    const float tl = cfg::CHUTE_CONFIRM_MS / 1000.0f + 0.1f;
++    const ChuteRun e = runChute(
++        [tl](float t) { return t < tl ? 0.02f : 1.0f; }, 6.0f);
++    CHECK(e.detected && e.releases == 1 && e.endReleased,
++          "chute: canopy during the LOCK dwell -> back to RELEASE (releases=%d)",
++          e.releases);
++
++    // Latch never frees and the rocket hits the ground at 2.5 s: the impact
++    // jolt (then 1 g lying on the ground) must NOT be logged as a canopy.
++    const ChuteRun f = runChute(
++        [](float t) { return t < 2.5f ? 0.02f : t < 2.6f ? 30.0f : 1.0f; },
++        6.0f, [](float t) { return t < 2.5f ? 30.0f - 12.0f * t : 0.0f; });
++    CHECK(!f.detected,
++          "chute: ground impact is not mistaken for a canopy (releases=%d)",
++          f.releases);
++  }
++
++  landingSolverChecks();
++}
++
++// ---------------------------------------------------------------------------
++struct Row {
++  float t, ax, ay, az, gx, gy, gz;
++  int baroNew;
++  float pPa, hTrue, vTrue, tiltTrue, thrust;
++};
++
++static bool parseRow(const std::string& line, Row& r) {
++  Row x{};
++  char pbuf[32] = "";
++  // p_pa may be empty (non-baro rows)
++  const int n = sscanf(line.c_str(),
++                       "%f,%f,%f,%f,%f,%f,%f,%d,%31[^,],%f,%f,%f,%f", &x.t,
++                       &x.ax, &x.ay, &x.az, &x.gx, &x.gy, &x.gz, &x.baroNew,
++                       pbuf, &x.hTrue, &x.vTrue, &x.tiltTrue, &x.thrust);
++  if (n == 13) {
++    x.pPa = atof(pbuf);
++  } else {
++    // empty p_pa: sscanf can't match an empty field with %[^,]; re-parse
++    const int n2 = sscanf(line.c_str(), "%f,%f,%f,%f,%f,%f,%f,%d,,%f,%f,%f,%f",
++                          &x.t, &x.ax, &x.ay, &x.az, &x.gx, &x.gy, &x.gz,
++                          &x.baroNew, &x.hTrue, &x.vTrue, &x.tiltTrue,
++                          &x.thrust);
++    if (n2 != 12) return false;
++    x.pPa = 0;
++  }
++  r = x;
++  return true;
++}
++
++static const char* abortName(AbortReason r) {
++  switch (r) {
++    case AbortReason::NONE: return "NONE";
++    case AbortReason::TILT: return "TILT";
++    case AbortReason::IMU_FAIL: return "IMU_FAIL";
++    case AbortReason::KF_UNHEALTHY: return "KF_UNHEALTHY";
++    case AbortReason::MISSED_WINDOW: return "MISSED_WINDOW";
++    case AbortReason::DUD_IGNITER: return "DUD_IGNITER";
++  }
++  return "?";
++}
++
++// ---------------------------------------------------------------------------
++static void runCase(const std::string& path) {
++  std::ifstream f(path);
++  if (!f) {
++    printf("cannot open %s\n", path.c_str());
++    ++failures;
++    return;
++  }
++  std::string meta, line;
++  std::getline(f, meta);           // #META {...}
++  std::getline(f, line);           // header
++
++  std::vector<Row> rows;
++  rows.reserve(20000);
++  Row r;
++  while (std::getline(f, line))
++    if (parseRow(line, r)) rows.push_back(r);
++
++  const std::string scenario = metaStr(meta, "scenario");
++  const std::string mode = metaStr(meta, "mode");
++  const double armT = metaNum(meta, "arm_t", 2.6);
++  const double tdTrue = metaNum(meta, "touchdown_t", 1e9);
++  const double maxKfErr = metaNum(meta, "max_kf_alt_err", 3.0);
++  const std::string expectAbort = metaStr(meta, "expect_abort");
++  const auto expectStates = metaStrArr(meta, "expect_states");
++  const int expectReleases = (int)metaNum(meta, "expect_chute_releases", 1);
++  const bool expectDetect = metaStr(meta, "expect_chute_detected") != "false";
++  double fw0 = 0, fw1 = 0;
++  const bool hasFireWindow = metaPair(meta, "fire_window", fw0, fw1);
++
++  printf("\n== case %s (%zu rows, mode %s) ==\n", scenario.c_str(),
++         rows.size(), mode.c_str());
++
++  // --- pad calibration, exactly like the firmware's arming sequence ---
++  Vec3 gyroBias{}, accelAvg{};
++  int nCal = 0;
++  double pM2 = 0, pMean = 0;
++  int nP = 0;
++  for (const Row& row : rows) {
++    if (row.t >= armT - 0.2) break;
++    gyroBias = gyroBias + Vec3{row.gx, row.gy, row.gz};
++    accelAvg = accelAvg + Vec3{row.ax, row.ay, row.az};
++    ++nCal;
++    if (row.baroNew && row.pPa > 0) {
++      ++nP;
++      const double d = row.pPa - pMean;
++      pMean += d / nP;
++      pM2 += d * (row.pPa - pMean);
++    }
++  }
++  gyroBias = gyroBias * (1.0f / nCal);
++  accelAvg = accelAvg * (1.0f / nCal);
++  const float p0 = (float)pMean;
++  const float mPerPa = 8434.6f / p0;
++  const float altVar = (float)(pM2 / (nP - 1)) * mPerPa * mPerPa;
++
++  // --- flight core, wired the same way RocketFC.ino wires it ---
++  FlightCore core;
++  core.begin();
++  core.setMode(mode == "land" ? cfg::FlightMode::FULL_LANDING
++                              : cfg::FlightMode::CHUTE_TEST);
++
++  std::vector<std::string> seq{"IDLE"};
++  double fireT = -1, abortT = -1, tdT = -1, launchT = -1;
++  double chuteT = -1, chuteDetT = -1;
++  int chuteReleases = 0;
++  double legsOnT = -1, legsOffT = -1;
++  bool legsEver = false, legsGap = false;
++  AbortReason abortReason = AbortReason::NONE;
++  float maxErr = 0;
++  bool armed = false;
++
++  CoreOutput co;
++  for (const Row& row : rows) {
++    const uint32_t ms = (uint32_t)(row.t * 1000.0 + 0.5);
++    if (!armed && row.t >= armT) {
++      core.padLevelInit(accelAvg);
++      core.setBaroNoiseVar(altVar > 0.0025f ? altVar : 0.0025f);
++      core.zeroAltitude();
++      core.requestArm(ms);
++      armed = true;
++    }
++
++    CoreInput ci;
++    ci.ms = ms;
++    ci.dt = 0.002f;
++    ci.accel = {row.ax, row.ay, row.az};
++    ci.gyro = Vec3{row.gx, row.gy, row.gz} - gyroBias;
++    ci.baroNew = row.baroNew != 0 && row.pPa > 0;
++    if (ci.baroNew)
++      ci.baroAlt = 44330.0f * (1.0f - powf(row.pPa / p0, 0.190295f));
++    core.step(ci, co);
++
++    const char* sn = FlightStateMachine::stateName(co.state);
++    if (seq.empty() || seq.back() != sn) seq.push_back(sn);
++
++    FlightStateMachine::Event ev;
++    while (core.fsm().popEvent(ev)) {
++      if (ev.code == FlightEvent::LAUNCH) launchT = row.t;
++      if (ev.code == FlightEvent::FIRE_LANDING) fireT = row.t;
++      if (ev.code == FlightEvent::ABORT_DET) {
++        abortT = row.t;
++        abortReason = (AbortReason)(uint8_t)ev.value;
++      }
++      if (ev.code == FlightEvent::TOUCHDOWN_DET && tdT < 0) tdT = row.t;
++      if (ev.code == FlightEvent::CHUTE_RELEASE) {
++        if (chuteT < 0) chuteT = row.t;
++        ++chuteReleases;
++      }
++      if (ev.code == FlightEvent::CHUTE_DETECTED) chuteDetT = row.t;
++      if (ev.code == FlightEvent::LEGS_BURN_ON) legsOnT = row.t;
++      if (ev.code == FlightEvent::LEGS_BURN_OFF) legsOffT = row.t;
++    }
++    legsEver |= co.legsBurn;
++    if (legsOnT > 0 && legsOffT < 0 && !co.legsBurn) legsGap = true;
++
++    if (launchT > 0 && tdT < 0) {
++      const float err = std::fabs(co.kfAlt - row.hTrue);
++      if (err > maxErr) maxErr = err;
++    }
++  }
++
++  // --- assertions ---
++  std::string got;
++  for (const auto& s : seq) got += s + " ";
++  std::string want;
++  for (const auto& s : expectStates) want += s + " ";
++  CHECK(seq == expectStates, "state sequence [%s] (want [%s])", got.c_str(),
++        want.c_str());
++
++  if (hasFireWindow)
++    CHECK(fireT >= fw0 && fireT <= fw1,
++          "landing fire cmd at %.2f s inside window [%.2f, %.2f]", fireT, fw0,
++          fw1);
++
++  if (expectAbort != "null" && !expectAbort.empty())
++    CHECK(abortT > 0 && expectAbort == abortName(abortReason),
++          "abort %s at %.2f s (want %s)", abortName(abortReason), abortT,
++          expectAbort.c_str());
++  else
++    CHECK(abortT < 0, "no abort (got %s at %.2f s)", abortName(abortReason),
++          abortT);
++
++  bool wantChute = false;
++  for (const auto& s : expectStates) wantChute |= s == "DESCENT_CHUTE";
++  if (wantChute) {
++    CHECK(chuteReleases == expectReleases && (chuteDetT > 0) == expectDetect &&
++              co.chuteRelease,
++          "chute released at %.2f s, %d release%s (want %d), canopy %s at "
++          "%.2f s (want %s), latch held open",
++          chuteT, chuteReleases, chuteReleases == 1 ? "" : "s", expectReleases,
++          chuteDetT > 0 ? "confirmed" : "NOT confirmed", chuteDetT,
++          expectDetect ? "confirmed" : "not confirmed");
++  } else {
++    CHECK(chuteReleases == 0 && !co.chuteRelease,
++          "chute never released (got %d release%s)", chuteReleases,
++          chuteReleases == 1 ? "" : "s");
++  }
++
++  // Legs: only on a real landing burn (fire command and no abort).
++  const bool wantLegs = hasFireWindow && abortT < 0;
++  if (wantLegs) {
++    const double delay = cfg::LEGS_DELAY_MS / 1000.0;
++    CHECK(legsOnT >= fireT + delay - 0.001 && legsOnT <= fireT + delay + 0.1 &&
++              legsOffT == tdT && !legsGap && !co.legsBurn,
++          "legs nichrome on at %.2f s (fire + %.2f s), off at %.2f s "
++          "(touchdown %.2f s), continuous, off at the end",
++          legsOnT, legsOnT - fireT, legsOffT, tdT);
++  } else {
++    CHECK(legsOnT < 0 && !legsEver, "legs never fired (on at %.2f s)",
++          legsOnT);
++  }
++
++  CHECK(tdT > 0 && tdT < tdTrue + 8.0,
++        "touchdown detected at %.2f s (true contact %.2f s)", tdT, tdTrue);
++
++  CHECK(maxErr < (float)maxKfErr, "KF altitude max error %.2f m < %.2f m",
++        maxErr, maxKfErr);
++}
++
++// ---------------------------------------------------------------------------
++int main(int argc, char** argv) {
++  unitChecks();
++  for (int i = 1; i < argc; ++i) runCase(argv[i]);
++  printf("\n%s (%d failure%s)\n", failures == 0 ? "ALL PASS" : "FAILURES",
++         failures, failures == 1 ? "" : "s");
++  return failures == 0 ? 0 : 1;
++}
+diff -ruN --binary patchcheck/tools/sim/bridge.cpp patchcheck_ideas/tools/sim/bridge.cpp
+--- patchcheck/tools/sim/bridge.cpp	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/tools/sim/bridge.cpp	2026-10-20 16:45:57.672672900 -0500
+@@ -178,6 +178,21 @@
+ 
+ void rfc_zero_altitude(void* h) { static_cast<FlightCore*>(h)->zeroAltitude(); }
+ 
++float rfc_thr_lean_deg(void* h) {
++  return static_cast<FlightCore*>(h)->throttleLeanDeg();
++}
++
++void rfc_gps_vel(void* h, float vx, float vy) {
++  static_cast<FlightCore*>(h)->gpsVelocity(vx, vy);
++}
++
++void rfc_wind_est(void* h, float wx, float wy) {
++  static_cast<FlightCore*>(h)->windEstimate(wx, wy);
++}
++
++float rfc_wind_est_x(void* h) { return static_cast<FlightCore*>(h)->windEstX(); }
++float rfc_wind_est_y(void* h) { return static_cast<FlightCore*>(h)->windEstY(); }
++
+ int32_t rfc_request_arm(void* h, uint32_t ms) {
+   return static_cast<FlightCore*>(h)->requestArm(ms) ? 1 : 0;
+ }
+diff -ruN --binary patchcheck/tools/sim/core.py patchcheck_ideas/tools/sim/core.py
+--- patchcheck/tools/sim/core.py	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/tools/sim/core.py	2026-10-20 16:45:57.727941100 -0500
+@@ -251,6 +251,16 @@
+                                        ctypes.c_float, ctypes.c_float]
+     lib.rfc_set_baro_noise_var.argtypes = [ctypes.c_void_p, ctypes.c_float]
+     lib.rfc_zero_altitude.argtypes = [ctypes.c_void_p]
++    lib.rfc_gps_vel.argtypes = [ctypes.c_void_p, ctypes.c_float, ctypes.c_float]
++    lib.rfc_gps_vel.restype = None
++    lib.rfc_wind_est.argtypes = [ctypes.c_void_p, ctypes.c_float, ctypes.c_float]
++    lib.rfc_wind_est.restype = None
++    lib.rfc_wind_est_x.argtypes = [ctypes.c_void_p]
++    lib.rfc_wind_est_x.restype = ctypes.c_float
++    lib.rfc_wind_est_y.argtypes = [ctypes.c_void_p]
++    lib.rfc_wind_est_y.restype = ctypes.c_float
++    lib.rfc_thr_lean_deg.argtypes = [ctypes.c_void_p]
++    lib.rfc_thr_lean_deg.restype = ctypes.c_float
+     lib.rfc_request_arm.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+     lib.rfc_request_arm.restype = ctypes.c_int32
+     lib.rfc_request_disarm.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+@@ -324,6 +334,18 @@
+     def state(self):
+         return FlightState(self._lib.rfc_state(self._h))
+ 
++    def thr_lean_deg(self):
++        return self._lib.rfc_thr_lean_deg(self._h)
++
++    def gps_vel(self, vx, vy):
++        self._lib.rfc_gps_vel(self._h, vx, vy)
++
++    def wind_est(self, wx, wy):
++        self._lib.rfc_wind_est(self._h, wx, wy)
++
++    def wind_est_xy(self):
++        return self._lib.rfc_wind_est_x(self._h), self._lib.rfc_wind_est_y(self._h)
++
+     def step(self, ms, dt, accel, gyro, baro_new=False, baro_alt=0.0,
+              imu_healthy=True, cont_landing=True):
+         ci = self._in
+diff -ruN --binary patchcheck/tools/sim/plant.py patchcheck_ideas/tools/sim/plant.py
+--- patchcheck/tools/sim/plant.py	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/tools/sim/plant.py	2026-10-20 16:45:57.784965700 -0500
+@@ -289,6 +289,9 @@
+         aero_torque_body = V3(0.0, 0.0, self._z_cp_rel_cg).cross(normal_force_body)
+         # Rotational aero damping (opposes body rate directly).
+         aero_torque_body = aero_torque_body - s.omega * v.aero_damping_nms
++        if (getattr(v, "normal_force_translates", False) and
++                s.ascent_ignite_t is not None and s.touchdown_t is None):
++            drag_world = drag_world + s.q.rotate(normal_force_body)
+ 
+         gravity_world = V3(0.0, 0.0, -9.80665)
+         G0 = 9.80665
+@@ -355,8 +358,11 @@
+         # ---- rotation ----
+         torque_body = self._torque_body(thrust, aero_torque_body, fx_body, fy_body)
+         alpha = torque_body * (1.0 / max(inertia, 1e-6))
+-        s.omega = s.omega + alpha * dt
+-        s.q.integrate(s.omega, dt)
++        if getattr(v, "pad_hold", False) and s.ascent_ignite_t is None:
++            s.omega = V3(0.0, 0.0, 0.0)  # held in the pad cradle until ignition
++        else:
++            s.omega = s.omega + alpha * dt
++            s.q.integrate(s.omega, dt)
+ 
+         s.t += dt
+         if s.touchdown_t is not None and s.t > s.touchdown_t + 0.5 and \
+diff -ruN --binary patchcheck/tools/sim/run.py patchcheck_ideas/tools/sim/run.py
+--- patchcheck/tools/sim/run.py	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/tools/sim/run.py	2026-10-20 16:45:57.839458400 -0500
+@@ -117,6 +117,13 @@
+     lag_n = 0
+     lag_eh_sum = lag_ev_sum = 0.0
+     prev_v_true = None
++    bo_diag = None
++    ap_diag = None
++
++    # Simulated GPS: its own RNG stream, so nothing else changes when it's on.
++    gps_rng = random.Random(seed * 104729 + 11)
++    gps_hist = []
++    gps_next = 0.0
+ 
+     t = 0.0
+     i = 0
+@@ -173,6 +180,13 @@
+ 
+             gyro_corrected = (gx - gbx, gy - gby, gz - gbz)
+             ms = int(t * 1000.0 + 0.5)
++            if getattr(vcfg, "wind_oracle", False):
++                _w = pl._wind(t)
++                _sp = math.hypot(_w.x, _w.y)
++                _k = vcfg.wind_oracle_scale + (vcfg.wind_oracle_add / _sp if _sp > 1e-6 else 0.0)
++                _r = math.radians(vcfg.wind_oracle_rot_deg)
++                fc.wind_est(_k * (_w.x * math.cos(_r) - _w.y * math.sin(_r)),
++                            _k * (_w.x * math.sin(_r) + _w.y * math.cos(_r)))
+             out = fc.step(ms, dt, (ax, ay, az), gyro_corrected,
+                          baro_new=baro_new, baro_alt=baro_alt)
+ 
+@@ -238,6 +252,18 @@
+                 lag_eh_sum += _eh
+                 lag_ev_sum += _ev
+                 lag_n += 1
++            if bo_diag is None and pl.state.ascent_burnout_t is not None:
++                _w = pl._wind(t)
++                _zb = s.q.rotate(plant_mod.V3(0.0, 0.0, 1.0))
++                _we = fc.wind_est_xy()
++                bo_diag = {"bo_hs_air": math.hypot(s.vel.x - _w.x, s.vel.y - _w.y),
++                           "bo_wind_est": [_we[0], _we[1]], "bo_wind_true": [_w.x, _w.y],
++                           "bo_hs": math.hypot(s.vel.x, s.vel.y),
++                           "bo_tilt_true": math.degrees(math.acos(max(-1.0, min(1.0, _zb.z)))),
++                           "bo_rate_dps": math.degrees(math.hypot(s.omega.x, s.omega.y))}
++            if ap_diag is None and pl.state.apogee_t is not None:
++                _zb = s.q.rotate(plant_mod.V3(0.0, 0.0, 1.0))
++                ap_diag = {"ap_tilt_true": math.degrees(math.acos(max(-1.0, min(1.0, _zb.z))))}
+             prev_v_true = s.vel.z
+             prev_tilt = out["tilt_deg"]
+             prev_state = out["state"].name
+@@ -248,7 +274,18 @@
+             legs_frac = (_ramp(t, legs_on_t + vcfg.legs_cut_s, vcfg.legs_swing_s)
+                          if legs_on_t is not None else 0.0)
+             pl.legs_frac = legs_frac
+-            pl.step(dt, act_x, act_y)
++            pl.step(dt, act_x + math.radians(vcfg.gimbal_offset_x_deg),
++                    act_y + math.radians(vcfg.gimbal_offset_y_deg))
++            if vcfg.gps_hz > 0.0 and launched:
++                gps_hist.append((t, s.vel.x, s.vel.y))
++                if t >= gps_next:
++                    gps_next = t + 1.0 / vcfg.gps_hz
++                    want = t - vcfg.gps_latency_s
++                    while len(gps_hist) > 1 and gps_hist[1][0] <= want:
++                        gps_hist.pop(0)
++                    _, gvx, gvy = gps_hist[0]
++                    fc.gps_vel(gvx + gps_rng.gauss(0.0, vcfg.gps_vel_sigma),
++                               gvy + gps_rng.gauss(0.0, vcfg.gps_vel_sigma))
+ 
+             # Hop: after landing thrust starts, the rocket stopped falling
+             # while still > 0.25 m up (it will climb, burn out and fall back).
+@@ -305,6 +342,7 @@
+                                    if pl.chute_deployed else 0.0),
+                     "legs_frac": legs_frac,
+                     "thrust_n": thrust_now,
++                    "thr_lean_deg": fc.thr_lean_deg(),
+                     "fire_landing": out["fire_landing"],
+                     "legs_burn": out["legs_burn"],
+                 })
+@@ -341,6 +379,8 @@
+         "final_state": rows[-1]["state"] if rows else None,
+         "sim_time_s": t,
+     }
++    summary.update(bo_diag or {})
++    summary.update(ap_diag or {})
+     # ---- landing diagnostics ----
+     fi = fire_info or {}
+     summary.update({
+diff -ruN --binary patchcheck/tools/sim/vehicle.py patchcheck_ideas/tools/sim/vehicle.py
+--- patchcheck/tools/sim/vehicle.py	2026-10-17 16:32:02.000000000 -0500
++++ patchcheck_ideas/tools/sim/vehicle.py	2026-10-20 16:45:57.896076000 -0500
+@@ -112,6 +112,22 @@
+     crash_speed_mps: float = 3.0       # [MEASURE: drop test] vertical contact speed above
+                                        #   which legs/airframe break (3 m/s = 46 cm drop)
+     settle_s: float = 2.0              # must stand still this long after burnout
++
++    # ---- Simulated GPS velocity (study; 0 Hz = no GPS) ----
++    gps_hz: float = 0.0                # u-blox M9/M10-class: 10 Hz
++    gps_vel_sigma: float = 0.1         # [ESTIMATE] horizontal velocity noise (m/s)
++    gps_latency_s: float = 0.1         # [ESTIMATE] measurement age when it arrives (s)
++
++    # ---- New-ideas study switches (defaults = earlier behaviour) ----
++    pad_hold: bool = False             # pad cradle/clamp: no rotation before ascent ignition
++    gimbal_offset_x_deg: float = 0.0   # actual gimbal = command + this (trim error)
++    gimbal_offset_y_deg: float = 0.0
++    normal_force_translates: bool = False  # aero normal force also pushes the CG (and the
++                                           # accelerometer sees it); False = torque only
++    wind_oracle: bool = False          # feed the TRUE wind to the firmware (WIND_MATCH bound)
++    wind_oracle_scale: float = 1.0     # ...times this (estimate scale error)
++    wind_oracle_rot_deg: float = 0.0   # ...rotated by this (direction error)
++    wind_oracle_add: float = 0.0       # ...plus this along the wind (m/s)
+     # Destabilizing/restoring aero torque coefficient: torque = dynamic
+     # pressure * reference area * (cp_from_nose_m - cg_from_nose_m) * angle of
+     # attack (small-angle). [ESTIMATE] -- this is a coarse model; treat sim

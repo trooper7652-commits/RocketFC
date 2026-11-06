@@ -1,0 +1,16 @@
+== h_fix_b80: 269 failures of 2000 (13.4 %)
+| Failure | first cause | involved in | only cause |
+|---|---|---|---|
+| LEGS_BROKEN | 8.6 % | 8.6 % | 8.5 % |
+| LIFTED_OFF | 4.9 % | 5.0 % | 4.9 % |
+   success vs crash speed the legs survive: 2.0 m/s: 65.8 % | 2.5 m/s: 76.8 % | 3.0 m/s: 86.5 % | 3.5 m/s: 92.0 % | 4.0 m/s: 94.3 % | 5.0 m/s: 95.0 %
+
+== h_c1_best: 263 failures of 2000 (13.2 %)
+| Failure | first cause | involved in | only cause |
+|---|---|---|---|
+| LIFTED_OFF | 3.9 % | 11.4 % | 3.9 % |
+| LEGS_BROKEN | 9.2 % | 9.2 % | 1.7 % |
+| TIPPED_OVER | 0.0 % | 0.1 % | 0.0 % |
+| NO_POWERED_LANDING | 0.1 % | 0.1 % | 0.1 % |
+   success vs crash speed the legs survive: 2.0 m/s: 20.2 % | 2.5 m/s: 73.5 % | 3.0 m/s: 86.8 % | 3.5 m/s: 88.3 % | 4.0 m/s: 88.5 % | 5.0 m/s: 88.5 %
+

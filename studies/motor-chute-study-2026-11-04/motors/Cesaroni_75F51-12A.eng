@@ -1,0 +1,11 @@
+; Cesaroni Technology 75F51-12A from the OpenRocket motor database (thrustcurve.org, cert curve)
+Cesaroni_75F51-12A 24 133 plug? 0.0400 0.0950 Cesaroni
+0.0200 75.924
+0.0310 84.148
+0.0620 70.441
+0.1170 73.659
+1.2110 38.737
+1.3760 14.779
+1.4560 7.271
+1.5320 3.337
+1.5770 0.000

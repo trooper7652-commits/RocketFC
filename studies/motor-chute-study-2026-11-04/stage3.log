@@ -1,0 +1,15 @@
+  ran hold_c_AeroTech_E18W__AeroTech_E18W | 2000 flights, 0 errors, 80.4 s
+  ran hold_c_AeroTech_E15W__AeroTech_E15W | 2000 flights, 0 errors, 83.9 s
+  ran hold_c_Cesaroni_26E31-15A__AeroTech_E15W | 2000 flights, 0 errors, 80.1 s
+  ran hold_c_AeroTech_E18W__AeroTech_F12J | 2000 flights, 0 errors, 85.1 s
+
+== Stage 3: holdout seeds 701-710, 2,000 flights each, measured spreads
+| Ascent / landing | Success (95 % CI) | Apogee med / p99 / max | Contact vz med / p90 | Lifted off | Legs late | Hops | Aborts | Casing |
+|---|---|---|---|---|---|---|---|---|
+| E18W / E18W | 79.5 % (78-81) | 18.2 / 18.8 / 18.8 m | 2.00 / 3.37 | 3 % | 2 % | 0 % | 0.0 % | 46 g |
+| E15W / E15W | 85.3 % (84-87) | 13.2 / 13.7 / 13.8 m | 2.20 / 3.20 | 0 % | 0 % | 0 % | 0.0 % | 40 g |
+| CTI 26E31-15A / E15W | 85.8 % (84-87) | 10.4 / 10.7 / 10.7 m | 1.49 / 2.96 | 5 % | 0 % | 0 % | 0.0 % | 45 g |
+| E18W / F12J | 78.5 % (77-80) | 18.2 / 18.8 / 18.8 m | 2.11 / 3.23 | 8 % | 0 % | 0 % | 0.0 % | 46 g |
+  E15W / E15W vs E18W / E18W: 179 rescued / 64 lost, p=8.88e-14
+  CTI 26E31-15A / E15W vs E18W / E18W: 222 rescued / 97 lost, p=2.02e-12
+  E18W / F12J vs E18W / E18W: 94 rescued / 114 lost, p=0.188

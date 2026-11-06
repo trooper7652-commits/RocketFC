@@ -1,0 +1,15 @@
+; Cesaroni Technology 55F29-12A from the OpenRocket motor database (thrustcurve.org, cert curve)
+Cesaroni_55F29-12A 29 98 plug? 0.0376 0.1058 Cesaroni
+0.0060 5.661
+0.0380 23.312
+0.0500 26.309
+0.2290 30.257
+0.3270 32.208
+0.4850 33.159
+1.0310 31.780
+1.5160 27.070
+1.6880 24.834
+1.7650 20.172
+1.8520 9.467
+1.9630 2.093
+2.0000 0.000

@@ -1,0 +1,42 @@
+== HOLDOUT 701-710: today's F10 + F15
+  ran h_ej_zero | 2000 flights, 0 errors, 143.6 s
+  ran h_ej_old | 2000 flights, 0 errors, 136.2 s
+  ran h_ej | 2000 flights, 0 errors, 131.1 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing stays (today) | 26.0 % (520/2000) | 3.84 / 5.77 | 69 % | 38 % | 0.0 % |  |
+| model check: eject knob 0 | 26.0 % (520/2000) | 3.84 / 5.77 | 69 % | 38 % | 0.0 % | 0 rescued / 0 lost, p=1 |
+| casing pushed out, burn table NOT rebuilt | 0.1 % (1/2000) | 9.34 / 10.90 | 100 % | 1 % | 0.0 % | 1 rescued / 520 lost, p=1.52e-154 |
+| casing pushed out, burn table rebuilt | 8.6 % (172/2000) | 3.92 / 6.03 | 69 % | 47 % | 0.0 % | 4 rescued / 352 lost, p=9.07e-99 |
+
+== HOLDOUT 701-710: E12/E12, legs as today
+  ran h_c1_ej | 2000 flights, 0 errors, 99.6 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing stays | 37.0 % (741/2000) | 2.20 / 2.91 | 8 % | 7 % | 0.1 % |  |
+| casing pushed out, table rebuilt | 45.3 % (906/2000) | 1.64 / 3.03 | 11 % | 21 % | 0.3 % | 285 rescued / 120 lost, p=1.39e-16 |
+
+== HOLDOUT 701-710: E12/E12, nichrome at confirm + 0.75 s band
+  ran h_c1_best_ej | 2000 flights, 0 errors, 97.1 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| casing stays | 86.8 % (1737/2000) | 2.22 / 2.96 | 9 % | 11 % | 0.1 % |  |
+| casing pushed out, table rebuilt | 69.7 % (1394/2000) | 1.75 / 3.12 | 12 % | 23 % | 0.3 % | 0 rescued / 343 lost, p=1.12e-103 |
+
+== KICK BRACKET (dev 101-103): net impulse change at eject
+  ran d_ej | 600 flights, 0 errors, 41.6 s
+  ran d_ej_k+0.2 | 600 flights, 0 errors, 39.0 s
+  ran d_ej_k-0.2 | 600 flights, 0 errors, 43.0 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| today + eject | 6.7 % (40/600) | 4.04 / 6.08 | 74 % | 49 % | 0.0 % |  |
+| today + eject, kick +0.2 N*s | 5.7 % (34/600) | 4.35 / 6.92 | 74 % | 35 % | 0.0 % | 34 rescued / 40 lost, p=0.561 |
+| today + eject, kick -0.2 N*s | 7.8 % (47/600) | 4.09 / 6.11 | 72 % | 65 % | 0.0 % | 47 rescued / 40 lost, p=0.52 |
+  ran d_c1_best_ej | 600 flights, 0 errors, 31.5 s
+  ran d_c1_best_ej_k+0.2 | 600 flights, 0 errors, 28.9 s
+  ran d_c1_best_ej_k-0.2 | 600 flights, 0 errors, 32.4 s
+| Run | Success | Contact vz median / p90 (m/s) | Over 3 m/s | Lifted off | Aborts | vs base |
+|---|---|---|---|---|---|---|
+| E12/E12 best + eject | 63.7 % (382/600) | 1.77 / 3.22 | 16 % | 26 % | 0.2 % |  |
+| E12/E12 best + eject, kick +0.2 N*s | 64.7 % (388/600) | 2.01 / 4.24 | 27 % | 10 % | 0.2 % | 97 rescued / 91 lost, p=0.715 |
+| E12/E12 best + eject, kick -0.2 N*s | 56.7 % (340/600) | 1.91 / 3.48 | 19 % | 43 % | 0.2 % | 61 rescued / 103 lost, p=0.0013 |

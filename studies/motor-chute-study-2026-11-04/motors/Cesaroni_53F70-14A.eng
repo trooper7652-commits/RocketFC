@@ -1,0 +1,14 @@
+; Cesaroni Technology 53F70-14A from the OpenRocket motor database (thrustcurve.org, cert curve)
+Cesaroni_53F70-14A 24 101 0 0.0290 0.0730 Cesaroni
+0.0010 8.303
+0.0130 85.680
+0.0230 96.149
+0.0520 78.821
+0.1000 83.634
+0.3790 77.858
+0.6410 62.575
+0.6650 55.716
+0.7060 23.947
+0.7440 9.146
+0.7870 2.768
+0.8160 0.000
