@@ -95,6 +95,7 @@ class Cli {
     if (!cmd) return;
     char* a1 = strtok_r(nullptr, " ", &save);
     char* a2 = strtok_r(nullptr, " ", &save);
+    char* a3 = strtok_r(nullptr, " ", &save);
 
     if (!strcmp(cmd, "help")) {
       printHelp();
@@ -154,7 +155,7 @@ class Cli {
       startCircle(ms, a1, a2);
     } else if (!strcmp(cmd, "chute")) {
       if (!isIdle()) { requireIdle("chute"); return; }
-      chuteCmd(a1, a2);
+      chuteCmd(a1, a2, a3);
     } else if (!strcmp(cmd, "pyrotest")) {
       if (!isIdle()) { requireIdle("pyrotest"); return; }
       if (a1 && (!strcmp(a1, "land") || !strcmp(a1, "2"))) {
@@ -218,25 +219,70 @@ class Cli {
     return "?";
   }
 
-  void chuteCmd(const char* sub, const char* arg) {
+  // Remember a ground move so the next power-up restores it.
+  void saveChuteLast() {
+    ctx_.store.setChuteLast((uint8_t)ctx_.act.chutePos(), ctx_.act.chuteDeg());
+  }
+
+  void printChute() {
+    Actuators& act = ctx_.act;
+    Serial.printf("chute latch: %s at %.1f deg (%.0f us)\n",
+                  chutePosName(act.chutePos()), act.chuteDeg(), act.chuteUs());
+    Serial.printf("  saved: lock %.1f deg (%.0f us), open %.1f deg (%.0f us); "
+                  "boot restore %s\n",
+                  ctx_.store.chuteLockDeg(), act.chuteLockUs(),
+                  ctx_.store.chuteReleaseDeg(), act.chuteReleaseUs(),
+                  cfg::CHUTE_BOOT_RESTORE ? "ON" : "off");
+  }
+
+  void chuteCmd(const char* sub, const char* arg, const char* arg2) {
     Actuators& act = ctx_.act;
     if (sub && !strcmp(sub, "lock")) {
       act.chuteLock();
-      Serial.printf("chute latch LOCKED (%.0f us).\n", act.chuteUs());
+      saveChuteLast();
+      Serial.printf("chute latch LOCKED (%.1f deg, %.0f us).\n", act.chuteDeg(),
+                    act.chuteUs());
     } else if (sub && !strcmp(sub, "open")) {
       act.chuteRelease();
+      saveChuteLast();
       Serial.printf(
-          "chute latch OPEN (%.0f us) -- a loaded spring fires now, stand clear.\n"
+          "chute latch OPEN (%.1f deg, %.0f us) -- a loaded spring fires now, "
+          "stand clear.\n"
           "Load spring + chute, then `chute lock` (arming is refused until "
           "then).\n",
-          act.chuteUs());
-    } else if (sub && !strcmp(sub, "us") && arg) {
-      act.chuteJogUs(atoi(arg));
+          act.chuteDeg(), act.chuteUs());
+    } else if (sub && (!strcmp(sub, "us") || !strcmp(sub, "deg")) && arg) {
+      if (!strcmp(sub, "us")) act.chuteJogUs(atoi(arg));
+      else act.chuteJogDeg((float)atof(arg));
+      saveChuteLast();
       Serial.printf(
-          "chute servo -> %.0f us (jog). Record the latch-closed / latch-open\n"
-          "values as CHUTE_LOCK_US / CHUTE_RELEASE_US in config.h; `chute "
-          "lock` before arming.\n",
-          act.chuteUs());
+          "chute servo -> %.1f deg (%.0f us) (jog). Save it with `chute set "
+          "lock` / `chute set open`; `chute lock` before arming.\n",
+          act.chuteDeg(), act.chuteUs());
+    } else if (sub && !strcmp(sub, "set") && arg &&
+               (!strcmp(arg, "lock") || !strcmp(arg, "open"))) {
+      const bool lock = !strcmp(arg, "lock");
+      float deg = arg2 ? (float)atof(arg2) : act.chuteDeg();
+      deg = constrain(deg, 0.0f, 180.0f);
+      if (lock) {
+        act.setChuteLockDeg(deg);
+        ctx_.store.setChuteLockDeg(deg);
+      } else {
+        act.setChuteReleaseDeg(deg);
+        ctx_.store.setChuteReleaseDeg(deg);
+      }
+      saveChuteLast();
+      Serial.printf("chute %s angle = %.1f deg (%.0f us), saved.\n",
+                    lock ? "LOCK" : "OPEN", deg, Actuators::chuteDegToUs(deg));
+      if (fabsf(ctx_.store.chuteLockDeg() - ctx_.store.chuteReleaseDeg()) < 5.0f)
+        Serial.println("!! lock and open angles are less than 5 deg apart.");
+    } else if (sub && !strcmp(sub, "defaults")) {
+      ctx_.store.resetChute();
+      act.setChuteLockDeg(ctx_.store.chuteLockDeg());
+      act.setChuteReleaseDeg(ctx_.store.chuteReleaseDeg());
+      saveChuteLast();
+      Serial.println("chute angles reset to the config.h defaults (saved).");
+      printChute();
     } else if (sub && !strcmp(sub, "cycle")) {
       // The in-flight re-cycle motion, once: back to LOCK, dwell, RELEASE.
       Serial.printf("re-cycle: LOCK for %.0f ms, then RELEASE -- stand clear.\n",
@@ -246,11 +292,13 @@ class Cli {
       while (millis() - t0 < (uint32_t)cfg::CHUTE_RECYCLE_LOCK_MS)
         if (ctx_.wdogFeed) ctx_.wdogFeed();
       act.chuteRelease();
+      saveChuteLast();
       Serial.println("released. `chute lock` before arming.");
     } else {
-      Serial.printf("chute latch: %s (%.0f us)\n", chutePosName(act.chutePos()),
-                    act.chuteUs());
-      Serial.println("usage: chute lock|open|cycle|us <n>");
+      printChute();
+      Serial.println(
+          "usage: chute lock|open|cycle|defaults | deg <n> | us <n> | "
+          "set lock|open [deg]");
     }
   }
 
@@ -317,7 +365,10 @@ class Cli {
         "  center            center servos\n"
         "  chute             show chute latch position\n"
         "  chute open|lock   open the latch to load the spring / lock it\n"
-        "  chute us <n>      jog the latch servo to find LOCK/RELEASE pulses\n"
+        "  chute deg <n>     jog the latch servo to n degrees (0-180)\n"
+        "  chute us <n>      jog the latch servo by pulse width\n"
+        "  chute set lock|open [deg]  save LOCK/OPEN angle (default: current)\n"
+        "  chute defaults    LOCK/OPEN angles back to config.h defaults\n"
         "  chute cycle       one in-flight re-cycle: LOCK dwell -> RELEASE\n"
         "  pyrotest land     test-fire the landing e-match (two-step confirm)\n"
         "  pyrotest legs     test-burn the legs nichrome (two-step confirm)\n"
@@ -354,8 +405,7 @@ class Cli {
                   ctx_.contLandCached ? "YES" : "no",
                   ctx_.contLegsCached ? "YES" : "no");
     Serial.printf("legs nichrome: %s\n", ctx_.act.legsActive() ? "ON" : "off");
-    Serial.printf("chute latch: %s (%.0f us)\n",
-                  chutePosName(ctx_.act.chutePos()), ctx_.act.chuteUs());
+    printChute();
     Serial.printf("servo trims: A=%+.0f B=%+.0f us\n", ctx_.act.trimA(),
                   ctx_.act.trimB());
     Serial.printf("fault code: %d %s\n", ctx_.faultCode,

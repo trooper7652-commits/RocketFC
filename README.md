@@ -77,9 +77,16 @@ Hardware rules that save rockets:
 - Parachute latch: design it so the spring **cannot back-drive the servo**
   (e.g. a pin loaded across its axis, not along it). Before the firmware
   starts, the servo gets no signal; a latch that slips when the servo goes
-  limp ejects the chute on the pad. Once running, the firmware drives the
-  latch **open** at boot, so any reboot or power-cycle with a loaded spring
-  ejects the chute — load it only after the FC is up. The chute servo shares
+  limp ejects the chute on the pad. Once running, the firmware puts the
+  latch back at the **last position commanded on the ground** (saved in
+  EEPROM, `CHUTE_BOOT_RESTORE`), so a locked latch stays locked across a
+  power-cycle. It boots **open** instead after a watchdog/crash reset, or if
+  the IMU sees the vehicle moving or away from ~1 g at power-up (a power blip
+  in flight). Trade-off: a power loss in flight while the rocket reads a
+  steady ~1 g reboots into IDLE with the chute held in; set
+  `CHUTE_BOOT_RESTORE = false` to always boot open. The servo has no memory
+  of its own — unplugged it stays roughly put but doesn't hold against the
+  spring. The chute servo shares
   the gimbal servos' BEC — check the rail with all three moving at once.
 - Pyro channels: logic-level MOSFETs, low-side, **gate pulldown resistors**
   (so a floating pin during boot can't fire), and flyback-safe wiring.
@@ -137,7 +144,8 @@ important ones:
 | `IGNITION_DELAY_MS` | **static-test the F15 igniter chain**: time from fire command to first thrust. This number directly moves the ignition altitude. |
 | `CDA_M2` | estimate from a drop test or flight log velocity decay |
 | Servo trims, `US_PER_GIMBAL_DEG`, signs | bench: CLI `trim`, `servotest`, direction test below |
-| `CHUTE_LOCK_US`, `CHUTE_RELEASE_US` | bench: CLI `chute us <n>` until the latch is fully closed / fully open |
+| chute LOCK / OPEN angles | bench: CLI `chute deg <n>` until the latch is fully closed / fully open, then `chute set lock` / `chute set open` (saved in EEPROM; `CHUTE_*_DEG_DEFAULT` are only first-boot defaults) |
+| `CHUTE_SERVO_US_AT_0_DEG`, `_AT_180_DEG` | servo datasheet: pulse width at 0° and 180° (default 500 / 2500 µs) |
 | `CHUTE_RECYCLE_LOCK_MS` | bench: time the servo takes to swing release → lock (`chute cycle`) |
 | Leg release timing | bench: `pyrotest legs`, time until the band parts; put it in the sim's "Legs: band cut" field and check the margin (see §4) |
 | `VBAT_DIVIDER` | multimeter vs. `status` readout (`CONT_DIVIDER_RATIO` is set from the 100k/10k schematic; check `pyro:` against a meter) |
@@ -222,7 +230,9 @@ as the abort recovery.
 | `circle [s] [deg]` / `circle off` | gimbal runs in circles until turned off — default 1 s/rev at full deflection; disarmed only, `center`/`stop` also end it, `cal`/`zero`/`arm` refused while circling |
 | `chute` | show the parachute latch position |
 | `chute open` / `chute lock` | open the latch to load the spring / lock it (arming is refused until locked) |
-| `chute us <n>` | jog the latch servo to find `CHUTE_LOCK_US` / `CHUTE_RELEASE_US` |
+| `chute deg <n>` / `chute us <n>` | jog the latch servo to an angle (0–180°) or a pulse width |
+| `chute set lock [deg]` / `chute set open [deg]` | save the LOCK / OPEN angle to EEPROM (default: the current jog angle); the servo only moves if it's already at that position |
+| `chute defaults` | LOCK / OPEN angles back to the `config.h` defaults |
 | `chute cycle` | one in-flight re-cycle: LOCK dwell, then RELEASE — tests freeing a sticky latch |
 | `pyrotest land` | fire the landing e-match channel on the bench — two-step typed confirmation, disarmed only, **no motor/match connected** |
 | `pyrotest legs` | burn the leg-release nichrome for 4 s (its longest in-flight burn) — two-step confirmation, disarmed only |
@@ -245,7 +255,7 @@ as the abort recovery.
 1. Fresh battery; `status` shows vbat > `VBAT_MIN`.
 2. SD card inserted; `status` shows SD OK.
 3. `mode` set correctly (listen for the 2-vs-3-beep pattern at arm).
-4. Load the chute: the latch boots open (or `chute open`), spring + chute
+4. Load the chute: `chute open` (the latch boots wherever it was last left), spring + chute
    in, `chute lock`. Strap the
    legs with a fresh band over the nichrome. Then rig motors + e-match
    **last**, on the pad, with the pyro LiPo **unplugged**.

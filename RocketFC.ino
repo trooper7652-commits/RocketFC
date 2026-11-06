@@ -29,7 +29,8 @@
 // ---------------------------------------------------------------------------
 // Watchdog (i.MX RT1062 WDOG1): 2 s timeout, fed from loop(). If the firmware
 // wedges, the processor resets, boots into IDLE with the pyro inhibited,
-// gimbal servos centered and the chute latch at LOCK — a safe state.
+// gimbal servos centered and the chute latch OPEN (a watchdog reset never
+// restores a locked latch, so a wedge in flight still ejects the chute).
 // ---------------------------------------------------------------------------
 #if defined(ARDUINO_TEENSY41) && defined(WDOG1_WCR)
 static void wdogInit() {
@@ -44,6 +45,29 @@ static void wdogFeed() {
 #else
 static void wdogInit() {}
 static void wdogFeed() {}
+#endif
+
+// ---------------------------------------------------------------------------
+// Reset cause: true only for a plain power-on (or the reset button). Anything
+// else -- watchdog, crash/lockup, JTAG -- counts as unexpected. SRC_SRSR bits
+// are sticky, so they're cleared after reading. PC/HIL builds: power-on.
+// ---------------------------------------------------------------------------
+#if defined(ARDUINO_TEENSY41) && defined(SRC_SRSR)
+static uint32_t resetCauseBits() {
+  const uint32_t srsr = SRC_SRSR;
+  SRC_SRSR = srsr;  // write 1 to clear
+  return srsr;
+}
+static bool resetWasPowerOn(uint32_t srsr) {
+  const uint32_t bad = SRC_SRSR_WDOG_RST_B | SRC_SRSR_WDOG3_RST_B |
+                       SRC_SRSR_LOCKUP_SYSRESETREQ | SRC_SRSR_CSU_RESET_B |
+                       SRC_SRSR_JTAG_RST_B | SRC_SRSR_JTAG_SW_RST |
+                       SRC_SRSR_TEMPSENSE_RST_B;
+  return (srsr & bad) == 0;
+}
+#else
+static uint32_t resetCauseBits() { return 1; }
+static bool resetWasPowerOn(uint32_t) { return true; }
 #endif
 
 // ---------------------------------------------------------------------------
@@ -78,8 +102,48 @@ void setup() {
   Serial.println("\n=== RocketFC — TVC self-landing flight computer ===");
 
   store.load();
-  act.begin(store.trimAUs(), store.trimBUs());
+
+  // Chute latch boot position: the last position commanded on the ground
+  // (EEPROM), unless restore is off or this was an unexpected reset.
+  const uint32_t srsr = resetCauseBits();
+  const bool powerOn = resetWasPowerOn(srsr);
+  Actuators::ChutePos bootPos = Actuators::ChutePos::RELEASE;
+  const char* bootWhy = "boot restore off";
+  if (!cfg::CHUTE_BOOT_RESTORE) {
+  } else if (!powerOn) {
+    bootWhy = "unexpected reset (watchdog/crash)";
+  } else {
+    bootPos = (Actuators::ChutePos)store.chuteLastPos();
+    if (bootPos != Actuators::ChutePos::LOCK &&
+        bootPos != Actuators::ChutePos::JOG)
+      bootPos = Actuators::ChutePos::RELEASE;
+    bootWhy = "restored last position";
+  }
+  act.begin(store.trimAUs(), store.trimBUs(), store.chuteLockDeg(),
+            store.chuteReleaseDeg(), bootPos,
+            Actuators::chuteDegToUs(store.chuteLastDeg()));
   const bool sensorsOk = sensors.begin();
+
+  // In-air guard: a restored LOCK is only kept if the vehicle is sitting
+  // still at ~1 g. A power blip in flight (boost, coast, falling, tumbling)
+  // opens the latch, like the old always-boot-OPEN behaviour.
+  if (bootPos == Actuators::ChutePos::LOCK && sensors.imuOk()) {
+    const uint32_t g0 = millis();
+    bool moving = false;
+    while (millis() - g0 < (uint32_t)cfg::CHUTE_BOOT_STILL_MS && !moving) {
+      sensors.readImu();
+      const float gNow = sensors.accel().norm() / cfg::G0;
+      const float rateDps = sensors.gyro().norm() * cfg::RAD2DEG;
+      if (gNow < cfg::CHUTE_BOOT_G_MIN || gNow > cfg::CHUTE_BOOT_G_MAX ||
+          rateDps > cfg::CHUTE_BOOT_RATE_MAX_DPS)
+        moving = true;
+      delay(2);
+    }
+    if (moving) {
+      act.chuteRelease();
+      bootWhy = "vehicle moving at power-up -> opened";
+    }
+  }
   const bool sdOk = logger.begin();
   core.begin();
   core.setMode(store.mode());
@@ -92,9 +156,15 @@ void setup() {
                 store.mode() == cfg::FlightMode::CHUTE_TEST ? "CHUTE_TEST"
                                                             : "FULL_LANDING",
                 store.trimAUs(), store.trimBUs());
-  Serial.printf("chute latch: OPEN (%.0f us, pin %d) -- load spring + chute, "
-                "then `chute lock`\n",
-                act.chuteUs(), cfg::PIN_SERVO_CHUTE);
+  Serial.printf("reset cause: 0x%03lX (%s)\n", (unsigned long)srsr,
+                powerOn ? "power-on" : "UNEXPECTED");
+  Serial.printf("chute latch: %s at %.1f deg (%.0f us, pin %d) -- %s\n",
+                act.chuteLocked()     ? "LOCKED"
+                : act.chuteReleased() ? "OPEN"
+                                      : "JOG (not locked)",
+                act.chuteDeg(), act.chuteUs(), cfg::PIN_SERVO_CHUTE, bootWhy);
+  if (!act.chuteLocked())
+    Serial.println("  load spring + chute, then `chute lock` before arming.");
   if (!sensorsOk) Serial.println("!! sensor failure — check wiring, then reboot.");
   Serial.println("type `help` for commands.\n");
 
@@ -303,6 +373,9 @@ static void slowTick(uint32_t ms) {
     if (ms - touchdownMs > 4000) {
       logger.close();
       logClosedAfterTd = true;
+      // On the ground now: remember the latch as it is (normally OPEN after
+      // a deploy), so a power cycle doesn't swing it back to LOCK.
+      store.setChuteLast((uint8_t)act.chutePos(), act.chuteDeg());
       Serial.println("flight log closed. Safe to power off.");
     }
   }

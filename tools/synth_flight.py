@@ -51,7 +51,7 @@ ARM_T = 2.6             # harness arms here (meta)
 # ---------------------------------------------------------------------------
 def load_burn_table():
     path = os.path.join(HERE, "..", "src", "core", "burn_table.h")
-    src = open(path).read()
+    src = open(path, encoding="utf-8").read()
     vmin = float(re.search(r"V_MIN = ([0-9.]+)f", src).group(1))
     vstep = float(re.search(r"V_STEP = ([0-9.]+)f", src).group(1))
     body = re.search(r"H_IGNITE\[N\] = \{(.*?)\};", src, re.S).group(1)

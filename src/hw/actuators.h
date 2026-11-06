@@ -7,12 +7,14 @@
 // via per-axis center trim, scale, and sign from config. Hard-clamped to the
 // servo travel limits on top of the controller's own gimbal clamp.
 //
-// Chute servo: boots OPEN (CHUTE_RELEASE_US) so the spring + chute can be
-// loaded straight away; CLI `chute lock` moves it to CHUTE_LOCK_US, and arming
-// is refused until it's locked. In flight, the flight logic's chuteRelease
-// level moves it to CHUTE_RELEASE_US (and back to LOCK briefly when
-// re-cycling a stuck latch). On the ground the flight logic never moves it.
-// A reboot with a loaded spring therefore ejects the chute.
+// Chute servo: LOCK / RELEASE are angles (degrees) saved in EEPROM by
+// ConfigStore and converted to pulses with the CHUTE_SERVO_US_AT_* map.
+// begin() puts it at the boot position the sketch chooses (the last
+// position commanded on the ground, or OPEN -- see CHUTE_BOOT_RESTORE);
+// CLI `chute lock` moves it to LOCK, and arming is refused until it's
+// locked. In flight, the flight logic's chuteRelease level moves it to
+// RELEASE (and back to LOCK briefly when re-cycling a stuck latch). On the
+// ground the flight logic never moves it.
 //
 // Pyro: MOSFET gate driven HIGH for PYRO_FIRE_MS, then released, on a
 // non-blocking timer. firePyro() only acts when enablePyro() has been set by
@@ -36,20 +38,42 @@ class Actuators {
   static constexpr int CHUTE_JOG_MIN_US = 500;
   static constexpr int CHUTE_JOG_MAX_US = 2500;
 
-  enum class ChutePos : uint8_t { LOCK, RELEASE, JOG };
+  // Same values as ConfigStore::CHUTE_LOCK / _RELEASE / _JOG.
+  enum class ChutePos : uint8_t { LOCK = 0, RELEASE = 1, JOG = 2 };
 
-  void begin(float trimAUs, float trimBUs) {
-    // Chute latch first, and atomically, straight to OPEN: Teensy 4's
-    // Servo::attach() loads the 1500 us default and its pulse ISR may read it
-    // before our write, which would twitch the latch toward some other
-    // position at power-up. With interrupts off across attach + write, the
-    // very first pulse is already RELEASE.
+  // Degrees <-> pulse for the chute servo (0..180 deg, inside the jog range).
+  static float chuteDegToUs(float deg) {
+    deg = constrain(deg, 0.0f, 180.0f);
+    const float us = cfg::CHUTE_SERVO_US_AT_0_DEG +
+                     deg * (cfg::CHUTE_SERVO_US_AT_180_DEG -
+                            cfg::CHUTE_SERVO_US_AT_0_DEG) / 180.0f;
+    return constrain(us, (float)CHUTE_JOG_MIN_US, (float)CHUTE_JOG_MAX_US);
+  }
+  static float chuteUsToDeg(float us) {
+    return (us - cfg::CHUTE_SERVO_US_AT_0_DEG) * 180.0f /
+           (cfg::CHUTE_SERVO_US_AT_180_DEG - cfg::CHUTE_SERVO_US_AT_0_DEG);
+  }
+
+  // lockDeg / releaseDeg: the saved latch angles. bootPos / bootUs: where
+  // the latch goes at power-up (chosen by the sketch).
+  void begin(float trimAUs, float trimBUs, float lockDeg, float releaseDeg,
+             ChutePos bootPos, float bootUs) {
+    lockUs_ = chuteDegToUs(lockDeg);
+    releaseUs_ = chuteDegToUs(releaseDeg);
+    if (bootPos == ChutePos::LOCK) bootUs = lockUs_;
+    else if (bootPos == ChutePos::RELEASE) bootUs = releaseUs_;
+    bootUs = constrain(bootUs, (float)CHUTE_JOG_MIN_US, (float)CHUTE_JOG_MAX_US);
+    // Chute latch first, and atomically, straight to the boot position:
+    // Teensy 4's Servo::attach() loads the 1500 us default and its pulse ISR
+    // may read it before our write, which would twitch the latch toward some
+    // other position at power-up. With interrupts off across attach + write,
+    // the very first pulse is already the boot position.
     noInterrupts();
     chute_.attach(cfg::PIN_SERVO_CHUTE, CHUTE_JOG_MIN_US, CHUTE_JOG_MAX_US);
-    chute_.writeMicroseconds((int)cfg::CHUTE_RELEASE_US);
+    chute_.writeMicroseconds((int)bootUs);
     interrupts();
-    chuteUs_ = cfg::CHUTE_RELEASE_US;
-    chutePos_ = ChutePos::RELEASE;
+    chuteUs_ = bootUs;
+    chutePos_ = bootPos;
 
     trimA_ = trimAUs;
     trimB_ = trimBUs;
@@ -102,16 +126,32 @@ class Actuators {
       chuteLock();
     }
   }
-  void chuteLock() { chuteWrite(cfg::CHUTE_LOCK_US, ChutePos::LOCK); }
-  void chuteRelease() { chuteWrite(cfg::CHUTE_RELEASE_US, ChutePos::RELEASE); }
+  void chuteLock() { chuteWrite(lockUs_, ChutePos::LOCK); }
+  void chuteRelease() { chuteWrite(releaseUs_, ChutePos::RELEASE); }
   void chuteJogUs(int us) {  // bench tests only: find the LOCK/RELEASE values
     chuteWrite((float)constrain(us, CHUTE_JOG_MIN_US, CHUTE_JOG_MAX_US),
                ChutePos::JOG);
+  }
+  void chuteJogDeg(float deg) {  // bench: same, in degrees
+    chuteWrite(chuteDegToUs(deg), ChutePos::JOG);
+  }
+  // New saved angles. The servo only moves if it's sitting at that position
+  // already (so changing the OPEN angle never fires a loaded spring).
+  void setChuteLockDeg(float deg) {
+    lockUs_ = chuteDegToUs(deg);
+    if (chutePos_ == ChutePos::LOCK) chuteLock();
+  }
+  void setChuteReleaseDeg(float deg) {
+    releaseUs_ = chuteDegToUs(deg);
+    if (chutePos_ == ChutePos::RELEASE) chuteRelease();
   }
   ChutePos chutePos() const { return chutePos_; }
   bool chuteLocked() const { return chutePos_ == ChutePos::LOCK; }
   bool chuteReleased() const { return chutePos_ == ChutePos::RELEASE; }
   float chuteUs() const { return chuteUs_; }
+  float chuteDeg() const { return chuteUsToDeg(chuteUs_); }
+  float chuteLockUs() const { return lockUs_; }
+  float chuteReleaseUs() const { return releaseUs_; }
 
   // ---- landing-motor pyro ----
   void enablePyro(bool en) { pyroEnabled_ = en; }
@@ -219,7 +259,9 @@ class Actuators {
   Servo servoA_, servoB_, chute_;
   float trimA_ = 0, trimB_ = 0;
   float lastUsA_ = 1500, lastUsB_ = 1500;
-  float chuteUs_ = cfg::CHUTE_RELEASE_US;
+  float lockUs_ = chuteDegToUs(cfg::CHUTE_LOCK_DEG_DEFAULT);
+  float releaseUs_ = chuteDegToUs(cfg::CHUTE_RELEASE_DEG_DEFAULT);
+  float chuteUs_ = releaseUs_;
   ChutePos chutePos_ = ChutePos::RELEASE;
   bool pyroEnabled_ = false;
   uint32_t fireEndMs_ = 0;

@@ -185,10 +185,29 @@ constexpr float DRIFT_MAX_TILT_DEG = 5.0f;   // cap on the commanded lean
 // holds the latch. FlightStateMachine decides WHEN (apogee in CHUTE_TEST, any
 // abort in either mode); ChuteDeploy (src/core/chute_deploy.h) then confirms
 // the canopy opened from the accelerometer and re-cycles the latch if not.
-// Find LOCK/RELEASE with the CLI `chute us <n>` jog, then set them here.
+//
+// Angles: find LOCK/OPEN with the CLI `chute deg <n>` jog, then
+// `chute set lock` / `chute set open` saves them in EEPROM (no re-upload).
+// The *_DEFAULT values below are only used on first boot / `chute defaults`.
+// Degrees -> pulse: linear between the two US_AT_* points; set them from the
+// servo's datasheet (typical: 500..2500 us over 0..180 deg).
+//
+// Boot: with CHUTE_BOOT_RESTORE the latch powers up at the last position
+// commanded on the ground (saved in EEPROM). Exceptions, which boot OPEN as
+// before: a watchdog / crash reset, and a power-on while the IMU says the
+// vehicle is moving or not at ~1 g (power blip in flight). false = always
+// boot OPEN (a reboot with a loaded spring ejects the chute).
 // ---------------------------------------------------------------------------
-constexpr float CHUTE_LOCK_US         = 1500.0f; // [MEASURE] latch holding the spring
-constexpr float CHUTE_RELEASE_US      = 1000.0f; // [MEASURE] latch fully open
+constexpr float CHUTE_SERVO_US_AT_0_DEG   = 500.0f;
+constexpr float CHUTE_SERVO_US_AT_180_DEG = 2500.0f;
+constexpr float CHUTE_LOCK_DEG_DEFAULT    = 90.0f;  // [MEASURE] latch holding the spring (1500 us)
+constexpr float CHUTE_RELEASE_DEG_DEFAULT = 45.0f;  // [MEASURE] latch fully open (1000 us)
+constexpr bool  CHUTE_BOOT_RESTORE        = true;
+// In-air guard at boot (only when restoring a LOCKED latch).
+constexpr float CHUTE_BOOT_STILL_MS       = 200.0f;
+constexpr float CHUTE_BOOT_G_MIN          = 0.7f;   // |accel| in g
+constexpr float CHUTE_BOOT_G_MAX          = 1.3f;
+constexpr float CHUTE_BOOT_RATE_MAX_DPS   = 30.0f;
 constexpr float CHUTE_CONFIRM_MS      = 1500.0f; // no chute seen this long after a release -> re-cycle
 constexpr float CHUTE_RECYCLE_LOCK_MS = 400.0f;  // [MEASURE] dwell back at LOCK (servo travel time)
 constexpr int   CHUTE_MAX_RELEASES    = 4;       // first release + 3 re-cycles, then hold RELEASE
