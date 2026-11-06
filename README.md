@@ -1,4 +1,9 @@
 # RocketFC — TVC Self-Landing Model Rocket Flight Computer
+<img width="400" alt="IMG_3111" src="https://github.com/user-attachments/assets/24cda4eb-49ee-4003-96ca-7cc5b36d366a" />
+<img width="569" alt="image" src="https://github.com/user-attachments/assets/939f8535-6281-4afa-90d8-443e04722aaf" />
+
+
+Google drive link with numerous photos of this model rocket project (and a few of my other projects): https://drive.google.com/drive/folders/1t4HR8e49pa-YUd3eFnzsIMzDf4J9D1U2?usp=sharing
 
 A complete flight computer for a thrust-vector-controlled (TVC), propulsively
 landed model rocket, built for the **Teensy 4.1** with a **BMI088**
@@ -323,3 +328,7 @@ You are responsible for complying with your local regulations.
 *Built with Claude Code. The core flight logic in `src/core/` is verified by
 `tools/replay` (unit checks + 6 synthetic flight scenarios) on every change:
 `cd tools/replay && make test`.*
+
+
+# Why I made this project
+I wanted to get my hands dirty with an advanced project so that I would force myself to learn new software and hardware skills that will be useful to me for later projects. I chose to build an autonomously landing model rocket because I was inspired by SpaceX landing their Starship. Additionally, I knew about thrust vector control in planes and fighter jets before, but I became really interested in it after I found out that they were also used in rockets as well. 
