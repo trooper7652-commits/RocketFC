@@ -77,6 +77,7 @@ class Runner:
         self.last_tel = None
         self.state = "?"
         self.landed_t = None
+        self.td_state_t = None     # plant time the Teensy first reported TOUCHDOWN
         self.record = False
         self._abort_sent = False
         self._con_seen = 0
@@ -365,9 +366,15 @@ class Runner:
         if fl.pl.state.landed and self.landed_t is None:
             self.landed_t = fl.t
             self.log("on the ground ({:.2f} m/s at contact)".format(fl.touchdown_speed or 0.0))
+        if self.state == "TOUCHDOWN" and self.td_state_t is None:
+            self.td_state_t = fl.t
         if self.landed_t is not None:
+            # 2 s after contact and 1 s after the Teensy's TOUCHDOWN state (so its
+            # console EVENT line arrives too: under a chute after an abort the
+            # detection can take > 4 s); 10 s after contact if it never comes.
             waited = fl.t - self.landed_t
-            if (self.state == "TOUCHDOWN" and waited >= 2.0) or waited >= 6.0:
+            if (self.td_state_t is not None and waited >= 2.0
+                    and fl.t - self.td_state_t >= 1.0) or waited >= 10.0:
                 self.flight_over = True
                 self.end_reason = "landed"
         elif fl.t - fl.launch_t > self.sc.max_flight_s:
