@@ -7,14 +7,16 @@
 // via per-axis center trim, scale, and sign from config. Hard-clamped to the
 // servo travel limits on top of the controller's own gimbal clamp.
 //
-// Chute servo: LOCK / RELEASE are angles (degrees) saved in EEPROM by
-// ConfigStore and converted to pulses with the CHUTE_SERVO_US_AT_* map.
-// begin() puts it at the boot position the sketch chooses (the last
-// position commanded on the ground, or OPEN -- see CHUTE_BOOT_RESTORE);
-// CLI `chute lock` moves it to LOCK, and arming is refused until it's
-// locked. In flight, the flight logic's chuteRelease level moves it to
-// RELEASE (and back to LOCK briefly when re-cycling a stuck latch). On the
-// ground the flight logic never moves it.
+// Chute servo: LOCK / SET / RELEASE (OPEN) are angles (degrees) saved in
+// EEPROM by ConfigStore and converted to pulses with the CHUTE_SERVO_US_AT_*
+// map. SET is the ground-only loading position (`chute set`, load the spring
+// and chute, then `chute lock`). begin() puts it at the boot position the
+// sketch chooses (the last position commanded on the ground, or OPEN -- see
+// CHUTE_BOOT_RESTORE); arming is refused until it's at LOCK. In flight, the
+// flight logic's chuteRelease level moves it to RELEASE (and back to LOCK
+// briefly when re-cycling a stuck latch); after the release it returns to SET
+// at touchdown or CHUTE_STOW_AFTER_MS, whichever comes first. On the ground
+// the flight logic never moves it.
 //
 // Pyro: MOSFET gate driven HIGH for PYRO_FIRE_MS, then released, on a
 // non-blocking timer. firePyro() only acts when enablePyro() has been set by
@@ -38,8 +40,8 @@ class Actuators {
   static constexpr int CHUTE_JOG_MIN_US = 500;
   static constexpr int CHUTE_JOG_MAX_US = 2500;
 
-  // Same values as ConfigStore::CHUTE_LOCK / _RELEASE / _JOG.
-  enum class ChutePos : uint8_t { LOCK = 0, RELEASE = 1, JOG = 2 };
+  // Same values as ConfigStore::CHUTE_LOCK / _RELEASE / _JOG / _SET.
+  enum class ChutePos : uint8_t { LOCK = 0, RELEASE = 1, JOG = 2, SET = 3 };
 
   // Degrees <-> pulse for the chute servo (0..180 deg, inside the jog range).
   static float chuteDegToUs(float deg) {
@@ -54,13 +56,15 @@ class Actuators {
            (cfg::CHUTE_SERVO_US_AT_180_DEG - cfg::CHUTE_SERVO_US_AT_0_DEG);
   }
 
-  // lockDeg / releaseDeg: the saved latch angles. bootPos / bootUs: where
-  // the latch goes at power-up (chosen by the sketch).
-  void begin(float trimAUs, float trimBUs, float lockDeg, float releaseDeg,
-             ChutePos bootPos, float bootUs) {
+  // lockDeg / setDeg / releaseDeg: the saved latch angles. bootPos / bootUs:
+  // where the latch goes at power-up (chosen by the sketch).
+  void begin(float trimAUs, float trimBUs, float lockDeg, float setDeg,
+             float releaseDeg, ChutePos bootPos, float bootUs) {
     lockUs_ = chuteDegToUs(lockDeg);
+    setUs_ = chuteDegToUs(setDeg);
     releaseUs_ = chuteDegToUs(releaseDeg);
     if (bootPos == ChutePos::LOCK) bootUs = lockUs_;
+    else if (bootPos == ChutePos::SET) bootUs = setUs_;
     else if (bootPos == ChutePos::RELEASE) bootUs = releaseUs_;
     bootUs = constrain(bootUs, (float)CHUTE_JOG_MIN_US, (float)CHUTE_JOG_MAX_US);
     // Chute latch first, and atomically, straight to the boot position:
@@ -116,19 +120,37 @@ class Actuators {
   // RELEASE is honored whenever commanded (the core only commands it in
   // flight; the arm switch is the same second layer as for the pyro). LOCK is
   // only applied in flight -- that's the re-cycle swing -- so on the ground a
-  // position set from the CLI is left alone, and after touchdown the latch
-  // stays open.
-  void applyChute(bool releaseCmd, bool inFlight) {
+  // position set from the CLI is left alone.
+  // Stow: once a flight release has happened, the latch returns to SET at
+  // touchdown or CHUTE_STOW_AFTER_MS after the first release (whichever is
+  // first) and ignores the flight logic until the next arm
+  // (resetChuteFlight()).
+  void applyChute(bool releaseCmd, bool inFlight, bool touchedDown, uint32_t ms) {
+    if (chuteStowed_) return;
     if (releaseCmd) {
       if (cfg::REQUIRE_ARM_SWITCH && !armSwitchOn()) return;
       if (chutePos_ != ChutePos::RELEASE) chuteRelease();
+      if (chuteFirstReleaseMs_ == 0) chuteFirstReleaseMs_ = ms ? ms : 1;
     } else if (inFlight && chutePos_ != ChutePos::LOCK) {
       chuteLock();
     }
+    if (chuteFirstReleaseMs_ != 0 &&
+        (touchedDown ||
+         (float)(ms - chuteFirstReleaseMs_) >= cfg::CHUTE_STOW_AFTER_MS)) {
+      chuteSet();
+      chuteStowed_ = true;
+    }
   }
+  // New flight (called at arm): forget the last flight's release and stow.
+  void resetChuteFlight() {
+    chuteFirstReleaseMs_ = 0;
+    chuteStowed_ = false;
+  }
+  bool chuteStowed() const { return chuteStowed_; }
   void chuteLock() { chuteWrite(lockUs_, ChutePos::LOCK); }
+  void chuteSet() { chuteWrite(setUs_, ChutePos::SET); }  // ground loading position
   void chuteRelease() { chuteWrite(releaseUs_, ChutePos::RELEASE); }
-  void chuteJogUs(int us) {  // bench tests only: find the LOCK/RELEASE values
+  void chuteJogUs(int us) {  // bench tests only: find the LOCK/SET/OPEN values
     chuteWrite((float)constrain(us, CHUTE_JOG_MIN_US, CHUTE_JOG_MAX_US),
                ChutePos::JOG);
   }
@@ -141,6 +163,10 @@ class Actuators {
     lockUs_ = chuteDegToUs(deg);
     if (chutePos_ == ChutePos::LOCK) chuteLock();
   }
+  void setChuteSetDeg(float deg) {
+    setUs_ = chuteDegToUs(deg);
+    if (chutePos_ == ChutePos::SET) chuteSet();
+  }
   void setChuteReleaseDeg(float deg) {
     releaseUs_ = chuteDegToUs(deg);
     if (chutePos_ == ChutePos::RELEASE) chuteRelease();
@@ -151,6 +177,7 @@ class Actuators {
   float chuteUs() const { return chuteUs_; }
   float chuteDeg() const { return chuteUsToDeg(chuteUs_); }
   float chuteLockUs() const { return lockUs_; }
+  float chuteSetUs() const { return setUs_; }
   float chuteReleaseUs() const { return releaseUs_; }
 
   // ---- landing-motor pyro ----
@@ -260,8 +287,11 @@ class Actuators {
   float trimA_ = 0, trimB_ = 0;
   float lastUsA_ = 1500, lastUsB_ = 1500;
   float lockUs_ = chuteDegToUs(cfg::CHUTE_LOCK_DEG_DEFAULT);
+  float setUs_ = chuteDegToUs(cfg::CHUTE_SET_DEG_DEFAULT);
   float releaseUs_ = chuteDegToUs(cfg::CHUTE_RELEASE_DEG_DEFAULT);
   float chuteUs_ = releaseUs_;
+  uint32_t chuteFirstReleaseMs_ = 0;  // first flight release this flight; 0 = none
+  bool chuteStowed_ = false;          // returned to SET after the release
   ChutePos chutePos_ = ChutePos::RELEASE;
   bool pyroEnabled_ = false;
   uint32_t fireEndMs_ = 0;

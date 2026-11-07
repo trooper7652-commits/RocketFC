@@ -1,10 +1,11 @@
 #pragma once
 //
 // EEPROM-backed persistent settings: flight mode, servo trims, the
-// flight-log counter, and the chute latch angles + last position. Guarded by
-// magic + checksum; falls back to defaults on first boot or corruption. A
-// version-1 record (before the chute fields) is migrated, keeping the mode,
-// trims and flight counter.
+// flight-log counter, and the chute latch angles (LOCK / SET / OPEN) + last
+// position. Guarded by magic + checksum; falls back to defaults on first boot
+// or corruption. Older records are migrated, keeping the mode, trims and
+// flight counter: version 1 (before the chute fields) and version 2 (LOCK and
+// OPEN only, placeholder angles -- reset to the current defaults).
 //
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -15,11 +16,11 @@ class ConfigStore {
  public:
   // Last chute latch position commanded on the ground (matches
   // Actuators::ChutePos values).
-  enum : uint8_t { CHUTE_LOCK = 0, CHUTE_RELEASE = 1, CHUTE_JOG = 2 };
+  enum : uint8_t { CHUTE_LOCK = 0, CHUTE_RELEASE = 1, CHUTE_JOG = 2, CHUTE_SET = 3 };
 
   struct Data {
     uint32_t magic = kMagic;
-    uint16_t version = 2;
+    uint16_t version = 3;
     uint8_t mode = (uint8_t)cfg::DEFAULT_MODE;
     uint16_t flightCount = 0;
     float trimAUs = 0, trimBUs = 0;
@@ -27,20 +28,33 @@ class ConfigStore {
     float chuteReleaseDeg = cfg::CHUTE_RELEASE_DEG_DEFAULT;
     uint8_t chuteLastPos = CHUTE_RELEASE;
     float chuteLastDeg = cfg::CHUTE_RELEASE_DEG_DEFAULT;
+    float chuteSetDeg = cfg::CHUTE_SET_DEG_DEFAULT;
     uint16_t checksum = 0;
   };
 
   void load() {
     EEPROM.get(cfg::EEPROM_BASE_ADDR, data_);
-    if (data_.magic == kMagic && data_.version == 2 &&
+    if (data_.magic == kMagic && data_.version == 3 &&
         data_.checksum == computeChecksum(data_))
       return;
 
+    // Older layouts: keep the mode, trims, flight counter and (v2) the last
+    // latch position; the chute angles start from the current defaults.
+    DataV2 v2;
+    EEPROM.get(cfg::EEPROM_BASE_ADDR, v2);
     DataV1 v1;
     EEPROM.get(cfg::EEPROM_BASE_ADDR, v1);
     data_ = Data{};
-    if (v1.magic == kMagic && v1.version == 1 &&
-        v1.checksum == computeChecksum(v1)) {
+    if (v2.magic == kMagic && v2.version == 2 &&
+        v2.checksum == computeChecksum(v2)) {
+      data_.mode = v2.mode;
+      data_.flightCount = v2.flightCount;
+      data_.trimAUs = v2.trimAUs;
+      data_.trimBUs = v2.trimBUs;
+      data_.chuteLastPos = v2.chuteLastPos;
+      data_.chuteLastDeg = v2.chuteLastDeg;
+    } else if (v1.magic == kMagic && v1.version == 1 &&
+               v1.checksum == computeChecksum(v1)) {
       data_.mode = v1.mode;
       data_.flightCount = v1.flightCount;
       data_.trimAUs = v1.trimAUs;
@@ -74,10 +88,12 @@ class ConfigStore {
 
   // ---- chute latch ----
   float chuteLockDeg() const { return data_.chuteLockDeg; }
+  float chuteSetDeg() const { return data_.chuteSetDeg; }
   float chuteReleaseDeg() const { return data_.chuteReleaseDeg; }
   uint8_t chuteLastPos() const { return data_.chuteLastPos; }
   float chuteLastDeg() const { return data_.chuteLastDeg; }
   void setChuteLockDeg(float d) { data_.chuteLockDeg = d; save(); }
+  void setChuteSetDeg(float d) { data_.chuteSetDeg = d; save(); }
   void setChuteReleaseDeg(float d) { data_.chuteReleaseDeg = d; save(); }
   // Ground moves only -- never call in flight (EEPROM write = flash write).
   void setChuteLast(uint8_t pos, float deg) {
@@ -88,6 +104,7 @@ class ConfigStore {
   }
   void resetChute() {
     data_.chuteLockDeg = cfg::CHUTE_LOCK_DEG_DEFAULT;
+    data_.chuteSetDeg = cfg::CHUTE_SET_DEG_DEFAULT;
     data_.chuteReleaseDeg = cfg::CHUTE_RELEASE_DEG_DEFAULT;
     save();
   }
@@ -95,13 +112,25 @@ class ConfigStore {
  private:
   static constexpr uint32_t kMagic = 0x524B4643;  // "RKFC"
 
-  // The version-1 layout, kept only to migrate old EEPROM contents.
+  // Older layouts, kept only to migrate old EEPROM contents.
   struct DataV1 {
     uint32_t magic;
     uint16_t version;
     uint8_t mode;
     uint16_t flightCount;
     float trimAUs, trimBUs;
+    uint16_t checksum;
+  };
+  struct DataV2 {
+    uint32_t magic;
+    uint16_t version;
+    uint8_t mode;
+    uint16_t flightCount;
+    float trimAUs, trimBUs;
+    float chuteLockDeg;
+    float chuteReleaseDeg;
+    uint8_t chuteLastPos;
+    float chuteLastDeg;
     uint16_t checksum;
   };
 

@@ -213,10 +213,22 @@ class Cli {
   static const char* chutePosName(Actuators::ChutePos p) {
     switch (p) {
       case Actuators::ChutePos::LOCK: return "LOCKED";
-      case Actuators::ChutePos::RELEASE: return "RELEASED";
+      case Actuators::ChutePos::SET: return "SET (loading)";
+      case Actuators::ChutePos::RELEASE: return "OPEN";
       case Actuators::ChutePos::JOG: return "JOG (not locked)";
     }
     return "?";
+  }
+
+  // Warn when two of the saved LOCK / SET / OPEN angles nearly coincide.
+  void warnChuteAngles() {
+    const float a[3] = {ctx_.store.chuteLockDeg(), ctx_.store.chuteSetDeg(),
+                        ctx_.store.chuteReleaseDeg()};
+    const char* n[3] = {"lock", "set", "open"};
+    for (int i = 0; i < 3; ++i)
+      for (int j = i + 1; j < 3; ++j)
+        if (fabsf(a[i] - a[j]) < 5.0f)
+          Serial.printf("!! %s and %s angles are less than 5 deg apart.\n", n[i], n[j]);
   }
 
   // Remember a ground move so the next power-up restores it.
@@ -228,9 +240,10 @@ class Cli {
     Actuators& act = ctx_.act;
     Serial.printf("chute latch: %s at %.1f deg (%.0f us)\n",
                   chutePosName(act.chutePos()), act.chuteDeg(), act.chuteUs());
-    Serial.printf("  saved: lock %.1f deg (%.0f us), open %.1f deg (%.0f us); "
-                  "boot restore %s\n",
+    Serial.printf("  saved: lock %.1f deg (%.0f us), set %.1f deg (%.0f us), "
+                  "open %.1f deg (%.0f us); boot restore %s\n",
                   ctx_.store.chuteLockDeg(), act.chuteLockUs(),
+                  ctx_.store.chuteSetDeg(), act.chuteSetUs(),
                   ctx_.store.chuteReleaseDeg(), act.chuteReleaseUs(),
                   cfg::CHUTE_BOOT_RESTORE ? "ON" : "off");
   }
@@ -242,43 +255,59 @@ class Cli {
       saveChuteLast();
       Serial.printf("chute latch LOCKED (%.1f deg, %.0f us).\n", act.chuteDeg(),
                     act.chuteUs());
+    } else if (sub && !strcmp(sub, "set") && !arg) {
+      act.chuteSet();
+      saveChuteLast();
+      Serial.printf(
+          "chute latch at SET (%.1f deg, %.0f us) -- load the spring + chute,\n"
+          "then `chute lock` (arming is refused until then).\n",
+          act.chuteDeg(), act.chuteUs());
+    } else if (sub && !strcmp(sub, "set") && arg) {
+      // The angle-saving command used to be `chute set lock|open [deg]`.
+      Serial.printf("`chute set` takes no argument (it moves to SET). To save an "
+                    "angle use `chute save %s%s%s`.\n",
+                    arg, arg2 ? " " : "", arg2 ? arg2 : "");
     } else if (sub && !strcmp(sub, "open")) {
       act.chuteRelease();
       saveChuteLast();
       Serial.printf(
           "chute latch OPEN (%.1f deg, %.0f us) -- a loaded spring fires now, "
           "stand clear.\n"
-          "Load spring + chute, then `chute lock` (arming is refused until "
-          "then).\n",
+          "To load: `chute set`, load spring + chute, then `chute lock`.\n",
           act.chuteDeg(), act.chuteUs());
     } else if (sub && (!strcmp(sub, "us") || !strcmp(sub, "deg")) && arg) {
       if (!strcmp(sub, "us")) act.chuteJogUs(atoi(arg));
       else act.chuteJogDeg((float)atof(arg));
       saveChuteLast();
       Serial.printf(
-          "chute servo -> %.1f deg (%.0f us) (jog). Save it with `chute set "
-          "lock` / `chute set open`; `chute lock` before arming.\n",
+          "chute servo -> %.1f deg (%.0f us) (jog). Save it with `chute save "
+          "lock|set|open`; `chute lock` before arming.\n",
           act.chuteDeg(), act.chuteUs());
-    } else if (sub && !strcmp(sub, "set") && arg &&
-               (!strcmp(arg, "lock") || !strcmp(arg, "open"))) {
-      const bool lock = !strcmp(arg, "lock");
+    } else if (sub && !strcmp(sub, "save") && arg &&
+               (!strcmp(arg, "lock") || !strcmp(arg, "set") || !strcmp(arg, "open"))) {
       float deg = arg2 ? (float)atof(arg2) : act.chuteDeg();
       deg = constrain(deg, 0.0f, 180.0f);
-      if (lock) {
+      const char* name = "OPEN";
+      if (!strcmp(arg, "lock")) {
         act.setChuteLockDeg(deg);
         ctx_.store.setChuteLockDeg(deg);
+        name = "LOCK";
+      } else if (!strcmp(arg, "set")) {
+        act.setChuteSetDeg(deg);
+        ctx_.store.setChuteSetDeg(deg);
+        name = "SET";
       } else {
         act.setChuteReleaseDeg(deg);
         ctx_.store.setChuteReleaseDeg(deg);
       }
       saveChuteLast();
-      Serial.printf("chute %s angle = %.1f deg (%.0f us), saved.\n",
-                    lock ? "LOCK" : "OPEN", deg, Actuators::chuteDegToUs(deg));
-      if (fabsf(ctx_.store.chuteLockDeg() - ctx_.store.chuteReleaseDeg()) < 5.0f)
-        Serial.println("!! lock and open angles are less than 5 deg apart.");
+      Serial.printf("chute %s angle = %.1f deg (%.0f us), saved.\n", name, deg,
+                    Actuators::chuteDegToUs(deg));
+      warnChuteAngles();
     } else if (sub && !strcmp(sub, "defaults")) {
       ctx_.store.resetChute();
       act.setChuteLockDeg(ctx_.store.chuteLockDeg());
+      act.setChuteSetDeg(ctx_.store.chuteSetDeg());
       act.setChuteReleaseDeg(ctx_.store.chuteReleaseDeg());
       saveChuteLast();
       Serial.println("chute angles reset to the config.h defaults (saved).");
@@ -293,12 +322,12 @@ class Cli {
         if (ctx_.wdogFeed) ctx_.wdogFeed();
       act.chuteRelease();
       saveChuteLast();
-      Serial.println("released. `chute lock` before arming.");
+      Serial.println("released. `chute set`, load, then `chute lock` before arming.");
     } else {
       printChute();
       Serial.println(
-          "usage: chute lock|open|cycle|defaults | deg <n> | us <n> | "
-          "set lock|open [deg]");
+          "usage: chute lock|set|open|cycle|defaults | deg <n> | us <n> | "
+          "save lock|set|open [deg]");
     }
   }
 
@@ -364,11 +393,13 @@ class Cli {
         "  trim a|b <us>     adjust servo center, saved\n"
         "  center            center servos\n"
         "  chute             show chute latch position\n"
-        "  chute open|lock   open the latch to load the spring / lock it\n"
+        "  chute open        latch fully OPEN (releases a loaded spring)\n"
+        "  chute set         latch to SET, the loading position\n"
+        "  chute lock        latch to LOCK, holds the spring (needed to arm)\n"
         "  chute deg <n>     jog the latch servo to n degrees (0-180)\n"
         "  chute us <n>      jog the latch servo by pulse width\n"
-        "  chute set lock|open [deg]  save LOCK/OPEN angle (default: current)\n"
-        "  chute defaults    LOCK/OPEN angles back to config.h defaults\n"
+        "  chute save lock|set|open [deg]  save that angle (default: current)\n"
+        "  chute defaults    LOCK/SET/OPEN angles back to config.h defaults\n"
         "  chute cycle       one in-flight re-cycle: LOCK dwell -> RELEASE\n"
         "  pyrotest land     test-fire the landing e-match (two-step confirm)\n"
         "  pyrotest legs     test-burn the legs nichrome (two-step confirm)\n"
