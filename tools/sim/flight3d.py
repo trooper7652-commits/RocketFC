@@ -484,6 +484,29 @@ class FlightView:
     def set_time(self, t):
         self._t = max(0.0, min(self.track.t_max, t))
 
+    def set_track(self, track, follow_end=True):
+        """Show another (or a grown) track in this open window: the wide
+        framing and the zoom limit follow its new bounds. follow_end puts the
+        playhead at its newest sample (a live flight streaming in); otherwise
+        the playhead stays where it was, clamped to the new track."""
+        self.track = track
+        self.show_ghost = self.show_ghost and track.has_estimate
+        center, rad = track.bounds()
+        self._wide_center = center
+        if self.follow:
+            self._dist_wide = max(12.0, rad * 1.5)
+        else:
+            # whole-flight view is live: keep the user's zoom unless the
+            # flight has outgrown it (called ~4 Hz while a bench flight streams)
+            self._store_dist()
+            self._dist_wide = max(self._dist_wide, rad * 1.5)
+            self.camera.dist = self._dist_wide
+            self.camera.target = center
+        self.camera.max_dist = max(400.0, rad * 8.0)
+        self.camera.dist = min(self.camera.dist, self.camera.max_dist)
+        self.set_time(track.t_max if follow_end else self._t)
+        self._overlay_key = None   # redraw the HUD now
+
     # -- event pump -------------------------------------------------------
     def pump(self):
         """Drain pygame events. Returns a dict describing what the user did:
