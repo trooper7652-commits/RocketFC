@@ -196,8 +196,14 @@ def format_table(rows):
         return str(v)
     lines = ["{:<26} {:>12} {:>12} {:>9}  {}".format("", "bench", "twin", "diff", "")]
     for item, a, b, d, tol, ok in rows:
+        mark = "ok" if ok else "** DIFFERS **"
+        if len(f(a)) > 12 or len(f(b)) > 12:   # long text (the outcome): one line each
+            lines.append("{:<26} {:>36}  {}".format(item, "", mark))
+            lines.append("    bench: " + f(a))
+            lines.append("    twin:  " + f(b))
+            continue
         lines.append("{:<26} {:>12} {:>12} {:>9}  {}".format(
-            item, f(a), f(b), f(d) if d is not None else "", "ok" if ok else "** DIFFERS **"))
+            item, f(a), f(b), f(d) if d is not None else "", mark))
     n_bad = sum(1 for r in rows if not r[5])
     lines.append("{} of {} checks agree".format(len(rows) - n_bad, len(rows)))
     return "\n".join(lines)
