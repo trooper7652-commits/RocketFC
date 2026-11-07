@@ -29,7 +29,11 @@ class SDClass {
     struct stat st;
     return stat(path(p).c_str(), &st) == 0;
   }
+#ifdef _WIN32
   bool mkdir(const char* p) { return ::mkdir(path(p).c_str()) == 0; }
+#else
+  bool mkdir(const char* p) { return ::mkdir(path(p).c_str(), 0777) == 0; }
+#endif
   File open(const char* p, int) { return File(fopen(path(p).c_str(), "ab")); }
  private:
   static std::string path(const char* p) { return g_sdRoot + "/" + p; }

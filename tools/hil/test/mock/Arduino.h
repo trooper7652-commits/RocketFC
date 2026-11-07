@@ -88,7 +88,13 @@ class HostSerial : public Print {
     while (k < n && !in.empty()) { dst[k++] = in.front(); in.pop_front(); }
     return k;
   }
+  int availableForWrite() { return 4096; }
+  void flush() {}
   size_t write(const uint8_t* b, size_t n) override {
+    if (rawSink) {  // host_live.cpp: bytes go straight to a TCP client
+      rawSink(b, n, rawCtx);
+      return n;
+    }
     for (size_t i = 0; i < n; ++i) {
       const char c = (char)b[i];
       if (c == '\r') continue;
@@ -112,6 +118,8 @@ class HostSerial : public Print {
   std::deque<char> in;
   std::deque<std::string> lines;
   bool echo = true;
+  void (*rawSink)(const uint8_t*, size_t, void*) = nullptr;
+  void* rawCtx = nullptr;
 
  private:
   std::string cur;

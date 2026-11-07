@@ -110,6 +110,10 @@ def main():
     ap.add_argument("--plant-list", default=None)
     ap.add_argument("--wind", type=float, default=None,
                     help="steady wind (m/s) for every flight instead of the -4..+4 draw")
+    ap.add_argument("--dll", default=None,
+                    help="fly this flight-core DLL (plant nominal from its config.h too), "
+                         "e.g. core.build_from_src() of a HIL profile build; "
+                         "not combinable with --fw-overrides")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
@@ -119,7 +123,9 @@ def main():
     import sweep
     import vehicle
 
-    truth_dll = core.default_dll()
+    if args.dll and json.loads(args.fw_overrides):
+        raise SystemExit("--dll and --fw-overrides can't be combined")
+    truth_dll = os.path.abspath(args.dll) if args.dll else core.default_dll()
     fw = json.loads(args.fw_overrides)
     flight_dll = core.build_with_overrides(fw) if fw else truth_dll
     base = vehicle.default_vehicle_config(truth_dll)  # plant truth nominal

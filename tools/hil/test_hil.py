@@ -27,7 +27,7 @@ import make_hil
 
 HIL = hil_trace.HIL_DIR
 PY = sys.executable
-GXX = r"C:\msys64\ucrt64\bin\g++.exe"
+MSYS_GXX = r"C:\msys64\ucrt64\bin\g++.exe"
 HOST_DIR = os.path.join(make_hil.BUILD_ROOT, "host")
 IGN_MS = 437
 
@@ -40,11 +40,22 @@ def ensure_trace(name):
     return base
 
 
+def find_gxx():
+    """The owner's MSYS2 ucrt64 g++; g++ on PATH only as a fallback."""
+    if os.path.isfile(MSYS_GXX):
+        return MSYS_GXX
+    g = shutil.which("g++")
+    if not g:
+        raise SystemExit("no g++: install MSYS2 ucrt64 (C:\\msys64\\ucrt64\\bin) or put g++ on PATH")
+    return g
+
+
 def build(sketch):
-    exe = os.path.join(HOST_DIR, "host_hil.exe")
+    gxx = find_gxx()
+    exe = os.path.join(HOST_DIR, "host_hil" + (".exe" if os.name == "nt" else ""))
     os.makedirs(HOST_DIR, exist_ok=True)
-    env = dict(os.environ, PATH=os.path.dirname(GXX) + os.pathsep + os.environ["PATH"])
-    subprocess.run([GXX, "-std=gnu++17", "-O2", "-Wall", "-Wno-unused-function",
+    env = dict(os.environ, PATH=os.path.dirname(gxx) + os.pathsep + os.environ["PATH"])
+    subprocess.run([gxx, "-std=gnu++17", "-O2", "-Wall", "-Wno-unused-function",
                     "-I", os.path.join(HIL, "test", "mock"), "-I", sketch,
                     os.path.join(HIL, "test", "host_main.cpp"), "-o", exe],
                    check=True, env=env)

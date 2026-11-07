@@ -115,19 +115,22 @@ void setup() {
   } else {
     bootPos = (Actuators::ChutePos)store.chuteLastPos();
     if (bootPos != Actuators::ChutePos::LOCK &&
+        bootPos != Actuators::ChutePos::SET &&
         bootPos != Actuators::ChutePos::JOG)
       bootPos = Actuators::ChutePos::RELEASE;
     bootWhy = "restored last position";
   }
   act.begin(store.trimAUs(), store.trimBUs(), store.chuteLockDeg(),
-            store.chuteReleaseDeg(), bootPos,
+            store.chuteSetDeg(), store.chuteReleaseDeg(), bootPos,
             Actuators::chuteDegToUs(store.chuteLastDeg()));
   const bool sensorsOk = sensors.begin();
 
-  // In-air guard: a restored LOCK is only kept if the vehicle is sitting
-  // still at ~1 g. A power blip in flight (boost, coast, falling, tumbling)
-  // opens the latch, like the old always-boot-OPEN behaviour.
-  if (bootPos == Actuators::ChutePos::LOCK && sensors.imuOk()) {
+  // In-air guard: a restored LOCK or SET (both can hold a loaded spring) is
+  // only kept if the vehicle is sitting still at ~1 g. A power blip in flight
+  // (boost, coast, falling, tumbling) opens the latch, like the old
+  // always-boot-OPEN behaviour.
+  if ((bootPos == Actuators::ChutePos::LOCK || bootPos == Actuators::ChutePos::SET) &&
+      sensors.imuOk()) {
     const uint32_t g0 = millis();
     bool moving = false;
     while (millis() - g0 < (uint32_t)cfg::CHUTE_BOOT_STILL_MS && !moving) {
@@ -161,10 +164,11 @@ void setup() {
   Serial.printf("chute latch: %s at %.1f deg (%.0f us, pin %d) -- %s\n",
                 act.chuteLocked()     ? "LOCKED"
                 : act.chuteReleased() ? "OPEN"
+                : act.chutePos() == Actuators::ChutePos::SET ? "SET (loading)"
                                       : "JOG (not locked)",
                 act.chuteDeg(), act.chuteUs(), cfg::PIN_SERVO_CHUTE, bootWhy);
   if (!act.chuteLocked())
-    Serial.println("  load spring + chute, then `chute lock` before arming.");
+    Serial.println("  `chute set`, load spring + chute, then `chute lock` before arming.");
   if (!sensorsOk) Serial.println("!! sensor failure — check wiring, then reboot.");
   Serial.println("type `help` for commands.\n");
 
@@ -208,9 +212,9 @@ static void runProcedures(uint32_t ms) {
       if (!logger.sdOk()) fail("SD card missing/failed");
       if (cliCtx.vbatCached < cfg::VBAT_MIN) fail("battery low");
       // Commanded position only -- there's no latch switch, so this can't
-      // prove the latch is physically seated. Load it, then `chute lock`.
+      // prove the latch is physically seated. Load it at SET, then LOCK.
       if (!act.chuteLocked())
-        fail("chute latch not locked (load the spring, then `chute lock`)");
+        fail("chute latch not locked (load the spring at `chute set`, then `chute lock`)");
       if (needLandCont && !cliCtx.contLandCached)
         fail("no continuity on LANDING channel");
       if (needLandCont && !cliCtx.contLegsCached)
@@ -286,6 +290,7 @@ static void runProcedures(uint32_t ms) {
           break;
         }
         core.requestArm(ms);
+        act.resetChuteFlight();
         touchdownMs = 0;
         logClosedAfterTd = false;
         Serial.printf(
@@ -373,8 +378,8 @@ static void slowTick(uint32_t ms) {
     if (ms - touchdownMs > 4000) {
       logger.close();
       logClosedAfterTd = true;
-      // On the ground now: remember the latch as it is (normally OPEN after
-      // a deploy), so a power cycle doesn't swing it back to LOCK.
+      // On the ground now: remember the latch as it is (SET after a deploy,
+      // LOCK if the chute never released), so a power cycle restores it.
       store.setChuteLast((uint8_t)act.chutePos(), act.chuteDeg());
       Serial.println("flight log closed. Safe to power off.");
     }
@@ -418,8 +423,10 @@ void loop() {
     act.applyLegs(co.legsBurn, ms);
 
     // Chute latch: follows the core's release level (incl. re-cycles of a
-    // stuck latch). Only ever released by the core in flight.
-    act.applyChute(co.chuteRelease, co.inFlight);
+    // stuck latch). Only ever released by the core in flight. After a
+    // release it returns to SET at touchdown or CHUTE_STOW_AFTER_MS.
+    act.applyChute(co.chuteRelease, co.inFlight,
+                   co.state == FlightState::TOUCHDOWN, ms);
   }
 
   // --- every pass: cheap state machines ---

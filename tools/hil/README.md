@@ -95,3 +95,115 @@ Check that the boot banner has **no** `HIL BUILD` line and that the Teensy shows
 - [ ] At the rocket: `load` the trace, `cli "mode land"`, `cli "chute lock"`. The pyro LiPo goes in **last**; in this design, plugging it in is the arm.
 - [ ] Then everyone walks back to the safety distance. Only then `cli arm` (keep the rocket still for ~4 s) and `go`, from the laptop. Ctrl-C after `go` sends `abort`.
 - [ ] After the test, wait for the motors to cool before approaching. Unplug the pyro LiPo first.
+
+## Live closed-loop bench sim
+
+Everything above plays a **recorded** flight into the Teensy. LIVE mode closes the loop instead. The real Teensy flies a **simulated** rocket in real time over USB: the PC runs the physics and sends fake IMU and baro data, and the Teensy's own gimbal, landing-fire, legs and chute commands steer that simulated rocket. You watch it live in the sim dashboard. Afterwards a pure-PC **twin** flies the same flight with the same firmware built for the PC, and the two are compared.
+
+What it proves that the trace can't: the real flight code, on the real board at its real 500 Hz, **reacting** to the rocket's motion. That covers the control loop, the state machine, the estimator, faults and aborts, with no motors and no rocket.
+
+### What is real and what is simulated
+
+| Real | Simulated (on the PC) |
+|---|---|
+| Teensy 4.1 running the flight code (HIL build) | the rocket's motion: thrust, drag, wind, chute, legs, ground |
+| both gimbal servos and the chute servo, really moving | the IMU and baro the flight code reads (the real ones stay plugged in, unused) |
+| SD logging, the 500 Hz loop, USB timing | both motors, and the landing e-match: **its gate pin is never driven** |
+| the leg nichrome, **only** if you opt in with "live legs" | the leg nichrome otherwise (timed, but the pin stays off) |
+
+Two words used below:
+- The **KF** (Kalman filter) is the Teensy's altitude/speed **estimator**. It blends the noisy baro with the accelerometer to guess height and vertical speed. The plots show its guess against the simulated truth.
+- **Stale ticks**: how many 2 ms loop ticks the Teensy flew on an old sensor frame because the PC's reply was late. A few is normal. Hundreds means the link stalled, and after 100 ms the flight code treats the IMU as failed.
+
+### Safety
+- In LIVE mode the **landing e-match gate pin is never driven**. FIRE_LANDING is timed and logged, but the pin stays LOW. The PC test checks this on every case.
+- The **leg nichrome** is driven only with **live legs**, which you switch on by typing `LEGS` (`live_run.py --live-legs`, or the "Live legs" box in the dashboard). Without it, both pyro channels are simulated. Continuity and pyro volts read 7.8 V while simulated, so `arm` works with nothing connected.
+- Nothing on the landing channel during bench runs.
+- `reboot` (HIL channel) restarts the Teensy for the next run. It is refused while armed or in flight. After it the **chute latch boots OPEN** (it isn't a power-on reset), so keep the chute spring unloaded.
+- The HIL build is not flight firmware (step 7 above).
+
+### Setup (once per bench session)
+```
+python tools/hil/make_hil.py --profile e18w_1400g --upload COMx
+```
+- **USB Type: Dual Serial** (make_hil sets it). Port 1 is the normal CLI; port 2 is the HIL channel.
+- The **flight battery** must be in: it powers the servos and gives vbat.
+- The **SD card** must be in: the flight log is written as usual.
+- The profile `e18w_1400g` is AeroTech E18W ascent + E18W landing at 1.4 kg. It changes only the build copy's config.h and burn table; your `src/` is untouched. `tools/hil/profiles/e18w_1400g.json` also carries the PC plant's settings (casing eject 46.3 g, 0.75 s band cut, chute CdA 3.387 m²).
+
+### A bench run in the dashboard
+`python tools/sim/dashboard.py` → **HIL bench...** opens a separate window.
+1. **Ports:** Auto finds the Teensy. Otherwise type the COM ports, or use "PC build (socket)" for the test host below.
+2. **Scenario:** mode, seed, wind and gust, motor faults (dud igniter, landing thrust %, ignition delay), stuck chute releases, sensor faults. Fault times are seconds after Launch; a duration of 0 is off.
+3. **Connect.** The Teensy enters LIVE and sees a still pad.
+4. **Prepare.** This does the pad calibration, sends `mode` and `chute lock`.
+5. **Arm.** The Teensy calibrates for ~4 s; keep the bench still.
+6. **Launch.** The simulated ascent motor lights.
+- **Abort** fails the IMU on purpose, so a flying core aborts to the chute. **Stop** ends the session.
+- The plots update live: altitude (truth vs KF), vertical speed, tilt, gimbal command and a state strip. Open **3D view** to watch the rocket fly.
+- At touchdown the flight loads into the main dashboard like a normal sim run, the twin flies, and the comparison table fills in.
+
+### The same from the command line
+```
+python tools/hil/live_run.py --mode chute
+python tools/hil/live_run.py --mode land --set dud_landing_igniter=true
+python tools/hil/live_run.py --mode land --set imu_frozen_at_s=1.5 imu_frozen_s=2
+python tools/hil/live_run.py --mode land --abort-at 1.5     # operator abort
+python tools/hil/live_run.py --mode land --live-legs        # asks you to type LEGS
+```
+`live_run.py` runs pad → Prepare → arm → countdown → Launch → fly → twin compare. Exit code 0 means the twin agrees, 1 means it differs, 2 means a link or sequence error. Each run is saved in `tools/hil/sessions/live_<time>/`: `session.json`, `result.json`, `twin.json`, `compare.txt`.
+
+### Reading the twin table
+The twin replays the session's own tick timeline (each tick's time, loop period, and which sensor frame the Teensy used). It runs it through the same firmware compiled for the PC, with the same physics and the same random sensor noise. So a healthy bench run matches **exactly**: every row reads `0.000` and `ok`.
+- **Events** (LAUNCH, APOGEE_DET, FIRE_LANDING ...) must match within ±50 ms.
+- **Heights** within ±0.5 m; **speeds** within ±0.3 m/s.
+- Abort reason, final state, chute releases and the landing verdict must be identical.
+
+A **DIFFERS** row means the Teensy did something the PC build of the same code didn't, given identical inputs. Likely causes:
+- a firmware difference between the board and the PC build (an old upload? re-run make_hil);
+- floating-point or timing behaviour on the board;
+- a missed or garbled packet (check the CRC count and max stale).
+
+The link stats are printed with every run. A healthy link has a max gap of about 4–15 ms, max stale under ~10 ticks, and 0 CRC errors.
+
+### PC test (no Teensy)
+```
+python tools/hil/test_live.py
+```
+This builds the e18w profile's HIL sketch for the PC (`test/host_live.cpp`: the real firmware, real time, its two USB ports on TCP sockets). It flies 8 cases, each against a fresh host: chute, land, dud igniter, 2 stuck chute releases, IMU dropout, frozen IMU, operator abort, and live legs. Every case must have the twin agree and never drive the landing gate. Live legs must drive the legs gate; plain land must not. At the end it regenerates the plain HIL build. It takes about 3.5 minutes. To drive the host by hand:
+```
+python tools/hil/make_hil.py --profile e18w_1400g --no-compile
+g++ -std=gnu++17 -O2 -Wall -Wno-unused-function -I tools/hil/test/mock -I tools/hil/build/RocketFC_HIL tools/hil/test/host_live.cpp tools/hil/test/net.cpp -o tools/hil/build/host/host_live -lws2_32
+tools/hil/build/host/host_live tools/hil/build/host/sd_live 7700 120
+python tools/hil/live_run.py --port socket://127.0.0.1:7701 --console socket://127.0.0.1:7700 --mode chute
+```
+(`-lws2_32` is Windows only.) `host_live` waits up to 20 s for both clients, and prints `landing gate ON/OFF` and `legs gate ON/OFF` whenever those pins change.
+
+### How it works
+- **The Teensy is the clock.** Each 500 Hz tick, right after the flight core and actuators update, the HIL build sends a telemetry packet. The PC steps its physics to that packet's time with the commands it already holds, takes the new commands, and replies with the sensor frame for that moment. The Teensy uses that frame on its next tick. That is one tick (2 ms) more sensor-to-actuator lag than `tools/sim/run.py`; the twin has the same lag.
+- **Batching.** If several packets arrive at once, each still steps the physics, but only the newest frame is sent. The telemetry says which frame the Teensy used, so the twin can replay it exactly.
+- **IMU fail** (the flight code's `imuOk()` false) on any of: no frame for 100 ms (link loss), 250 identical ticks (frozen data), the frame's fail flag, or the operator abort.
+- **Framing:** `A5 5A <type> <len> <payload> <crc8>`. CRC-8 is poly 0x07, init 0, over type+len+payload; little-endian throughout.
+
+| type | direction | what |
+|---|---|---|
+| `F` | PC → Teensy | sensor frame, 32 B: `uint16 seq; uint8 flags` (bit0 new baro, bit1 IMU fail)`; uint8; float ax ay az gx gy gz baroAlt` (body frame, bias-corrected gyro) |
+| `T` | Teensy → PC | telemetry, 80 B: ms, frame seq used, state, abort reason, gimbal, servo µs, chute position, bits, KF alt/vel, tilt, quaternion, PID terms, stale ticks, loop period |
+| `C` | PC → Teensy | text: `live <pad ax ay az> <baro var> <legs 0/1>`, `live off`, `status`, `abort`, `reboot` |
+| `M` | Teensy → PC | text reply |
+
+  Telemetry bits: 1 landing fire (timed only), 2 legs commanded, 4 legs pin really driven, 8 chute release, 16 chute detected, 32 in flight, 64 TVC active, 128 IMU bad.
+
+| File | What |
+|---|---|
+| `firmware/sensors_hil.h` | the shim: LIVE mode (frames in, telemetry out, commands) |
+| `firmware/hil_hooks.h` | pyro gates and simulated volts (patched into the build copy's `actuators.h`) |
+| `profiles/*.json` | motor/mass profiles (`make_hil.py --profile`) |
+| `live/link.py` | ports, packing, decoder, console EVENT parsing, `find_ports()` |
+| `live/scenario.py` | the `Scenario` (faults, wind, mode, seed) |
+| `live/flight.py` | `LiveFlight`: physics, sensors, servos and faults on the Teensy's clock |
+| `live/runner.py` | the 500 Hz loop, session save/load, `run_twin()`, the dashboard process |
+| `live/twin.py` | twin flight and the comparison |
+| `live_run.py` / `test_live.py` | command line / PC test |
+| `test/host_live.cpp` | the HIL sketch on the PC in real time, over TCP |
+| `../sim/hil_panel.py` | the dashboard's HIL bench window |

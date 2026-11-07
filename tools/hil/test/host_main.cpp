@@ -37,6 +37,11 @@ EEPROMClass EEPROM;
 
 #include "RocketFC_HIL.ino"
 
+void hostReboot() {  // HIL `reboot`: not used by these tests
+  ::printf("host: reboot requested\n");
+  exit(5);
+}
+
 static uint64_t g_fireUs = 0;
 static int g_ignDelayMs = 400;
 
