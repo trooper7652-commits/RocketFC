@@ -572,6 +572,43 @@ def build_with_overrides(overrides):
     return _compile(work_dir, "bridge.cpp", "rocketfc_core.dll")
 
 
+def build_from_src(src_dir):
+    """Build a DLL from ANOTHER src/ tree (e.g. a generated HIL build's, whose
+    config.h and burn_table.h carry a motor profile), cached by a fingerprint
+    of that tree's config.h + core headers + bridge.cpp. Same layout trick as
+    build_with_overrides(): the tree is copied under build/src_<hash>/ so
+    bridge.cpp's "../../src/..." include resolves into the copy. The real
+    src/ is never touched. Returns the DLL path."""
+    src_dir = os.path.abspath(src_dir)
+    paths = [os.path.join(SIM_DIR, "bridge.cpp"), os.path.join(src_dir, "config.h")]
+    for root, _, files in os.walk(os.path.join(src_dir, "core")):
+        paths += [os.path.join(root, f) for f in files if f.endswith(".h")]
+    h = hashlib.sha1()
+    for p in sorted(paths):
+        h.update(os.path.basename(p).encode("utf-8"))
+        with open(p, "rb") as f:
+            h.update(f.read())
+    cache_dir = os.path.join(BUILD_DIR, "src_" + h.hexdigest()[:16])
+    work_dir = os.path.join(cache_dir, "tools", "sim")
+    out = os.path.join(work_dir, "rocketfc_core.dll")
+    if os.path.isfile(out):
+        return out
+    dst_src = os.path.join(cache_dir, "src")
+    if os.path.isdir(dst_src):
+        shutil.rmtree(dst_src)
+    os.makedirs(os.path.join(dst_src, "core"))
+    shutil.copy2(os.path.join(src_dir, "config.h"), os.path.join(dst_src, "config.h"))
+    for root, _, files in os.walk(os.path.join(src_dir, "core")):
+        for f in files:
+            if f.endswith(".h"):
+                shutil.copy2(os.path.join(root, f), os.path.join(dst_src, "core", f))
+    os.makedirs(work_dir, exist_ok=True)
+    shutil.copy2(os.path.join(SIM_DIR, "bridge.cpp"), os.path.join(work_dir, "bridge.cpp"))
+    with open(os.path.join(cache_dir, "source.txt"), "w") as f:
+        f.write(src_dir + "\n")
+    return _compile(work_dir, "bridge.cpp", "rocketfc_core.dll")
+
+
 if __name__ == "__main__":
     dll = default_dll()
     print("built:", dll)

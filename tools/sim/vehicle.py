@@ -153,6 +153,11 @@ class VehicleConfig:
     # the flight software keeps assuming the nominal .eng curve.
     landing_thrust_scale: float = 1.0    # multiplies landing thrust (impulse scales too)
     landing_time_scale: float = 1.0      # stretches the landing burn, impulse kept
+    # Casing-eject study: the landing motor's exhaust pushes the spent ascent
+    # casing out of the tail at landing thrust onset. 0 = it stays aboard.
+    ascent_casing_eject_kg: float = 0.0
+    ascent_casing_cg_from_nose_m: float = 0.0  # 0 = tail minus half the ascent .eng length
+    ascent_casing_kick_ns: float = 0.0   # net impulse change from the eject, over the first 0.15 s
 
     # ---- Gimbal / servo --------------------------------------------------
     # NOTE: firmware's own GIMBAL_MAX_RAD (software clamp) and the

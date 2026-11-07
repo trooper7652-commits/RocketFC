@@ -21,6 +21,7 @@ attitude + accel and must reconstruct position; here horizontal position is
 ground truth, tracked because a gimbal deflection really does impart sideways
 thrust and the vehicle really does drift downrange, same as a real rocket.
 """
+import dataclasses
 import math
 import os
 import sys
@@ -111,6 +112,18 @@ class Q:
         self.normalize()
 
 
+KICK_S = 0.15   # casing-eject kick bracket: spread over the first 0.15 s of thrust
+
+
+def _eng_length_m(path):
+    """Motor length from a RASP .eng header line (mm -> m)."""
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            if line.strip() and not line.lstrip().startswith(";"):
+                return float(line.split()[2]) / 1000.0
+    raise ValueError("no .eng header in " + path)
+
+
 class PlantState:
     def __init__(self):
         self.t = 0.0
@@ -168,6 +181,20 @@ class Plant:
         # placeholder) hasn't been reconciled with the placeholder motor yet.
         self._pad_mass_kg = vcfg.mass_descent_kg + self.ascent_motor.prop_kg
 
+        # Casing eject (casing-eject study): the mass drop is in
+        # mass_and_thrust(); _eject_casing() moves the CG and trims the inertia.
+        self._eject_kg = getattr(vcfg, "ascent_casing_eject_kg", 0.0)
+        self._ejected = False
+        self._inertia_cut = 0.0
+        self._kick_k = 0.0
+        self._geo = vcfg
+        if self._eject_kg > 0:
+            self._casing_x = (getattr(vcfg, "ascent_casing_cg_from_nose_m", 0.0) or
+                              vcfg.length_m - 0.5 * _eng_length_m(vcfg.ascent_eng_path))
+            kick = getattr(vcfg, "ascent_casing_kick_ns", 0.0)
+            if kick:
+                self._kick_k = kick / max(self.landing_motor.impulse(KICK_S), 1e-6)
+
         # Leg/ground contact (ground.py). None = the old fixed-arrest model.
         self.ground = (ground_mod.Ground(vcfg)
                        if getattr(vcfg, "ground_model", "arrest") == "legs" else None)
@@ -205,12 +232,46 @@ class Plant:
         if self.state.landing_ignite_t is not None:
             tb = t - self.state.landing_ignite_t
             if self._land_k == 1.0:
-                thrust += self.landing_motor.thrust(tb)
+                lt = self.landing_motor.thrust(tb)
+                if self._kick_k and 0.0 <= tb < KICK_S:
+                    lt *= 1.0 + self._kick_k
+                thrust += lt
                 m -= self.landing_motor.mass_burned(tb)
             else:  # stretched burn, same impulse: T'(t) = T(t/k)/k
                 thrust += self.landing_motor.thrust(tb / self._land_k) / self._land_k
                 m -= self.landing_motor.mass_burned(tb / self._land_k)
+            if self._eject_kg > 0 and tb >= 0.0:
+                m -= self._eject_kg
         return max(m, 0.05), thrust
+
+    def _eject_casing(self):
+        """The landing exhaust has pushed the spent ascent casing out of the
+        tail: the CG moves toward the nose, the inertia loses the casing's
+        parallel-axis share, and the ground model gets the lighter rocket's
+        standing geometry (CG higher on the legs)."""
+        self._ejected = True
+        v, s = self.v, self.state
+        mc = self._eject_kg
+        m_after = self.mass_and_thrust(s.t)[0]
+        m_before = m_after + mc
+        d = self._casing_x - v.cg_from_nose_m      # casing aft of the CG (m)
+        shift = mc * d / m_after
+        cg = v.cg_from_nose_m - shift
+        self._gimbal_arm_m = v.gimbal_pivot_from_nose_m - cg
+        self._z_cp_rel_cg = cg - v.cp_from_nose_m
+        i_before = v.inertia_kgm2 * (m_before / self._pad_mass_kg)
+        i_after = i_before - mc * d * d - m_after * shift * shift
+        self._inertia_cut = v.inertia_kgm2 * (m_after / self._pad_mass_kg) - i_after
+        if self.ground is not None:
+            m_end = v.mass_descent_kg - self.landing_motor.prop_kg - mc
+            shift_l = mc * d / m_end
+            self._geo = dataclasses.replace(
+                v, cg_from_nose_m=v.cg_from_nose_m - shift_l,
+                landed_cg_height_m=v.landed_cg_height_m + shift_l)
+            g = ground_mod.Ground(self._geo)
+            g.set_slope(self.ground.slope_deg, self.ground.slope_dir_deg)
+            g.anchor = self.ground.anchor
+            self.ground = g
 
     def _wind(self, t):
         v = self.v
@@ -242,11 +303,14 @@ class Plant:
         if s.landed:
             return s
 
+        if (self._eject_kg > 0 and not self._ejected and
+                s.landing_ignite_t is not None and s.t >= s.landing_ignite_t):
+            self._eject_casing()
         m, thrust = self.mass_and_thrust(s.t)
         # Inertia scales with instantaneous mass (simplification: fixed mass
         # distribution shape as propellant burns -- see vehicle.py's note on
         # inertia_kgm2 for how to refine).
-        inertia = v.inertia_kgm2 * (m / self._pad_mass_kg)
+        inertia = v.inertia_kgm2 * (m / self._pad_mass_kg) - self._inertia_cut
 
         # ---- thrust vector in body frame ----
         # Torque about body X/Y should be directly proportional to
@@ -515,7 +579,7 @@ class Plant:
         """Everything landing_outcome.classify needs, JSON-friendly."""
         if self.ground is None:
             return None
-        v = self.v
+        v = self._geo
         st = dict(self._g)
         st.pop("rest_since", None)
         return {

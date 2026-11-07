@@ -1,0 +1,22 @@
+{
+  "description": "AeroTech E18W ascent + E18W landing (RMS-24/40, plugged), 1.4 kg at liftoff; the recommended setup from motor-chute-study-2026-11-04 (legs on at ignition confirm, 0.75 s band cut, spent ascent casing pushed out at landing ignition, 1.4 m / 55 in annular chute, Cd 2.2 -> CdA 3.39 m^2, 2.55 m/s steady; the sim's plain 0.4 s inflation ramp, not the study's fill model).",
+  "config": {
+    "MASS_PAD_KG": "1.4000f",
+    "MASS_DESCENT_KG": "1.3793f",
+    "ASCENT_BURN_MS": "2140.0f",
+    "LANDING_BURN_MAX_MS": "5000.0f",
+    "LEGS_DELAY_MS": "0.0f"
+  },
+  "burn_table": {
+    "eng": "tools/motors/AeroTech_E18W.eng",
+    "mass": 1.3793,
+    "eject_kg": 0.0463
+  },
+  "plant": {
+    "ascent_eng_path": "tools/motors/AeroTech_E18W.eng",
+    "landing_eng_path": "tools/motors/AeroTech_E18W.eng",
+    "ascent_casing_eject_kg": 0.0463,
+    "legs_cut_s": 0.75,
+    "cda_chute_m2": 3.387
+  }
+}
