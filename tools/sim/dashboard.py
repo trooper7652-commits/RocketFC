@@ -130,6 +130,7 @@ class Dashboard:
         self.play_speed = 1.0
         self.show_dead_reckon = tk.BooleanVar(value=False)
         self.view3d = None          # flight3d.FlightView while the window is open
+        self.hil_panel = None       # hil_panel.HilPanel while the bench window is open
         self._pump_job = None       # the after() id driving it
         self._stage_bands = []      # canvas item ids, rebuilt per flight
         self._stage_playhead = None
@@ -159,6 +160,7 @@ class Dashboard:
         ttk.Button(top, text="Reflight with panel settings",
                   command=self.on_reflight).pack(side=tk.LEFT, padx=6)
         ttk.Button(top, text="3D view", command=self.on_open_3d).pack(side=tk.LEFT)
+        ttk.Button(top, text="HIL bench...", command=self.on_hil_bench).pack(side=tk.LEFT, padx=6)
         ttk.Checkbutton(top, text="3D: dead-reckon a log's downrange",
                        variable=self.show_dead_reckon,
                        command=self.redraw).pack(side=tk.LEFT, padx=10)
@@ -397,8 +399,9 @@ class Dashboard:
         # new one rather than leaving it silently stale.
         if self.view3d is not None and not self.view3d.closed:
             try:
-                self.view3d.track = self._make_track()
-                self.view3d.show_ghost = self.view3d.track.has_estimate
+                trk = self._make_track()
+                self.view3d.set_track(trk, follow_end=False)
+                self.view3d.show_ghost = trk.has_estimate
             except Exception:
                 pass
         self.redraw()
@@ -523,8 +526,35 @@ class Dashboard:
             chute_inflation_s=vc.chute_inflation_s,
             outcome=outcome, ground=ground)
 
-    def on_open_3d(self):
-        if not self.rows:
+    def on_hil_bench(self):
+        """The closed-loop bench window (tools/sim/hil_panel.py): a separate
+        Toplevel, so its ~10 Hz live plots never wait on this figure's
+        ~140 ms full re-plot."""
+        if self.hil_panel is not None:
+            try:
+                if self.hil_panel.win.winfo_exists():
+                    self.hil_panel.win.lift()
+                    return
+            except tk.TclError:
+                pass
+        try:
+            import hil_panel
+            self.hil_panel = hil_panel.HilPanel(self)
+        except Exception as e:
+            messagebox.showerror("HIL bench unavailable", str(e))
+
+    def show_live_time(self, t_max):
+        """A live bench flight is streaming into the 3D view: hold the shared
+        clock at its newest sample (the 2D plots still show the last loaded
+        flight until the bench flight ends)."""
+        if self.playing:
+            self.toggle_play()
+        self.t_max = t_max
+        self.scrub.configure(to=max(t_max, 0.001))
+        self.scrub_var.set(t_max)
+
+    def on_open_3d(self, track=None):
+        if track is None and not self.rows:
             messagebox.showinfo("3D view", "Run a flight or open a log first.")
             return
         if self.view3d is not None and not self.view3d.closed:
@@ -532,7 +562,7 @@ class Dashboard:
         try:
             snap = core.FlightCore.config_snapshot(core.default_dll())
             self.view3d = flight3d.FlightView(
-                self._make_track(), vehicle_length_m=self.vcfg.length_m,
+                track or self._make_track(), vehicle_length_m=self.vcfg.length_m,
                 gimbal_limit_deg=math.degrees(snap["gimbalMaxRad"]),
                 chute_diameter_m=flight3d.canopy_diameter_m(
                     self.vcfg.cda_chute_m2))

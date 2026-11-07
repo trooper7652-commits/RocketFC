@@ -22,6 +22,7 @@ import datetime
 import json
 import os
 import queue
+import threading
 import time
 
 import flight
@@ -504,6 +505,8 @@ def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKET
     sent = 0
     last = 0.0
     finished = False
+    flight_stats = None
+    saver = None
     try:
         while True:
             r.poll()
@@ -534,14 +537,39 @@ def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKET
                     "launch_t": r.fl.launch_t, "origin": r.origin(),
                     "kf_alt": tel.get("kf_alt"), "h_true": r.fl.pl.state.pos.z,
                     "tilt": tel.get("tilt_deg"), "chute": link.CHUTE_POS.get(tel.get("chute_pos")),
-                    "stats": dict(r.stats), "legs": r.sc.live_legs, "error": r.error}))
+                    "stats": flight_stats or dict(r.stats), "legs": r.sc.live_legs,
+                    "error": r.error}))
             if r.flight_over and not finished:
+                # Save in a thread: writing the session takes ~0.4 s, and the
+                # loop must keep answering the Teensy meanwhile (else its IMU
+                # "fails" by link loss on the ground). The link stats shown
+                # from here on are the flight's.
                 finished = True
-                res, path = r.finish(save=True, close=False)
-                out_q.put(("finished", path))
+                flight_stats = dict(r.stats)
+                saver = threading.Thread(target=_save_bg, daemon=True, args=(
+                    r.sessions_dir, _session_copy(r.session_data()), r.result(), r.origin(),
+                    out_q, log))
+                saver.start()
     except Exception as e:
         import traceback
         out_q.put(("error", "runner crashed: {}\n{}".format(e, traceback.format_exc())))
     finally:
+        if saver is not None:
+            saver.join(timeout=30.0)
         r.close()
         out_q.put(("closed", None))
+
+
+def _session_copy(session):
+    """Snapshot of session_data(): its lists keep growing while the loop runs."""
+    return {k: (list(v) if isinstance(v, list) else dict(v) if isinstance(v, dict) else v)
+            for k, v in session.items()}
+
+
+def _save_bg(root, session, result, origin, out_q, log):
+    try:
+        path = save_session(root, session, result, origin)
+        log("saved " + path)
+        out_q.put(("finished", path))
+    except Exception as e:
+        out_q.put(("error", "couldn't save the session: {}".format(e)))
