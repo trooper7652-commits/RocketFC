@@ -153,9 +153,12 @@ class VehicleConfig:
     # the flight software keeps assuming the nominal .eng curve.
     landing_thrust_scale: float = 1.0    # multiplies landing thrust (impulse scales too)
     landing_time_scale: float = 1.0      # stretches the landing burn, impulse kept
-    # Casing-eject study: the landing motor's exhaust pushes the spent ascent
-    # casing out of the tail at landing thrust onset. 0 = it stays aboard.
-    ascent_casing_eject_kg: float = 0.0
+    # The landing motor's exhaust ALWAYS pushes the spent ascent casing out of
+    # the tail at landing thrust onset (the real design; burn_table.h assumes
+    # it too). -1 = auto: burn_table.casing_kg(ascent_eng_path), i.e. the
+    # .eng's total - propellant mass (+10 g adapter under 26 mm): F10 43 g,
+    # E18W 46.3 g. A positive value overrides; 0 = stays aboard (comparisons only).
+    ascent_casing_eject_kg: float = -1.0
     ascent_casing_cg_from_nose_m: float = 0.0  # 0 = tail minus half the ascent .eng length
     ascent_casing_kick_ns: float = 0.0   # net impulse change from the eject, over the first 0.15 s
 

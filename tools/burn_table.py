@@ -40,6 +40,20 @@ def config_value(name, path=CONFIG_H):
     return float(m.group(1))
 
 
+MOTORS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "motors")
+ASCENT_ENG = os.path.join(MOTORS_DIR, "AeroTech_F10.eng")  # tools/sim's default ascent motor
+ADAPTER_KG = 0.010  # 24 mm motor in the 29 mm mount: its adapter goes out with the casing
+
+
+def casing_kg(eng_path):
+    """Mass of the spent ascent casing the landing exhaust pushes out of the
+    tail (always, on this rocket): the .eng's total minus propellant mass,
+    plus the motor adapter for a motor under 26 mm (motor-chute-study-2026-11-04).
+    AeroTech F10: 43 g; AeroTech E18W: 46.3 g."""
+    m = Motor(eng_path)
+    return m.total_kg - m.prop_kg + (ADAPTER_KG if m.diameter_mm < 26.0 else 0.0)
+
+
 class Motor:
     def __init__(self, path, scale=1.0):
         self.path = path
@@ -54,6 +68,7 @@ class Motor:
                     p = line.split()
                     header = p
                     self.name = p[0]
+                    self.diameter_mm = float(p[1])
                     self.prop_kg = float(p[4])
                     self.total_kg = float(p[5])
                     continue
@@ -173,8 +188,11 @@ def main():
                     help="drag Cd*A (m^2)")
     ap.add_argument("--delay-ms", type=float, default=config_value("IGNITION_DELAY_MS"),
                     help="measured ignition delay, command->thrust (ms)")
-    ap.add_argument("--eject-kg", type=float, default=0.0,
-                    help="spent ascent casing pushed out at landing thrust onset (kg)")
+    ap.add_argument("--ascent-eng", default=ASCENT_ENG,
+                    help="ascent motor, for the casing mass pushed out at landing ignition")
+    ap.add_argument("--eject-kg", type=float, default=None,
+                    help="spent ascent casing pushed out at landing thrust onset (kg); "
+                         "default: from --ascent-eng (casing_kg); 0 = stays aboard")
     ap.add_argument("--vmin", type=float, default=2.0)
     ap.add_argument("--vmax", type=float, default=25.0)
     ap.add_argument("--vstep", type=float, default=0.5)
@@ -186,7 +204,8 @@ def main():
     delay_s = args.delay_ms / 1000.0
     print(f"motor {motor.name}: {motor.total_impulse:.1f} N*s over "
           f"{motor.burn_time:.2f} s, prop {motor.prop_kg*1000:.0f} g")
-    ej = args.eject_kg
+    ej = args.eject_kg if args.eject_kg is not None else casing_kg(args.ascent_eng)
+    print(f"ascent casing pushed out at landing ignition: {ej*1000:.1f} g")
     dv = motor.total_impulse / (args.mass - ej) - G * motor.burn_time
     print(f"vehicle {args.mass:.3f} kg -> net delta-v capacity ~ {dv:.1f} m/s "
           f"(energy-matched arrival speed)")

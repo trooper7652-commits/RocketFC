@@ -182,7 +182,13 @@ def main():
         if t < 0 or t > rts[-1]:
             continue
         for key, want in want_of.items():
-            d = r[key] - interp(rts, want, t)
+            # Best match within one 10 ms log row: the logs are written at
+            # 100 Hz and line up to +-2 ms (see the events), so a step (e.g.
+            # TVC off at touchdown with the gimbal at its limit) can land on
+            # either side of a row; without this a pure timing offset counts
+            # as a full-scale gimbal difference.
+            d = min((r[key] - interp(rts, want, t + off)
+                     for off in (-0.01, -0.005, 0.0, 0.005, 0.01)), key=abs)
             s2 += d * d
             n += 1
             worst = max(worst, abs(d))
