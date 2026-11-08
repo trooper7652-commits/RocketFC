@@ -179,6 +179,12 @@ python tools/burn_table.py     # rewrites src/core/burn_table.h
 cd tools/replay && make test   # confirm the logic still passes
 ```
 
+The table (and the simulator) always assume the spent ascent casing is pushed
+out of the tail when the landing motor lights. Its mass comes from the ascent
+motor's .eng file (total − propellant, + the 10 g adapter for a 24 mm motor):
+pass your ascent motor with `--ascent-eng tools/motors/<motor>.eng`
+(default: AeroTech F10, 43 g).
+
 **Servo direction test (do this or the rocket flies into the ground):**
 power up on the bench, run `cal`, then tilt the nose toward body +X.
 The gimbal must deflect so the *thrust vector pushes the tail back under
@@ -246,6 +252,7 @@ as the abort recovery.
 |---|---|
 | `help` / `status` | command list / one-shot health & sensor readout |
 | `stream` | toggle 10 Hz live telemetry |
+| `buzzer off` / `buzzer on` | silence / restore the beeper (LED keeps going). Not saved: a reboot or `arm` turns it back on, so a flight is never silent |
 | `cal` | gyro bias + level calibration (keep still ~4 s) |
 | `zero` | baro ground reference + noise measurement |
 | `arm` / `disarm` | pre-arm checks, then ARMED (launch detect live!) |

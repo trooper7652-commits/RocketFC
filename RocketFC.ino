@@ -291,6 +291,10 @@ static void runProcedures(uint32_t ms) {
         }
         core.requestArm(ms);
         act.resetChuteFlight();
+        if (cliCtx.buzzerMuted) {  // never fly silent: ARMED beeps + locate beacon
+          cliCtx.buzzerMuted = false;
+          Serial.println("buzzer back on (armed).");
+        }
         touchdownMs = 0;
         logClosedAfterTd = false;
         Serial.printf(
@@ -434,6 +438,7 @@ void loop() {
   act.pyroTick(ms);
   serialCli.poll(ms);
   runProcedures(ms);
+  statusInd.setMuted(cliCtx.buzzerMuted);
   statusInd.tick(ms, co.state, core.mode());
 
   // --- 50 Hz: servos ---

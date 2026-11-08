@@ -28,6 +28,7 @@ struct CliContext {
   ProcRequest procRequest = ProcRequest::NONE;
   bool procBusy = false;
   bool streamOn = false;
+  bool buzzerMuted = false;  // `buzzer off`; not saved, cleared at arm
   uint8_t faultCode = 0;
   float vbatCached = 0;
   float vpyroCached = 0;
@@ -104,6 +105,12 @@ class Cli {
     } else if (!strcmp(cmd, "stream")) {
       ctx_.streamOn = a1 && !strcmp(a1, "on");
       Serial.printf("stream %s\n", ctx_.streamOn ? "on" : "off");
+    } else if (!strcmp(cmd, "buzzer")) {
+      if (a1 && !strcmp(a1, "off")) ctx_.buzzerMuted = true;
+      else if (a1 && !strcmp(a1, "on")) ctx_.buzzerMuted = false;
+      else if (a1) { Serial.println("usage: buzzer on|off"); return; }
+      Serial.printf("buzzer %s%s\n", ctx_.buzzerMuted ? "OFF" : "on",
+                    ctx_.buzzerMuted ? " (back on at arm or reboot)" : "");
     } else if (!strcmp(cmd, "cal") || !strcmp(cmd, "zero") ||
                !strcmp(cmd, "arm")) {
       if (!isIdle()) { requireIdle(cmd); return; }
@@ -382,6 +389,7 @@ class Cli {
         "commands:\n"
         "  status            snapshot of sensors/state/health\n"
         "  stream on|off     10 Hz live telemetry\n"
+        "  buzzer on|off     beeper on/off (not saved; back on at arm or reboot)\n"
         "  cal               gyro bias + level init (keep vehicle still)\n"
         "  zero              baro ground reference + KF reset\n"
         "  mode chute|land   select flight mode (saved to EEPROM)\n"
