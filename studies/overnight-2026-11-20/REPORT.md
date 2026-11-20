@@ -26,7 +26,7 @@ The CSVs (one row per flight) and `results/summary.md` are in `results/`; the sc
 3. **Port the wind-matched ascent together with margin 0.75 (tasks 7b + 4), after two bench checks.** Apply `patches/task7_wind_matched_ascent.patch` (set `WIND_MATCH_ASCENT = 1`) and `patches/task4_burn_table_margin_0.75.patch`.
    - Holdout: 78.2 → 84.7 % (p = 8e-10). Fresh seeds: 76.7 → 84.8 % (p = 4e-14).
    - It holds 84–86 % from 0 to 6 m/s, 79 % at 7 m/s (today 32 %) and 65 % at 8 m/s (today 6 %).
-   - Never-used seeds 901–910 (run after the design): 77.7 → 82.8 % (+297 / −194, p = 4e-6).
+   - Never-used seeds 901–910 (run after the design): 77.7 → 82.8 % (+297 / −194, p = 4e-6). The gain is smaller there (+5.1 pts) because this set has more LEGS_NOT_DOWN (177 vs 122 on the holdout).
    - It is not worse at any wind tested. The dips at 4 and 5 m/s (−1.4 / −1.0 pts on 600 flights) are not significant.
    - The two patches applied together reproduce the study copy flight for flight (300 / 300 at 6 m/s).
    - **Port it only together with the task 5 patch.** The ascent change creates a few new missed-window aborts at the default wind where today has none: 3 / 2,000 on the holdout, 8 / 2,000 fresh, 11 / 2,000 on seeds 901–910.
