@@ -39,6 +39,8 @@ constexpr float STUDY_WP_D_M = 0.0f;
 // IGNITE_CONFIRM_G, above TOUCHDOWN_ALT_M) hold the TVC (landing gains) until
 // burnout / touchdown. The chute release is unchanged. 1 = on.
 constexpr int   STUDY_DUD_GUARD = 0;
+constexpr float STUDY_DUD_GUARD_WIN_MS = 250.0f;  // thrust latch only within this long after the DUD abort
+constexpr float STUDY_DUD_CONFIRM_MS = 20.0f;     // accel must stay above IGNITE_CONFIRM_G this long
 // T7a: D2 predicted-tilt interlock (software-landing study S4a): also allow
 // the fire when tilt >= TILT_IGNITE_MAX_DEG if the tilt predicted at thrust
 // onset (tilt + filtered tilt rate * IGNITION_DELAY_MS) is below it and the
@@ -136,8 +138,11 @@ sub(fsm, """      enter(FlightState::TOUCHDOWN, in.ms);
     // untouched; this only adds TVC (landing gains) while real thrust lasts.
     if (cfg::STUDY_DUD_GUARD != 0 && state_ == FlightState::DESCENT_CHUTE &&
         abortReason_ == AbortReason::DUD_IGNITER && !dudBurnedOut_) {
-      if (!dudThrust_ && in.accelNormG > cfg::IGNITE_CONFIRM_G &&
-          in.kfAlt > cfg::TOUCHDOWN_ALT_M) {
+      if (!dudThrust_ &&
+          (float)(in.ms - dudAbortMs_) <= cfg::STUDY_DUD_GUARD_WIN_MS &&
+          dbDudOn_.check(in.accelNormG > cfg::IGNITE_CONFIRM_G &&
+                             in.kfAlt > cfg::TOUCHDOWN_ALT_M,
+                         in.dtMs, cfg::STUDY_DUD_CONFIRM_MS)) {
         dudThrust_ = true;
         dbDud_.reset();
       }
@@ -156,10 +161,12 @@ sub(fsm, """      enter(FlightState::TOUCHDOWN, in.ms);
 
   void updateAbort(""")
 
+sub(fsm, "    abortReason_ = r;\n", "    abortReason_ = r;\n    dudAbortMs_ = in.ms;  // STUDY (only used for DUD_IGNITER)\n")
 sub(fsm, "  ChuteDeploy chute_;\n",
     "  ChuteDeploy chute_;\n"
     "  // STUDY members (T6 dud guard, T7a D2)\n"
-    "  Debounce dbDud_;\n"
+    "  Debounce dbDud_, dbDudOn_;\n"
+    "  uint32_t dudAbortMs_ = 0;\n"
     "  bool dudThrust_ = false, dudBurnedOut_ = false;\n"
     "  float d2Prev_ = 0.0f, d2Rate_ = 0.0f;\n"
     "  bool d2HavePrev_ = false, d2Valid_ = false;\n"
