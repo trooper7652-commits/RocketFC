@@ -122,3 +122,4 @@
 | T5_wp2.0_w5 | 600 | 86.2 % | 15.43 / 15.97 / 15.99 | SUCCESS:517 LEGS_NOT_DOWN:34 TIPPED_OVER:21 LEGS_BROKEN:16 LIFTED_OFF:12 | fw={"STUDY_WP_D_M": "2.0f"} plant={"legs_cut_s": 0.75} wind=5.0 |
 | T8F1_hold | 2000 | 83.0 % | 15.48 / 15.96 / 16.00 | SUCCESS:1659 LEGS_BROKEN:285 LEGS_NOT_DOWN:35 LIFTED_OFF:16 TIPPED_OVER:5 | fw={"GAINS_LANDING": {"kd": "0.065f"}} plant={"legs_cut_s": 0.75} wind=None |
 | T5_wp2.0_w6 | 600 | 74.8 % | 15.43 / 15.96 / 15.98 | SUCCESS:449 LEGS_NOT_DOWN:102 TIPPED_OVER:17 NO_POWERED_LANDING:16 LIFTED_OFF:13 LEGS_BROKEN:3 | fw={"STUDY_WP_D_M": "2.0f"} plant={"legs_cut_s": 0.75} wind=6.0 |
+| T8F1_fresh | 2000 | 82.2 % | 15.47 / 15.96 / 16.00 | SUCCESS:1644 LEGS_BROKEN:311 LEGS_NOT_DOWN:27 LIFTED_OFF:16 TIPPED_OVER:2 | fw={"GAINS_LANDING": {"kd": "0.065f"}} plant={"legs_cut_s": 0.75} wind=None |
