@@ -21,7 +21,7 @@ codes, in time order (the first one that applies is the headline):
   LEGS_BROKEN         vertical contact speed above crash_speed_mps. A rule,
                       not physics: the simulated legs never break, so the same
                       flights can be re-judged at any crash speed.
-  LIFTED_OFF          the F15 was still pushing harder than the weight and
+  LIFTED_OFF          the landing motor was still pushing harder than the weight and
                       lifted it back off the ground (> 0.25 m)
   TIPPED_OVER         fell over during the landing (tilt passed 45 deg)
   BLOWN_OVER          came to rest standing, then the wind pushed it over

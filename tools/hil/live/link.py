@@ -51,7 +51,7 @@ def pyro_label(live_legs, live_landing):
     return {0: "sim", 1: "LIVE LEGS", 2: "LIVE LANDING", 3: "LIVE LEGS + LANDING"}[
         pyro_mask(live_legs, live_landing)]
 
-CHUTE_POS = {0: "LOCK", 1: "OPEN", 2: "JOG", 3: "SET"}
+CHUTE_POS = {0: "LOCK", 1: "OPEN", 2: "JOG", 3: "SET", 4: "WIGGLE"}
 
 EVENT_RE = re.compile(r"^\[(\d+) ms\] EVENT (\w+) (-?[\d.]+|nan|inf)")
 

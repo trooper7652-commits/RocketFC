@@ -17,14 +17,13 @@ same way the bench would, then checks:
   land         FULL_LANDING, landing motor fired, legs simulated: the leg
                gate is never driven
   dud          the landing motor never lights. FIRE_LANDING is issued and no
-               thrust appears. NOTE: at this profile's fire point (~15.5 m,
-               -7.4 m/s) the ground comes ~1.2 s after the fire command, before
-               the DUD_IGNITER window closes (IGNITION_DELAY_MS + DUD_WINDOW_MS
-               = 1.32 s), so the flight computer never aborts. The impact spike
-               then reads as IGNITION_CONFIRMED. The table shows what happened.
-  stuck        the first 2 latch releases don't free the canopy: 3 releases
-               (1.9 s apart). NOTE: from an 18 m apogee the rocket is on the
-               ground ~2 s after the first release, so the canopy never opens.
+               thrust appears. The fire point is ~15.5 m at -7.4 m/s and the
+               ground comes ~1.2 s after the command; the DUD_IGNITER window
+               closes at IGNITION_DELAY_MS + DUD_WINDOW_MS = 0.82 s (~6 m up):
+               DUD_IGNITER abort, chute latch released before impact.
+  stuck        the first 2 latch releases don't free the canopy: the fast
+               wiggle's 3rd release (~0.7 s after the first) does, so the
+               canopy is out and confirmed (3 releases).
   imu-dropout  frames stop for 1 s in flight: IMU_FAIL abort, chute
   imu-frozen   the same IMU sample for 2 s: IMU_FAIL abort, chute
   op-abort     operator abort 1.5 s after launch: IMU_FAIL abort, chute
@@ -66,16 +65,17 @@ BASE_PORT = 7740
 
 # name, live_run.py args, checks on the saved summary
 CASES = [
+    # chute / reboot: a healthy latch is confirmed during the fast wiggle, so
+    # its next stroke may already count as a release (1 .. 1 + CHUTE_WIG_CYCLES)
     ("chute", ["--mode", "chute"],
-     {"abort": None, "final": "TOUCHDOWN", "releases": 1, "touchdown_max": 3.5}),
+     {"abort": None, "final": "TOUCHDOWN", "releases_min": 1, "releases_max": 3,
+      "events": ["CHUTE_DETECTED"], "touchdown_max": 3.5}),
     ("land", ["--mode", "land"],
      {"abort": None, "final": "TOUCHDOWN", "releases": 0, "fired": True, "legs_gate": False}),
-    # dud / stuck: with this profile the flight code can't recover in time (see
-    # the module docstring), so these check what it does do, and the safety rules.
     ("dud", ["--mode", "land", "--set", "dud_landing_igniter=true"],
-     {"fired": True, "thrust": False}),
+     {"abort": "DUD_IGNITER", "releases_min": 1, "fired": True, "thrust": False}),
     ("stuck", ["--mode", "chute", "--set", "chute_stuck_releases=2"],
-     {"abort": None, "releases": 3}),
+     {"abort": None, "releases": 3, "events": ["CHUTE_DETECTED"]}),
     ("imu-dropout", ["--mode", "land", "--set", "imu_dropout_at_s=1.5", "imu_dropout_s=1"],
      {"abort": "IMU_FAIL", "releases_min": 1, "fired": False}),
     ("imu-frozen", ["--mode", "land", "--set", "imu_frozen_at_s=1.5", "imu_frozen_s=2"],
@@ -92,7 +92,7 @@ CASES = [
       "legs_gate": True}),
     ("randomize", ["--mode", "land", "--randomize", "--seed", "3"], {}),
     ("reboot", ["--mode", "chute", "--reboot-after"],
-     {"abort": None, "releases": 1, "chute_kept": "SET (loading)"}),
+     {"abort": None, "releases_min": 1, "releases_max": 3, "chute_kept": "SET (loading)"}),
 ]
 
 
@@ -236,6 +236,8 @@ def check(name, want, code, out, host_txt):
             probs.append("chute releases {} (want {})".format(s.get("chute_releases"), want["releases"]))
         if "releases_min" in want and (s.get("chute_releases") or 0) < want["releases_min"]:
             probs.append("chute never released")
+        if "releases_max" in want and (s.get("chute_releases") or 0) > want["releases_max"]:
+            probs.append("chute releases {} (max {})".format(s.get("chute_releases"), want["releases_max"]))
         if "fired" in want and ("FIRE_LANDING" in names) != want["fired"]:
             probs.append("FIRE_LANDING {}".format("issued" if "FIRE_LANDING" in names else "missing"))
         if "thrust" in want:

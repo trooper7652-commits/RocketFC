@@ -225,7 +225,7 @@ def plot_crash(sweep_today, sweep_meas, path):
         ax.fill_between(xs, lo, hi, color=col, alpha=0.15, linewidth=0)
         ax.plot(xs, ps, color=col, linewidth=2, marker="o", markersize=5, label=name)
     ax.axvline(3.0, color=INK2, linewidth=1, linestyle=":")
-    ax.text(3.05, ax.get_ylim()[1] * 0.95, "3 m/s placeholder", color=INK2,
+    ax.text(3.05, ax.get_ylim()[1] * 0.95, "3 m/s (owner's limit)", color=INK2,
             fontsize=8, va="top")
     ax.set_xlabel("crash speed: vertical contact speed the legs survive (m/s)",
                   color=INK2, fontsize=9)
@@ -298,7 +298,7 @@ def main():
         time.strftime("%Y-%m-%d %H:%M"), time.time() - t0,
         len(today) + len(meas) + sum(len(x[2]) for x in sens)))
     w("## The answer\n")
-    w("Success = a powered landing that ends **upright and intact**: the F15 lit, nothing aborted, "
+    w("Success = a powered landing that ends **upright and intact**: the landing motor lit, nothing aborted, "
       "no hop, legs down at touchdown, contact under {:.1f} m/s, and still standing {:.0f} s after "
       "burnout.\n".format(base.crash_speed_mps, base.settle_s))
     w("| Scenario | Landing success rate (2,000 flights, 95 % range) |")
@@ -352,7 +352,7 @@ def main():
 
     w("## How hard a hit can the legs take?\n")
     w("![crash speed](crash_speed_sweep.png)\n")
-    w("Crash speed is a [MEASURE] placeholder (3 m/s, about a 46 cm drop). Same flights, judged "
+    w("Crash speed is the owner's limit (3 m/s, about a 46 cm drop). Same flights, judged "
       "again at each limit:\n")
     w("| Crash speed | Today | After measuring |")
     w("|---|---|---|")
@@ -381,7 +381,7 @@ def main():
     w("- The legs are rigid and never break in the physics; \"crash\" is the speed rule above.")
     w("- Leg geometry, CG height, grass stiffness/friction and the band-burn time are estimates "
       "tagged [MEASURE]/[ESTIMATE] in `tools/sim/vehicle.py`.")
-    w("- The TVC keeps flying after touchdown exactly as the firmware does; the F15 keeps "
+    w("- The TVC keeps flying after touchdown exactly as the firmware does; the landing motor keeps "
       "burning (it can't be shut off), so if it is still pushing harder than the weight at "
       "contact, it lifts the rocket back off.")
     w("- Field slope is random 0-{:.0f} deg per flight; wind is steady (no gusts).".format(

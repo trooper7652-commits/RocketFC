@@ -34,7 +34,7 @@ enum class FlightState : uint8_t {
   COAST,          // unpowered ascent — servos centered
   APOGEE,         // transient marker state (one tick)
   DESCENT,        // freefall, waiting for the ignition window (FULL_LANDING)
-  LANDING_BURN,   // F15 lit — TVC active
+  LANDING_BURN,   // landing motor lit — TVC active
   DESCENT_CHUTE,  // under parachute (nominal in CHUTE_TEST, or post-abort)
   TOUCHDOWN,      // landed, everything safed — terminal
   ABORT,          // transient: inhibits landing motor, releases chute
@@ -77,6 +77,7 @@ struct FsmOutput {
   bool tvcActive = false;
   bool useLandingGains = false;
   bool chuteRelease = false;   // LEVEL: chute latch servo should be at RELEASE now
+  ChuteServo chuteServo = ChuteServo::LOCK;  // where exactly (OPEN or a wiggle target)
   bool chuteDetected = false;  // canopy confirmed by the accelerometer
   bool fireLanding = false;    // one-shot pulse: actuator runs its own fire timer
   bool legsBurn = false;       // LEVEL: leg-release nichrome should be on now
@@ -146,6 +147,7 @@ class FlightStateMachine {
     }
 
     out.chuteRelease = chute_.servoRelease();
+    out.chuteServo = chute_.servoCmd();
     out.chuteDetected = chute_.detected();
     out.legsBurn = legsOn_ && state_ == FlightState::LANDING_BURN;
     out.state = state_;
@@ -369,7 +371,10 @@ class FlightStateMachine {
     out.useLandingGains = true;
 
     if (!ignitionConfirmed_) {
-      if (sinceEntry(in) > 50.0f && in.accelNormG > cfg::IGNITE_CONFIRM_G) {
+      // Near the ground a jolt is the impact, not thrust: a dud that hits
+      // must still be declared a dud (same rule as the chute detector).
+      if (sinceEntry(in) > 50.0f && in.accelNormG > cfg::IGNITE_CONFIRM_G &&
+          in.kfAlt > cfg::TOUCHDOWN_ALT_M) {
         ignitionConfirmed_ = true;
         pushEvent(in.ms, FlightEvent::IGNITION_CONFIRMED, in.kfAlt);
       } else if (sinceEntry(in) >

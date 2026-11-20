@@ -3,10 +3,10 @@
 
 A solid motor can't throttle or restart, so landing is a pure TIMING problem:
 for each descent speed v, find the altitude h_ignite(v) at which the fire
-command must be issued (including the e-match ignition delay) so the F15
-kills the descent as close to the ground as possible.
+command must be issued (including the e-match ignition delay) so the landing
+motor kills the descent as close to the ground as possible.
 
-The tool also answers the question timing alone can't fix: because the F15's
+The tool also answers the question timing alone can't fix: because the motor's
 total impulse is fixed, only descents arriving with roughly the right energy
 can be stopped AT the ground (too little energy -> the motor stops you high
 and pushes you back up; too much -> you hit hard). The apogee report at the
@@ -41,7 +41,7 @@ def config_value(name, path=CONFIG_H):
 
 
 MOTORS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "motors")
-ASCENT_ENG = os.path.join(MOTORS_DIR, "AeroTech_F10.eng")  # tools/sim's default ascent motor
+ASCENT_ENG = os.path.join(MOTORS_DIR, "AeroTech_E18W.eng")  # tools/sim's default ascent motor
 ADAPTER_KG = 0.010  # 24 mm motor in the 29 mm mount: its adapter goes out with the casing
 
 
@@ -181,7 +181,7 @@ def interp_factory(v_min, v_step, table):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     here = os.path.dirname(os.path.abspath(__file__))
-    ap.add_argument("--eng", default=os.path.join(here, "motors", "Estes_F15.eng"))
+    ap.add_argument("--eng", default=os.path.join(here, "motors", "AeroTech_E18W.eng"))
     ap.add_argument("--mass", type=float, default=config_value("MASS_DESCENT_KG"),
                     help="vehicle mass at descent, landing motor loaded (kg)")
     ap.add_argument("--cda", type=float, default=config_value("CDA_M2"),

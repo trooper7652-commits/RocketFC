@@ -223,6 +223,7 @@ class Cli {
       case Actuators::ChutePos::SET: return "SET (loading)";
       case Actuators::ChutePos::RELEASE: return "OPEN";
       case Actuators::ChutePos::JOG: return "JOG (not locked)";
+      case Actuators::ChutePos::WIGGLE: return "WIGGLE (flight retry)";
     }
     return "?";
   }
@@ -236,6 +237,14 @@ class Cli {
       for (int j = i + 1; j < 3; ++j)
         if (fabsf(a[i] - a[j]) < 5.0f)
           Serial.printf("!! %s and %s angles are less than 5 deg apart.\n", n[i], n[j]);
+    // The fast wiggle's angles are fixed in config.h, not saved: they must stay
+    // between LOCK and OPEN (and straddle the angle where the latch lets go).
+    const float lo = fminf(a[0], a[2]), hi = fmaxf(a[0], a[2]);
+    if (cfg::CHUTE_WIG_CYCLES > 0 &&
+        !(lo < cfg::CHUTE_WIG_LOW_DEG && cfg::CHUTE_WIG_HIGH_DEG < hi))
+      Serial.printf("!! wiggle angles %.0f/%.0f deg (config.h CHUTE_WIG_*) are not "
+                    "between lock and open.\n",
+                    cfg::CHUTE_WIG_LOW_DEG, cfg::CHUTE_WIG_HIGH_DEG);
   }
 
   // Remember a ground move so the next power-up restores it.

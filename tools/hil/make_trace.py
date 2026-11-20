@@ -15,8 +15,8 @@ Presets (both on today's src/config.h, calm-wind vehicle defaults otherwise):
     nominal  powered landing: LAUNCH, APOGEE, FIRE_LANDING, LEGS_BURN_ON, ...
     abort    4 m/s wind plus a 12 m/s gust just after apogee, tilt abort in
              DESCENT: the landing motor must NOT fire and the chute latch
-             must release. (With the F10 ascent, steady wind alone no longer
-             tips the rocket over, even at 10 m/s.)
+             must release. (Steady wind alone doesn't tip the rocket over
+             in the short flight, hence the gust.)
 
 Usage:
     python tools/hil/make_trace.py                 # nominal
@@ -37,8 +37,9 @@ import vehicle  # noqa: E402
 
 PRESETS = {
     "nominal": {"wind": 0.0, "seed": 1},
-    # gust: (m/s, start in s after launch, length s); 7.9 s is just past apogee
-    "abort": {"wind": 4.0, "seed": 1, "gust": (12.0, 7.9, 0.5)},
+    # gust: (m/s, start in s after launch, length s); 2.9 s is just past the
+    # E18W apogee (detected ~2.86 s after launch, fire ~3.4 s)
+    "abort": {"wind": 4.0, "seed": 1, "gust": (12.0, 2.9, 0.5)},
 }
 TRACES_DIR = os.path.join(hil_trace.HIL_DIR, "traces")
 ARM_T = 2.6   # sim time the harness arms at (run.simulate's default)

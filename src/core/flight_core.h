@@ -30,6 +30,7 @@ struct CoreOutput {
   bool tvcActive = false;
   float gimbalX = 0, gimbalY = 0;  // rad
   bool chuteRelease = false;   // LEVEL: chute latch servo at RELEASE now
+  ChuteServo chuteServo = ChuteServo::LOCK;  // where exactly (OPEN or a wiggle target)
   bool chuteDetected = false;  // canopy confirmed by the accelerometer
   bool fireLanding = false;    // one-shot pulse
   bool legsBurn = false;       // LEVEL: leg-release nichrome on now
@@ -142,6 +143,7 @@ class FlightCore {
     out.gimbalX = fo.tvcActive ? ctl_.gimbalX() : 0.0f;
     out.gimbalY = fo.tvcActive ? ctl_.gimbalY() : 0.0f;
     out.chuteRelease = fo.chuteRelease;
+    out.chuteServo = fo.chuteServo;
     out.chuteDetected = fo.chuteDetected;
     out.fireLanding = fo.fireLanding;
     out.legsBurn = fo.legsBurn;

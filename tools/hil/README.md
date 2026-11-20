@@ -1,6 +1,6 @@
 # tools/hil — static-fire ground test with simulated sensors
 
-A rocket clamped to a stand never "flies". Its IMU reads 1 g and its baro reads 0 m, so the real firmware would never detect launch and never fire the F15. This folder runs the **real RocketFC firmware on the real rocket**, with the sensor data replaced by a recorded simulator flight. This is hardware-in-the-loop (HIL) testing: real computer, wiring, servos, pyros and motors, with fake sensors.
+A rocket clamped to a stand never "flies". Its IMU reads 1 g and its baro reads 0 m, so the real firmware would never detect launch and never fire the landing motor. This folder runs the **real RocketFC firmware on the real rocket**, with the sensor data replaced by a recorded simulator flight. This is hardware-in-the-loop (HIL) testing: real computer, wiring, servos, pyros and motors, with fake sensors.
 
 What a run proves:
 - the landing e-match fires from the pyro LiPo at the right moment;
@@ -10,7 +10,7 @@ What a run proves:
 
 It also **measures the real ignition delay** (`IGNITION_DELAY_MS`, still a 500 ms guess). The real IMU keeps recording during the burn, so the vibration onset can be timed against the fire command on the same clock.
 
-What it can't prove: the control loop reacting to real motion. The attitude data is scripted. A dud F15 also isn't caught, because the "ignition confirmed" signal comes from the trace.
+What it can't prove: the control loop reacting to real motion. The attitude data is scripted. A dud landing motor also isn't caught, because the "ignition confirmed" signal comes from the trace.
 
 > ⚠️ **The HIL build is not flight firmware.** It prints `HIL BUILD - NOT FOR FLIGHT` at boot. Reflash RocketFC before any flight (step 7).
 
@@ -18,7 +18,7 @@ What it can't prove: the control loop reacting to real motion. The attitude data
 
 | File | What it does |
 |---|---|
-| `make_trace.py` | Runs one sim flight and writes `traces/<name>.bin/.json` (the trace), `_sim.csv` (the sim's log) and `_ref.csv` (the expected Teensy log). It also checks that the trace replays to the same events. Presets: `nominal` (powered landing) and `abort` (tilt abort; the F15 must not fire). |
+| `make_trace.py` | Runs one sim flight and writes `traces/<name>.bin/.json` (the trace), `_sim.csv` (the sim's log) and `_ref.csv` (the expected Teensy log). It also checks that the trace replays to the same events. Presets: `nominal` (powered landing) and `abort` (tilt abort; the landing motor must not fire). |
 | `make_hil.py` | Builds the HIL firmware from a **fresh copy** of `RocketFC.ino` + `src/` in `build/RocketFC_HIL/`, swapping only `sensors.h` for `firmware/sensors_hil.h`. Your `src/` is never edited, and the copy can't drift. USB type is Dual Serial: port 1 is the normal CLI, port 2 is HIL control. |
 | `hil_ctl.py` | Laptop side: `load` a trace, run CLI commands (`cli arm`), `go` with a countdown and cues, `abort`. |
 | `compare.py` | Checks the Teensy's SD files against `_ref.csv`: event times, gimbal, loop timing and pyro gates. It also estimates the ignition delay (use `--plot` and confirm it by eye). |
@@ -32,7 +32,7 @@ What it can't prove: the control loop reacting to real motion. The attitude data
   - `arm` uses the trace's pad level and baro noise, but still calibrates the real gyro and baro (keep the rocket still);
   - `go` (only while ARMED) plays the trace in real time, paced by the clock rather than by loop ticks.
 - **After the trace ends:** a resting rocket.
-- **`abort` (or Ctrl-C in `hil_ctl.py go`):** the IMU reports unhealthy. In flight, the core aborts after 200 ms with IMU_FAIL: chute released, F15 inhibited. The flight log then stays open, because the core waits under the chute. Wait 1 s and power off; the log is flushed every 0.5 s.
+- **`abort` (or Ctrl-C in `hil_ctl.py go`):** the IMU reports unhealthy. In flight, the core aborts after 200 ms with IMU_FAIL: chute released, landing motor inhibited. The flight log then stays open, because the core waits under the chute. Wait 1 s and power off; the log is flushed every 0.5 s.
 - **Real-IMU log:** from `go` until 10 s after the trace ends, the real IMU goes to `HIL/IMU_NNN.BIN` on the SD card.
 
 ## Procedure
@@ -70,9 +70,9 @@ python tools/hil/compare.py --trace tools/hil/traces/nominal --flight <csv> --im
 
 **3. Dress rehearsal on the stand.** Install the motors with no igniters, and keep the e-match outside the motor. Run the whole countdown from the safety distance, using the laptop on an active USB extension cable.
 
-**4. Live: F15 only.** Same as stage 3, but with the e-match in the F15. Run `compare.py --plot` afterwards for the measured ignition delay.
+**4. Live: landing motor only.** Same as stage 3, but with the e-match in the landing motor. Run `compare.py --plot` afterwards for the measured ignition delay.
 
-**5. Live: both motors.** `hil_ctl.py go` beeps and prints `>>> T-0 LIGHT THE ASCENT MOTOR NOW <<<`. Light it with the normal launch controller. If you miss the cue by more than ~2 s, don't light it: the F15 fires about 7 s after T-0 regardless, and the stand shouldn't take both burns at once.
+**5. Live: both motors.** `hil_ctl.py go` beeps and prints `>>> T-0 LIGHT THE ASCENT MOTOR NOW <<<`. Light it with the normal launch controller. If you miss the cue by more than ~1.5 s, don't light it: the landing motor's thrust starts about 4 s after T-0 regardless (fire ~3.4 s + 0.62 s delay), the E18W ascent burn lasts 2.1 s, and the stand shouldn't take both burns at once.
 
 **6. Afterwards.**
 - Feed the measured delay into `IGNITION_DELAY_MS` and `tools/burn_table.py` only when you decide to. That is a flight-code change.
@@ -89,7 +89,7 @@ Check that the boot banner has **no** `HIL BUILD` line and that the Teensy shows
 
 - [ ] Static firing is allowed where you are, and the site is clear. Stay at least the NAR/Tripoli distance for the total installed impulse (30 ft / 9 m minimum for F/G class). Keep an extinguisher and water on hand.
 - [ ] The hold-down is rated well above the larger motor's peak thrust, plus the side load at full gimbal deflection. Nose up, with a blast deflector under the tail.
-- [ ] Neither motor has an ejection charge (landing F15-**0**; the AeroTech F10 ascent motor plugged, no charge).
+- [ ] Neither motor has an ejection charge (both AeroTech E18W reloads plugged, no charge).
 - [ ] The chute spring is unloaded, or the nose cone is tethered. FULL_LANDING releases the latch on any abort, and the latch also boots OPEN on every power-up.
 - [ ] The legs are free to swing, or you expect the band to burn and the legs to drop.
 - [ ] At the rocket: `load` the trace, `cli "mode land"`, `cli "chute lock"`. The pyro LiPo goes in **last**; in this design, plugging it in is the arm.

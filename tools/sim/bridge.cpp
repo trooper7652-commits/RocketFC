@@ -55,6 +55,7 @@ struct COutput {
   // Servo microseconds, computed here from gimbalX/Y via the same mapping
   // Actuators::writeGimbal() uses (config-driven center/scale/sign/clamp).
   float usA, usB;
+  int32_t chuteServo;   // ChuteServo: 0 LOCK, 1 OPEN, 2 WIG_LOW, 3 WIG_HIGH
 };
 
 struct CEvent {
@@ -228,6 +229,7 @@ void rfc_step(void* h, const CInput* in, COutput* out) {
   out->gimbalY = co.gimbalY;
   out->chuteRelease = co.chuteRelease ? 1 : 0;
   out->chuteDetected = co.chuteDetected ? 1 : 0;
+  out->chuteServo = static_cast<int32_t>(co.chuteServo);
   out->fireLanding = co.fireLanding ? 1 : 0;
   out->legsBurn = co.legsBurn ? 1 : 0;
   out->kfAlt = co.kfAlt;
