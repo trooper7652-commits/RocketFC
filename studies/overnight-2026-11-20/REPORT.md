@@ -32,7 +32,8 @@ The CSVs (one row per flight) and `results/summary.md` are in `results/`; the sc
    - It gains about 8 points in the default −4…+4 m/s wind (holdout and fresh seeds, both significant).
    - It loses 11–17 points in steady 5–7 m/s wind.
    - Port it only if you fly in ≤ 4 m/s.
-5. **No change** for the dud window (task 6), the D2 interlock, `DRIFT_GAIN`, `DRIFT_MAX_TILT_DEG` (task 7) and the TVC gains (task 8).
+5. **All three patches together** (`task4`, `task5`, `task7`, in any order) apply cleanly to today's `src/`. With `WIND_MATCH_ASCENT = 1` and `WINDOW_PASSED_D_M = 0.5f`, the holdout (2,000) and 0 / 5 / 7 m/s (300 each) are identical to the WMA + 0.75 study runs. That is 84.7 % on the holdout.
+6. **No change** for the dud window (task 6), the D2 interlock, `DRIFT_GAIN`, `DRIFT_MAX_TILT_DEG` (task 7) and the TVC gains (task 8).
 
 ## T0: baseline at 1.477 kg
 
