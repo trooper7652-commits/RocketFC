@@ -190,3 +190,7 @@
 | T7_dg1.0_w7 | 300 | 31.7 % | 15.41 / 15.96 / 15.97 | NO_POWERED_LANDING:142 SUCCESS:95 LEGS_NOT_DOWN:45 LIFTED_OFF:16 TIPPED_OVER:2 | fw={"DRIFT_GAIN": "1.0f"} plant={"legs_cut_s": 0.75} wind=7.0 |
 | T7_dg3.0_w7 | 300 | 31.7 % | 15.41 / 15.96 / 15.97 | NO_POWERED_LANDING:142 SUCCESS:95 LEGS_NOT_DOWN:45 LIFTED_OFF:16 TIPPED_OVER:2 | fw={"DRIFT_GAIN": "3.0f"} plant={"legs_cut_s": 0.75} wind=7.0 |
 | T7_dg4.0_w7 | 300 | 31.7 % | 15.41 / 15.96 / 15.97 | NO_POWERED_LANDING:142 SUCCESS:95 LEGS_NOT_DOWN:45 LIFTED_OFF:16 TIPPED_OVER:2 | fw={"DRIFT_GAIN": "4.0f"} plant={"legs_cut_s": 0.75} wind=7.0 |
+| T7_dt3.0_w7 | 300 | 31.3 % | 15.41 / 15.96 / 15.97 | NO_POWERED_LANDING:142 SUCCESS:94 LEGS_NOT_DOWN:42 LIFTED_OFF:19 TIPPED_OVER:3 | fw={"DRIFT_MAX_TILT_DEG": "3.0f"} plant={"legs_cut_s": 0.75} wind=7.0 |
+| T7_dt8.0_w7 | 300 | 29.7 % | 15.41 / 15.96 / 15.97 | NO_POWERED_LANDING:142 SUCCESS:89 LEGS_NOT_DOWN:59 TIPPED_OVER:6 LIFTED_OFF:4 | fw={"DRIFT_MAX_TILT_DEG": "8.0f"} plant={"legs_cut_s": 0.75} wind=7.0 |
+| T7_off0.5_w0 | 300 | 76.3 % | 15.41 / 15.96 / 15.97 | SUCCESS:229 LEGS_BROKEN:69 LIFTED_OFF:1 TIPPED_OVER:1 | fw={} plant={"legs_cut_s": 0.75, "gimbal_offset_deg": 0.5} wind=0.0 |
+| T7_wma_off0.5_w0 | 300 | 84.7 % | 15.38 / 15.93 / 15.94 | SUCCESS:254 LEGS_BROKEN:40 LIFTED_OFF:4 LEGS_NOT_DOWN:2 | fw={"STUDY_WMA": "1"} plant={"legs_cut_s": 0.75, "gimbal_offset_deg": 0.5} wind=0.0 |
