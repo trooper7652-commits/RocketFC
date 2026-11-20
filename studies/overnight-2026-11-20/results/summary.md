@@ -50,3 +50,14 @@
 | T6_d0.84_w300 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | LEGS_NOT_DOWN:300 | fw={"DUD_WINDOW_MS": "300.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.84} wind=None |
 | T4_m0.75_hold | 2000 | 86.2 % | 15.48 / 15.96 / 16.00 | SUCCESS:1724 LEGS_BROKEN:121 LEGS_NOT_DOWN:119 LIFTED_OFF:30 TIPPED_OVER:6 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=None |
 | T6_d0.90_w300 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"DUD_WINDOW_MS": "300.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.9} wind=None |
+| T6_d1.00_w300 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"DUD_WINDOW_MS": "300.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 1.0} wind=None |
+| T6_dud_w300 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"DUD_WINDOW_MS": "300.0f"} plant={"legs_cut_s": 0.75} wind=None |
+| T6_d0.62_w400 | 300 | 99.3 % | 15.42 / 15.98 / 15.98 | SUCCESS:298 LEGS_BROKEN:2 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.62} wind=None |
+| T6_d0.70_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | LEGS_NOT_DOWN:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.7} wind=None |
+| T6_d0.76_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | LEGS_NOT_DOWN:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.76} wind=None |
+| T6_d0.80_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | LEGS_NOT_DOWN:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.8} wind=None |
+| T0_fresh | 2000 | 76.7 % | 15.47 / 15.96 / 16.00 | SUCCESS:1533 LEGS_BROKEN:446 LIFTED_OFF:12 LEGS_NOT_DOWN:7 TIPPED_OVER:2 | fw={} plant={"legs_cut_s": 0.75} wind=None |
+| T6_d0.84_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | LEGS_NOT_DOWN:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.84} wind=None |
+| T6_d0.90_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | LEGS_NOT_DOWN:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.9} wind=None |
+| T6_d1.00_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 1.0} wind=None |
+| T6_dud_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75} wind=None |
