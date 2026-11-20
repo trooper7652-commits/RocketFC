@@ -1,0 +1,8 @@
+  ran ld_Cs_good_current | 600 flights, 0 errors, 36.4 s
+
+== altitude gate vs ignition-delay scatter +-15 % (good motors, dev 600)
+current: 164/600 success, 0 false DUD aborts
+  ran ld_Cs_good_alt1 | 600 flights, 0 errors, 42.2 s
+alt1: 164/600 (+0/−0, p=1.00), 0 false DUD aborts
+  ran ld_Cs_good_alt3 | 600 flights, 0 errors, 41.3 s
+alt3: 164/600 (+0/−0, p=1.00), 0 false DUD aborts

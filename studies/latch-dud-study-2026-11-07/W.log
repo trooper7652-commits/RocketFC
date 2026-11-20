@@ -1,0 +1,156 @@
+
+== R = 70 deg (the latch lets go here), servo 375 deg/s; impact median, share ≤ 3 m/s
+| scheme | healthy latch | 1 stuck, re-pass | 2 stuck, re-pass | tries at (s, 2 stuck, re-pass) | 1 stuck, shake | 2 stuck, shake |
+|---|---|---|---|---|---|---|
+  ran ld_W_r375_today_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.5 s
+  ran ld_W_r375_today_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 12.9 s
+  ran ld_W_r375_today_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 12.8 s
+  ran ld_W_r375_today_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 13.1 s
+  ran ld_W_r375_today_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 12.8 s
+| today | 2.55 m/s, 100 % | 18.60 m/s, 0 % | 18.60 m/s, 0 % | 0.08/1.98/3.88 | 18.60 m/s, 0 % | 18.60 m/s, 0 % |
+  ran ld_W_r375_old143-180_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 15.6 s
+  ran ld_W_r375_old143-180_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 12.8 s
+  ran ld_W_r375_old143-180_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 14.3 s
+  ran ld_W_r375_old143-180_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 13.0 s
+  ran ld_W_r375_old143-180_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 13.4 s
+| old143-180 | 2.55 m/s, 100 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 0.08/2.92/- | 2.56 m/s, 100 % | 3.20 m/s, 14 % |
+  ran ld_W_r375_70-150_k2_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 15.8 s
+  ran ld_W_r375_70-150_k2_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 13.1 s
+  ran ld_W_r375_70-150_k2_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 14.0 s
+  ran ld_W_r375_70-150_k2_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 13.3 s
+  ran ld_W_r375_70-150_k2_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 13.2 s
+| 70-150 k2 | 2.55 m/s, 100 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 0.08/2.92/- | 2.76 m/s, 100 % | 16.21 m/s, 0 % |
+  ran ld_W_r375_70-150_k3_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 16.2 s
+  ran ld_W_r375_70-150_k3_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 13.3 s
+  ran ld_W_r375_70-150_k3_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 14.0 s
+  ran ld_W_r375_70-150_k3_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 12.9 s
+  ran ld_W_r375_70-150_k3_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 13.2 s
+| 70-150 k3 | 2.55 m/s, 100 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 0.08/3.35/- | 2.76 m/s, 100 % | 12.88 m/s, 0 % |
+  ran ld_W_r375_55-150_k2_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 16.1 s
+  ran ld_W_r375_55-150_k2_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 14.6 s
+  ran ld_W_r375_55-150_k2_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 13.9 s
+  ran ld_W_r375_55-150_k2_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 13.1 s
+  ran ld_W_r375_55-150_k2_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 13.3 s
+| 55-150 k2 | 2.55 m/s, 100 % (+0/−0) | 2.56 m/s, 100 % (+300/−0) | 10.17 m/s, 0 % (+0/−0) | 0.08/0.59/1.10 | 3.11 m/s, 29 % | 18.58 m/s, 0 % |
+  ran ld_W_r375_55-150_k3_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 16.2 s
+  ran ld_W_r375_55-150_k3_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 18.6 s
+  ran ld_W_r375_55-150_k3_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 17.0 s
+  ran ld_W_r375_55-150_k3_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 16.3 s
+  ran ld_W_r375_55-150_k3_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+| 55-150 k3 | 2.55 m/s, 100 % (+0/−0) | 2.56 m/s, 100 % (+300/−0) | 10.17 m/s, 0 % (+0/−0) | 0.08/0.59/1.10 | 3.11 m/s, 29 % | 18.06 m/s, 0 % |
+  ran ld_W_r375_55-110_k2_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.6 s
+  ran ld_W_r375_55-110_k2_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 17.9 s
+  ran ld_W_r375_55-110_k2_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 17.2 s
+  ran ld_W_r375_55-110_k2_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 16.5 s
+  ran ld_W_r375_55-110_k2_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.2 s
+| 55-110 k2 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 2.61 m/s, 100 % (+300/−0) | 0.08/0.38/0.68 | 2.55 m/s, 100 % | 5.28 m/s, 0 % |
+  ran ld_W_r375_55-110_k3_R70_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.7 s
+  ran ld_W_r375_55-110_k3_R70_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 17.5 s
+  ran ld_W_r375_55-110_k3_R70_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 16.7 s
+  ran ld_W_r375_55-110_k3_R70_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 16.1 s
+  ran ld_W_r375_55-110_k3_R70_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.7 s
+| 55-110 k3 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 2.61 m/s, 100 % (+300/−0) | 0.08/0.38/0.68 | 2.55 m/s, 100 % | 3.02 m/s, 45 % |
+
+== R = 80 deg (the latch lets go here), servo 375 deg/s; impact median, share ≤ 3 m/s
+| scheme | healthy latch | 1 stuck, re-pass | 2 stuck, re-pass | tries at (s, 2 stuck, re-pass) | 1 stuck, shake | 2 stuck, shake |
+|---|---|---|---|---|---|---|
+  ran ld_W_r375_today_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.9 s
+  ran ld_W_r375_today_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 15.2 s
+  ran ld_W_r375_today_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 15.1 s
+  ran ld_W_r375_today_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+  ran ld_W_r375_today_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.2 s
+| today | 2.55 m/s, 100 % | 18.60 m/s, 0 % | 18.60 m/s, 0 % | 0.11/2.01/3.91 | 18.60 m/s, 0 % | 18.60 m/s, 0 % |
+  ran ld_W_r375_old143-180_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.4 s
+  ran ld_W_r375_old143-180_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 16.5 s
+  ran ld_W_r375_old143-180_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 17.9 s
+  ran ld_W_r375_old143-180_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 15.4 s
+  ran ld_W_r375_old143-180_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.5 s
+| old143-180 | 2.55 m/s, 100 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 0.11/2.95/- | 2.56 m/s, 100 % | 3.20 m/s, 14 % |
+  ran ld_W_r375_70-150_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 19.0 s
+  ran ld_W_r375_70-150_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 16.7 s
+  ran ld_W_r375_70-150_k2_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 16.1 s
+  ran ld_W_r375_70-150_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 14.8 s
+  ran ld_W_r375_70-150_k2_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 16.2 s
+| 70-150 k2 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 5.18 m/s, 0 % (+0/−0) | 0.11/0.54/0.97 | 2.76 m/s, 100 % | 16.21 m/s, 0 % |
+  ran ld_W_r375_70-150_k3_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.9 s
+  ran ld_W_r375_70-150_k3_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 17.0 s
+  ran ld_W_r375_70-150_k3_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 16.2 s
+  ran ld_W_r375_70-150_k3_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 14.5 s
+  ran ld_W_r375_70-150_k3_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+| 70-150 k3 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 5.18 m/s, 0 % (+0/−0) | 0.11/0.54/0.97 | 2.76 m/s, 100 % | 12.88 m/s, 0 % |
+  ran ld_W_r375_55-150_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.1 s
+  ran ld_W_r375_55-150_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 16.9 s
+  ran ld_W_r375_55-150_k2_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 15.4 s
+  ran ld_W_r375_55-150_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 15.7 s
+  ran ld_W_r375_55-150_k2_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.2 s
+| 55-150 k2 | 2.55 m/s, 100 % (+0/−0) | 2.56 m/s, 100 % (+300/−0) | 11.54 m/s, 0 % (+0/−0) | 0.11/0.62/1.13 | 3.11 m/s, 29 % | 18.58 m/s, 0 % |
+  ran ld_W_r375_55-150_k3_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.6 s
+  ran ld_W_r375_55-150_k3_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 16.5 s
+  ran ld_W_r375_55-150_k3_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 15.4 s
+  ran ld_W_r375_55-150_k3_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 15.1 s
+  ran ld_W_r375_55-150_k3_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.1 s
+| 55-150 k3 | 2.55 m/s, 100 % (+0/−0) | 2.56 m/s, 100 % (+300/−0) | 11.54 m/s, 0 % (+0/−0) | 0.11/0.62/1.13 | 3.11 m/s, 29 % | 18.06 m/s, 0 % |
+  ran ld_W_r375_55-110_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.7 s
+  ran ld_W_r375_55-110_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 17.3 s
+  ran ld_W_r375_55-110_k2_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 17.5 s
+  ran ld_W_r375_55-110_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 16.0 s
+  ran ld_W_r375_55-110_k2_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 14.7 s
+| 55-110 k2 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 2.69 m/s, 100 % (+300/−0) | 0.11/0.41/0.71 | 2.55 m/s, 100 % | 5.28 m/s, 0 % |
+  ran ld_W_r375_55-110_k3_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.6 s
+  ran ld_W_r375_55-110_k3_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 17.4 s
+  ran ld_W_r375_55-110_k3_R80_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 17.4 s
+  ran ld_W_r375_55-110_k3_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 16.3 s
+  ran ld_W_r375_55-110_k3_R80_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.5 s
+| 55-110 k3 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 2.69 m/s, 100 % (+300/−0) | 0.11/0.41/0.71 | 2.55 m/s, 100 % | 3.02 m/s, 45 % |
+
+== R = 90 deg (the latch lets go here), servo 375 deg/s; impact median, share ≤ 3 m/s
+| scheme | healthy latch | 1 stuck, re-pass | 2 stuck, re-pass | tries at (s, 2 stuck, re-pass) | 1 stuck, shake | 2 stuck, shake |
+|---|---|---|---|---|---|---|
+  ran ld_W_r375_today_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.2 s
+  ran ld_W_r375_today_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+  ran ld_W_r375_today_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+  ran ld_W_r375_today_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 15.2 s
+  ran ld_W_r375_today_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 14.9 s
+| today | 2.55 m/s, 100 % | 18.60 m/s, 0 % | 18.60 m/s, 0 % | 0.13/2.03/3.85 | 18.60 m/s, 0 % | 18.60 m/s, 0 % |
+  ran ld_W_r375_old143-180_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.4 s
+  ran ld_W_r375_old143-180_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+  ran ld_W_r375_old143-180_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 16.3 s
+  ran ld_W_r375_old143-180_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+  ran ld_W_r375_old143-180_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.5 s
+| old143-180 | 2.55 m/s, 100 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 18.60 m/s, 0 % (+0/−0) | 0.13/2.97/- | 2.56 m/s, 100 % | 3.20 m/s, 14 % |
+  ran ld_W_r375_70-150_k2_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 18.2 s
+  ran ld_W_r375_70-150_k2_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 16.8 s
+  ran ld_W_r375_70-150_k2_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 16.4 s
+  ran ld_W_r375_70-150_k2_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 14.5 s
+  ran ld_W_r375_70-150_k2_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 15.3 s
+| 70-150 k2 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 5.89 m/s, 0 % (+0/−0) | 0.13/0.56/1.00 | 2.76 m/s, 100 % | 16.21 m/s, 0 % |
+  ran ld_W_r375_70-150_k3_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 17.9 s
+  ran ld_W_r375_70-150_k3_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 189.3 s
+  ran ld_W_r375_70-150_k3_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 13.2 s
+  ran ld_W_r375_70-150_k3_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 46.9 s
+  ran ld_W_r375_70-150_k3_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 48.0 s
+| 70-150 k3 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 5.89 m/s, 0 % (+0/−0) | 0.13/0.56/1.00 | 2.76 m/s, 100 % | 12.88 m/s, 0 % |
+  ran ld_W_r375_55-150_k2_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 65.4 s
+  ran ld_W_r375_55-150_k2_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 67.5 s
+  ran ld_W_r375_55-150_k2_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 64.4 s
+  ran ld_W_r375_55-150_k2_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 57.9 s
+  ran ld_W_r375_55-150_k2_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 32.8 s
+| 55-150 k2 | 2.55 m/s, 100 % (+0/−0) | 2.57 m/s, 100 % (+300/−0) | 12.79 m/s, 0 % (+0/−0) | 0.13/0.64/1.16 | 3.11 m/s, 29 % | 18.58 m/s, 0 % |
+  ran ld_W_r375_55-150_k3_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 26.9 s
+  ran ld_W_r375_55-150_k3_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 70.4 s
+  ran ld_W_r375_55-150_k3_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 63.6 s
+  ran ld_W_r375_55-150_k3_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 61.5 s
+  ran ld_W_r375_55-150_k3_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 61.7 s
+| 55-150 k3 | 2.55 m/s, 100 % (+0/−0) | 2.57 m/s, 100 % (+300/−0) | 12.79 m/s, 0 % (+0/−0) | 0.13/0.64/1.16 | 3.11 m/s, 29 % | 18.06 m/s, 0 % |
+  ran ld_W_r375_55-110_k2_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 74.1 s
+  ran ld_W_r375_55-110_k2_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 67.3 s
+  ran ld_W_r375_55-110_k2_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 69.9 s
+  ran ld_W_r375_55-110_k2_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 64.8 s
+  ran ld_W_r375_55-110_k2_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 59.2 s
+| 55-110 k2 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 2.78 m/s, 100 % (+300/−0) | 0.13/0.43/0.73 | 2.55 m/s, 100 % | 5.28 m/s, 0 % |
+  ran ld_W_r375_55-110_k3_R90_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 80.4 s
+  ran ld_W_r375_55-110_k3_R90_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 76.6 s
+  ran ld_W_r375_55-110_k3_R90_s1_shake_n100_101-102-103 | 300 flights, 0 errors, 55.3 s
+  ran ld_W_r375_55-110_k3_R90_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 21.8 s
+  ran ld_W_r375_55-110_k3_R90_s2_shake_n100_101-102-103 | 300 flights, 0 errors, 20.8 s
+| 55-110 k3 | 2.55 m/s, 100 % (+0/−0) | 2.55 m/s, 100 % (+300/−0) | 2.78 m/s, 100 % (+300/−0) | 0.13/0.43/0.73 | 2.55 m/s, 100 % | 3.02 m/s, 45 % |

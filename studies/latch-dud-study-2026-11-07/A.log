@@ -1,0 +1,28 @@
+
+== Step A: canopy freed d s after the first release (stuck latch freed late), chute mode
+| delay | fill n = 8: impact med / p90, ≤ 3 m/s | free height med | fill n = 4 |
+|---|---|---|---|
+  ran ld_A_d0.00_n8 | 600 flights, 0 errors, 21.1 s
+  ran ld_A_d0.00_n4 | 600 flights, 0 errors, 29.0 s
+| 0.00 s | 2.55 / 2.56 m/s, 100 % ≤ 3 | 17.9 m | 2.55 / 2.56 m/s, 100 % ≤ 3 |
+  ran ld_A_d0.25_n8 | 600 flights, 0 errors, 30.1 s
+  ran ld_A_d0.25_n4 | 600 flights, 0 errors, 32.1 s
+| 0.25 s | 2.55 / 2.56 m/s, 100 % ≤ 3 | 17.1 m | 2.55 / 2.56 m/s, 100 % ≤ 3 |
+  ran ld_A_d0.50_n8 | 600 flights, 0 errors, 28.6 s
+  ran ld_A_d0.50_n4 | 600 flights, 0 errors, 30.6 s
+| 0.50 s | 2.55 / 2.56 m/s, 100 % ≤ 3 | 15.7 m | 2.55 / 2.56 m/s, 100 % ≤ 3 |
+  ran ld_A_d0.75_n8 | 600 flights, 0 errors, 27.6 s
+  ran ld_A_d0.75_n4 | 600 flights, 0 errors, 29.3 s
+| 0.75 s | 2.85 / 3.01 m/s, 87 % ≤ 3 | 13.6 m | 2.55 / 2.56 m/s, 100 % ≤ 3 |
+  ran ld_A_d1.00_n8 | 600 flights, 0 errors, 25.1 s
+  ran ld_A_d1.00_n4 | 600 flights, 0 errors, 26.8 s
+| 1.00 s | 6.00 / 7.02 m/s, 0 % ≤ 3 | 11.0 m | 2.56 / 2.58 m/s, 100 % ≤ 3 |
+  ran ld_A_d1.25_n8 | 600 flights, 0 errors, 25.8 s
+  ran ld_A_d1.25_n4 | 600 flights, 0 errors, 25.6 s
+| 1.25 s | 16.58 / 17.16 m/s, 0 % ≤ 3 | 7.7 m | 11.81 / 13.88 m/s, 0 % ≤ 3 |
+  ran ld_A_d1.50_n8 | 600 flights, 0 errors, 25.9 s
+  ran ld_A_d1.50_n4 | 600 flights, 0 errors, 25.8 s
+| 1.50 s | 18.60 / 18.82 m/s, 0 % ≤ 3 | 3.9 m | 18.60 / 18.82 m/s, 0 % ≤ 3 |
+  ran ld_A_d1.90_n8 | 600 flights, 0 errors, 26.0 s
+  ran ld_A_d1.90_n4 | 600 flights, 0 errors, 25.4 s
+| 1.90 s | 18.60 / 18.82 m/s, 0 % ≤ 3 | nan m | 18.60 / 18.82 m/s, 0 % ≤ 3 |

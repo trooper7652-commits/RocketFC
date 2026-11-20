@@ -1,0 +1,25 @@
+  ran ld_Cb_dud_current | 600 flights, 0 errors, 26.0 s
+  ran ld_Cb_good_current | 600 flights, 0 errors, 35.5 s
+
+== C(b) ignition confirm vs the impact jolt (dev, 600 flights each)
+| rule | dud: false confirms (legs on at impact) | dud: DUD_IGNITER aborts | good: success (paired vs current) | good: legs-on later by med / p99 / max | good: false DUD aborts |
+|---|---|---|---|---|---|
+| current | 600/600 | 0 | 487/600 (+0/−0, p=1.00) | 0 / 0 / 0 ms | 0 |
+  ran ld_Cb_dud_hold20 | 600 flights, 0 errors, 34.8 s
+  ran ld_Cb_good_hold20 | 600 flights, 0 errors, 39.1 s
+| hold20 | 566/600 | 34 | 483/600 (+0/−4, p=0.12) | 18 / 28 / 32 ms | 0 |
+  ran ld_Cb_dud_hold40 | 600 flights, 0 errors, 35.4 s
+  ran ld_Cb_good_hold40 | 600 flights, 0 errors, 39.8 s
+| hold40 | 0/600 | 600 | 480/600 (+0/−7, p=0.02) | 38 / 48 / 52 ms | 0 |
+  ran ld_Cb_dud_hold60 | 600 flights, 0 errors, 29.7 s
+  ran ld_Cb_good_hold60 | 600 flights, 0 errors, 38.3 s
+| hold60 | 0/600 | 600 | 472/600 (+0/−15, p=0.00) | 58 / 68 / 72 ms | 0 |
+  ran ld_Cb_dud_alt3 | 600 flights, 0 errors, 29.8 s
+  ran ld_Cb_good_alt3 | 600 flights, 0 errors, 38.3 s
+| alt3 | 0/600 | 600 | 487/600 (+0/−0, p=1.00) | 0 / 0 / 0 ms | 0 |
+  ran ld_Cb_dud_alt1 | 600 flights, 0 errors, 29.6 s
+  ran ld_Cb_good_alt1 | 600 flights, 0 errors, 41.5 s
+| alt1 | 0/600 | 600 | 487/600 (+0/−0, p=1.00) | 0 / 0 / 0 ms | 0 |
+  ran ld_Cb_dud_hold40+alt1 | 600 flights, 0 errors, 28.9 s
+  ran ld_Cb_good_hold40+alt1 | 600 flights, 0 errors, 38.9 s
+| hold40+alt1 | 0/600 | 600 | 480/600 (+0/−7, p=0.02) | 38 / 48 / 52 ms | 0 |

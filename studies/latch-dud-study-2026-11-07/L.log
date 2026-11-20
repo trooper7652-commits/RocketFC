@@ -1,0 +1,10 @@
+
+== Landing mode, latch 375 deg/s: success (paired vs current) | aborted flights: impact med, ≤ 3 m/s
+  ran ld_L_current_s0 | 600 flights, 0 errors, 27.4 s
+stuck 0 | current        | 487/600 (+0/−0) | 0 aborts: nan m/s med, 0 % ≤ 3
+  ran ld_L_wig3_s0 | 600 flights, 0 errors, 32.0 s
+stuck 0 | wig3           | 487/600 (+0/−0) | 0 aborts: nan m/s med, 0 % ≤ 3
+  ran ld_L_current_s1 | 600 flights, 0 errors, 32.0 s
+stuck 1 | current        | 487/600 (+0/−0) | 0 aborts: nan m/s med, 0 % ≤ 3
+  ran ld_L_wig3_s1 | 600 flights, 0 errors, 32.0 s
+stuck 1 | wig3           | 487/600 (+0/−0) | 0 aborts: nan m/s med, 0 % ≤ 3

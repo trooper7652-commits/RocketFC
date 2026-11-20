@@ -1,0 +1,26 @@
+
+== servo speed, R = 80, re-pass: impact median, share ≤ 3 m/s (tries at, 2 stuck)
+  ran ld_Wd430_r430_70-150_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 82.4 s
+  ran ld_Wd430_r430_70-150_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 73.8 s
+  ran ld_Wd430_r430_70-150_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 61.8 s
+70-150 k2    servo 430 deg/s (dwells for 430): healthy 2.55 m/s, 100 % | 1 stuck 2.55 m/s, 100 % | 2 stuck 3.42 m/s, 0 % (0.09/0.47/0.85)
+  ran ld_Wd375_r375_70-150_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 75.5 s
+  ran ld_Wd375_r375_70-150_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 68.9 s
+  ran ld_Wd375_r375_70-150_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 59.9 s
+70-150 k2    servo 375 deg/s (dwells for 375): healthy 2.55 m/s, 100 % | 1 stuck 2.55 m/s, 100 % | 2 stuck 5.18 m/s, 0 % (0.11/0.54/0.97)
+  ran ld_Wd375_r300_70-150_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 73.8 s
+  ran ld_Wd375_r300_70-150_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 70.1 s
+  ran ld_Wd375_r300_70-150_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 58.4 s
+70-150 k2    servo 300 deg/s (dwells for 375): healthy 2.55 m/s, 100 % | 1 stuck 2.55 m/s, 100 % | 2 stuck 5.33 m/s, 0 % (0.13/0.54/0.98)
+  ran ld_Wd430_r430_55-110_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 24.4 s
+  ran ld_Wd430_r430_55-110_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 69.2 s
+  ran ld_Wd430_r430_55-110_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 63.0 s
+55-110 k2    servo 430 deg/s (dwells for 430): healthy 2.55 m/s, 100 % | 1 stuck 2.55 m/s, 100 % | 2 stuck 2.56 m/s, 100 % (0.09/0.35/0.61)
+  ran ld_Wd375_r375_55-110_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 75.4 s
+  ran ld_Wd375_r375_55-110_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 70.1 s
+  ran ld_Wd375_r375_55-110_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 66.0 s
+55-110 k2    servo 375 deg/s (dwells for 375): healthy 2.55 m/s, 100 % | 1 stuck 2.55 m/s, 100 % | 2 stuck 2.69 m/s, 100 % (0.11/0.41/0.71)
+  ran ld_Wd375_r300_55-110_k2_R80_s0_repass_n100_101-102-103 | 300 flights, 0 errors, 76.2 s
+  ran ld_Wd375_r300_55-110_k2_R80_s1_repass_n100_101-102-103 | 300 flights, 0 errors, 69.5 s
+  ran ld_Wd375_r300_55-110_k2_R80_s2_repass_n100_101-102-103 | 300 flights, 0 errors, 62.6 s
+55-110 k2    servo 300 deg/s (dwells for 375): healthy 2.55 m/s, 100 % | 1 stuck 2.55 m/s, 100 % | 2 stuck 2.75 m/s, 100 % (0.13/0.42/0.72)
