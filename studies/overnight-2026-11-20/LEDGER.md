@@ -1,5 +1,5 @@
-status: RUNNING
-heartbeat: 2026-11-20T12:35:56Z
+status: DONE
+heartbeat: 2026-11-20T12:45:58Z
 run: 1
 
 # Jobs
@@ -11,4 +11,4 @@ run: 1
 - task 6 late ignition: done — success only for true delay 0.60–0.65 s; ≥0.80 s → dud declared (window 200), longer window → late light with chute held, 8–13 m/s impacts; guard cuts sideways impact 3.0→0.8 m/s, no success change
 - task 7 shelved fixes: done — D2/DRIFT_GAIN/DRIFT_MAX_TILT: no gain; WMA alone fails gate; WMA + margin 0.75: holdout 78.2→84.7 % (p=8e-10), fresh 76.7→84.8 % (p=4e-14), ≥ baseline at 0–8 m/s (w7 32→79, w8 6→65); gimbal 0.5° / slow servo cost 5–8 pts at w5 → recommend after bench trims; patches port-checked
 - task 8 TVC gains: done — boost gains no effect; landing kd×0.5 (F1) and kp×0.75/kd×0.35 (F2) win holdout+fresh (+5 pts) but lose at wind 5 (−6/−11) and with a slower servo (−22/−12): no change
-- REPORT.md: done — head chef YES (after one round of fixes); PR opened
+- REPORT.md: done — head chef YES (after one round of fixes); PR #3 opened (left open)
