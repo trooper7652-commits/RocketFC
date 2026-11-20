@@ -1,0 +1,124 @@
+diff -ru a/src/config.h b/src/config.h
+--- a/src/config.h	2026-11-20 11:58:58.113428060 +0000
++++ b/src/config.h	2026-11-20 11:58:58.138909020 +0000
+@@ -191,6 +191,21 @@
+ constexpr float DRIFT_MAX_TILT_DEG = 5.0f;   // cap on the commanded lean
+ 
+ // ---------------------------------------------------------------------------
++// Wind-matched ascent (study 2026-11-20, from software-landing-study new-ideas
++// s4): estimate the wind from the accelerometer during BOOST and lean the TVC
++// target so the rocket reaches burnout moving with the air.
++// ---------------------------------------------------------------------------
++constexpr int   WIND_MATCH_ASCENT = 0;         // 1 = on, 0 = off (today's behaviour)
++constexpr float WMA_GAIN = 1.0f;               // 1/s: lean = -gain * (sideways vel - wind) / accel
++constexpr float WMA_MAX_TILT_DEG = 5.0f;       // cap on the commanded boost lean
++constexpr float WMA_START_S = 0.3f;            // lean only after this long into BOOST
++constexpr float WMA_END_S = 0.6f;              // ...and stand upright this long before ASCENT_BURN_MS
++constexpr float WMA_CNA_AREF_M2 = 0.00884f;    // [ESTIMATE] CN_alpha (2/rad) * A_ref (75 mm tube), m^2
++constexpr float WMA_SCALE = 0.8f;              // scale the estimate low: reading low is the safe error
++constexpr float WMA_MIN_SPEED_MS = 4.0f;       // airspeed below this: no estimate sample
++constexpr float WMA_PRIOR_MPS = 1.0f;          // prior wind spread: shrinks a noisy estimate toward 0; 0 = off
++
++// ---------------------------------------------------------------------------
+ // Parachute release servo. The chute is pushed out by a spring; this servo
+ // holds the latch. FlightStateMachine decides WHEN (apogee in CHUTE_TEST, any
+ // abort in either mode); ChuteDeploy (src/core/chute_deploy.h) then confirms
+diff -ru a/src/core/flight_core.h b/src/core/flight_core.h
+--- a/src/core/flight_core.h	2026-11-20 11:58:58.117403105 +0000
++++ b/src/core/flight_core.h	2026-11-20 11:58:58.148244962 +0000
+@@ -86,6 +86,8 @@
+     // IS the horizontal acceleration.
+     if (onPad) {
+       velHx_ = velHy_ = 0.0f;
++      windX_ = windY_ = windSx_ = windSy_ = windSw_ = 0.0f;
++      windPnx_ = windPny_ = windNv_ = 0.0f; windNn_ = 0;
+     } else {
+       const Vec3 aw = ahrs_.quat().rotate(in.accel);
+       velHx_ += aw.x * in.dt;
+@@ -130,6 +132,23 @@
+           e = ahrs_.tiltErrorBodyTo(Vec3{hx / n, hy / n, 1.0f / n});
+         }
+       }
++      if (cfg::WIND_MATCH_ASCENT != 0 && fo.state == FlightState::BOOST) {
++        windEstStep(in);
++        // Lean toward the wind-matched velocity; upright outside [START, burn - END].
++        if (!wasActive_) boostMs_ = in.ms;
++        const float tb = (in.ms - boostMs_) * 0.001f;
++        const float aT = in.accel.norm();
++        if (aT > 3.0f && tb >= cfg::WMA_START_S &&
++            tb <= cfg::ASCENT_BURN_MS * 0.001f - cfg::WMA_END_S) {
++          float hx = -cfg::WMA_GAIN * (velHx_ - windX_) / aT;
++          float hy = -cfg::WMA_GAIN * (velHy_ - windY_) / aT;
++          const float hn = std::sqrt(hx * hx + hy * hy);
++          const float cap = std::tan(cfg::WMA_MAX_TILT_DEG * cfg::DEG2RAD);
++          if (hn > cap) { hx *= cap / hn; hy *= cap / hn; }
++          const float n = std::sqrt(hx * hx + hy * hy + 1.0f);
++          e = ahrs_.tiltErrorBodyTo(Vec3{hx / n, hy / n, 1.0f / n});
++        }
++      }
+       ctl_.update(e.x, e.y, in.gyro.x, in.gyro.y, in.dt, true);
+     } else if (wasActive_) {
+       ctl_.reset();  // clean integrators/slew state for the next burn phase
+@@ -158,6 +177,62 @@
+   }
+ 
+  private:
++  // Wind estimate during BOOST (one sample per tick). The airframe is fin-less
++  // and its normal force is ~ 0.5 rho |V| (CNa Aref) * crossflow, so:
++  //   1. sideways specific force minus the gimbal's share of the thrust = the
++  //      aerodynamic normal force / m = -k * (rocket velocity relative to air,
++  //      sideways), with k = 0.5 rho CNa Aref / m * airspeed;
++  //   2. rotate that body-frame relative velocity to the world frame (axial part
++  //      from the airspeed) and subtract it from the dead-reckoned rocket
++  //      velocity -> one wind sample;
++  //   3. average samples weighted by k^2 (a stronger airflow is a better
++  //      measurement), shrink toward 0 by the sample noise measured from
++  //      successive differences against WMA_PRIOR_MPS, and scale by WMA_SCALE
++  //      (reading low is the safe error).
++  void windEstStep(const CoreInput& in) {
++    const float az = in.accel.z;                    // ~thrust / mass
++    if (az < 3.0f) return;
++    // body: fx = -T sin(gimbalY), fy = +T sin(gimbalX)
++    const float nx = in.accel.x + az * std::sin(ctl_.gimbalY());
++    const float ny = in.accel.y - az * std::sin(ctl_.gimbalX());
++    const float vUp = kf_.velocity();
++    const float dwx = velHx_ - windX_, dwy = velHy_ - windY_;
++    const float speed = std::sqrt(vUp * vUp + dwx * dwx + dwy * dwy);
++    if (speed < cfg::WMA_MIN_SPEED_MS) return;
++    const float k = 0.5f * 1.225f * cfg::WMA_CNA_AREF_M2 / cfg::MASS_DESCENT_KG * speed;
++    const float vtx = -nx / k, vty = -ny / k;
++    const float vax2 = speed * speed - vtx * vtx - vty * vty;
++    const Vec3 vrelW = ahrs_.quat().rotate(Vec3{vtx, vty, vax2 > 0.0f ? std::sqrt(vax2) : 0.0f});
++    const float wx = velHx_ - vrelW.x, wy = velHy_ - vrelW.y;
++    const float wgt = k * k;
++    windSx_ += wgt * wx;
++    windSy_ += wgt * wy;
++    windSw_ += wgt;
++    float shrink = 1.0f;
++    if (cfg::WMA_PRIOR_MPS > 0.0f) {
++      if (windNn_ > 0) {
++        const float ddx = nx - windPnx_, ddy = ny - windPny_;
++        windNv_ += 0.25f * (ddx * ddx + ddy * ddy);
++        ++windNn_;
++      } else {
++        windNn_ = 1;
++      }
++      windPnx_ = nx;
++      windPny_ = ny;
++      const float nv = windNn_ > 1 ? windNv_ / (float)(windNn_ - 1) : 1.0f;
++      const float pv = cfg::WMA_PRIOR_MPS * cfg::WMA_PRIOR_MPS;
++      shrink = windSw_ / (windSw_ + nv / pv);
++    }
++    windX_ = cfg::WMA_SCALE * shrink * windSx_ / windSw_;
++    windY_ = cfg::WMA_SCALE * shrink * windSy_ / windSw_;
++  }
++
++  uint32_t boostMs_ = 0;
++  float windX_ = 0.0f, windY_ = 0.0f;                       // wind estimate (m/s, world x/y)
++  float windSx_ = 0.0f, windSy_ = 0.0f, windSw_ = 0.0f;     // weighted sums
++  float windPnx_ = 0.0f, windPny_ = 0.0f, windNv_ = 0.0f;   // noise tracking
++  int windNn_ = 0;
++
+   Ahrs ahrs_;
+   AltitudeKf kf_;
+   TvcControl ctl_;

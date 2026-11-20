@@ -1,0 +1,28 @@
+diff -ru a/src/config.h b/src/config.h
+--- a/src/config.h	2026-11-20 11:16:30.775269641 +0000
++++ b/src/config.h	2026-11-20 11:16:30.809920778 +0000
+@@ -165,6 +165,8 @@
+                                               // sim holdout 2026-10-24 (motor-study-2026-10-24)
+ constexpr float BURN_MIN_SPEED_MS   = 2.0f;   // table domain lower bound
+ constexpr float MISSED_WINDOW_ALT_M = 4.0f;   // in DESCENT below this = missed ignition -> abort
++constexpr float WINDOW_PASSED_D_M   = 0.0f;   // > 0: abort once this far below the ignition point with the
++                                              // interlocks failing (sim study 2026-11-20 task 5: 0.5 m); 0 = off
+ constexpr float IGNITE_CONFIRM_G    = 1.3f;   // accel that confirms the landing motor lit
+                                               // (only above TOUCHDOWN_ALT_M: lower, a jolt is the impact)
+ // After the expected delay, no thrust = dud -> abort to the chute. Short on
+diff -ru a/src/core/flight_state.h b/src/core/flight_state.h
+--- a/src/core/flight_state.h	2026-11-20 11:16:30.785494728 +0000
++++ b/src/core/flight_state.h	2026-11-20 11:16:30.809749194 +0000
+@@ -363,6 +363,12 @@
+       enter(FlightState::LANDING_BURN, in.ms);
+       out.tvcActive = true;
+       out.useLandingGains = true;
++    } else if (cfg::WINDOW_PASSED_D_M > 0.0f && !interlocks &&
++               in.kfAlt < hIgn - cfg::WINDOW_PASSED_D_M) {
++      // The ignition point has passed and the interlocks still say no: the
++      // landing can't happen any more, so abort now and get the chute out
++      // high instead of waiting for MISSED_WINDOW_ALT_M.
++      doAbort(in, out, AbortReason::MISSED_WINDOW);
+     }
+   }
+ 

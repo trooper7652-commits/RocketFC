@@ -1,0 +1,11 @@
+--- a/src/config.h	2026-11-20 10:25:49.444895463 +0000
++++ b/src/config.h	2026-11-20 10:25:49.447803158 +0000
+@@ -161,7 +161,7 @@
+ constexpr float TILT_ABORT_DEG   = 30.0f;  // sustained tilt beyond this aborts
+ constexpr float TILT_ABORT_MS    = 100.0f;
+ constexpr float TILT_IGNITE_MAX_DEG = 15.0f;  // never light the landing motor beyond this tilt
+-constexpr float BURN_TABLE_MARGIN_M = 1.0f;   // + = ignite earlier (higher); 1 m with S3:
++constexpr float BURN_TABLE_MARGIN_M = 0.75f;   // + = ignite earlier (higher); 1 m with S3:
+                                               // sim holdout 2026-10-24 (motor-study-2026-10-24)
+ constexpr float BURN_MIN_SPEED_MS   = 2.0f;   // table domain lower bound
+ constexpr float MISSED_WINDOW_ALT_M = 4.0f;   // in DESCENT below this = missed ignition -> abort

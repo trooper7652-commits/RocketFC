@@ -164,7 +164,7 @@ important ones:
 | `MASS_PAD_KG`, `MASS_DESCENT_KG` | kitchen scale, fully loaded / after ascent burnout |
 | `ASCENT_BURN_MS` | your ascent motor's datasheet or static test |
 | `IGNITION_DELAY_MS` | **static-test the landing-motor igniter chain** (620 ms measured 2026-10-25): time from fire command to first thrust. This number directly moves the ignition altitude. |
-| `CDA_M2` | estimate now in OpenRocket (`Cd × π(d/2)²`); measure from the first flight log: in the unpowered fall the accelerometer reads only drag, `CdA = 2·m·a / (ρ·v²)` |
+| `CDA_M2` | estimate now in OpenRocket (`Cd × π(d/2)²`); measure from the first flight log with `python tools/fit_cda.py <log.csv>` (fits the coast and the pre-burn descent; mind its warnings): in the unpowered fall the accelerometer reads only drag, `CdA = 2·m·a / (ρ·v²)` |
 | Servo trims, `US_PER_GIMBAL_DEG`, signs | bench: CLI `trim`, `servotest`, direction test below |
 | chute LOCK / SET / OPEN angles (defaults 40° / 120° / 180°) | bench: CLI `chute deg <n>` to fine-tune each position, then `chute save lock` / `chute save set` / `chute save open` (saved in EEPROM; `CHUTE_*_DEG_DEFAULT` are only first-boot defaults) |
 | `CHUTE_SERVO_US_AT_0_DEG`, `_AT_180_DEG` | servo datasheet: pulse width at 0° and 180° (default 500 / 2500 µs) |
@@ -268,6 +268,7 @@ as the abort recovery.
 | `chute save lock\|set\|open [deg]` | save that position's angle to EEPROM (default: the current jog angle); the servo only moves if it's already at that position |
 | `chute defaults` | LOCK / SET / OPEN angles back to the `config.h` defaults |
 | `chute cycle` | one in-flight re-cycle: LOCK dwell, then RELEASE — tests freeing a sticky latch |
+| `chute wiggle` | the exact in-flight release sequence (wiggle strokes, last one to OPEN), once, on the ground; disarmed only; prints each target with a ms timestamp. Check: 110° frees the door with the spring loaded and 55° doesn't re-catch it; LOCK→110° ≤ 190 ms and 55→110° ≤ 150 ms under load, else lengthen the `CHUTE_WIG_*_MS` dwells in `config.h` |
 | `pyrotest land` | fire the landing e-match channel on the bench — two-step typed confirmation, disarmed only, **no motor/match connected** |
 | `pyrotest legs` | burn the leg-release nichrome for 4 s (its longest in-flight burn) — two-step confirmation, disarmed only |
 | `stop` | every pyro output off immediately |
