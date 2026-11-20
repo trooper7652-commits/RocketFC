@@ -2,38 +2,48 @@
 """Estimate the drag area CdA (m^2) from a RocketFC flight log.
 
 Usage:
-    python tools/fit_cda.py LOG.csv [--mass KG] [--rho R | --alt-m M --temp-c C] [--plot]
+    python tools/fit_cda.py LOG.csv [LOG2.csv ...] [--mass KG] [--rho R | --alt-m M --temp-c C] [--plot]
 
 Physics: in unpowered flight the accelerometer measures specific force, which
-is aerodynamic drag only (gravity is not sensed), so per sample
-    CdA = 2 * m * |a_spec| / (rho * v^2)
-with |a_spec| the 3-axis accel norm in m/s^2 and v the vertical Kalman-filter
-velocity kf_vel. Horizontal speed and wind are IGNORED (v is vertical-only): a
-real flight with wind or a drifting rocket sees a larger airspeed than kf_vel
-and this tool then over-estimates CdA.
+is aerodynamic drag only (gravity is not sensed). Drag acts along body Z (the
+nose axis), so the SIGNED axial az is used, not the 3-axis norm: the norm
+rectifies sensor noise into a positive bias (2.4-7x too high on this rocket's
+low flight, where drag is only ~0.05 m/s^2 against 0.12 m/s^2/axis noise).
+Sign: COAST is nose-first, drag decelerates, az < 0; DESCENT is tail-first,
+az > 0 (plant.py/sensors.py convention; assumes the logged accel is already in
+the body frame with +Z toward the nose, as logger.h says). Per phase, with
+v = vertical Kalman-filter velocity kf_vel (wind and horizontal speed are
+IGNORED; they would bias CdA high):
+    a_drag = sign * az = c * v^2 + b        (least squares WITH intercept b,
+                                             which absorbs the accel Z bias)
+    CdA = 2 * m * c / rho, +/- 1 sigma from the slope's standard error.
+The through-origin fit (biased by any accel bias) and the median per-sample CdA
+are printed for reference. A JOINT line fits both phases with one CdA and one
+shared bias (opposite signs separate bias from drag; assumes equal
+nose-first/tail-first CdA, true in the sim): by far the best conditioned.
+Speed estimate: kf_vel (it reads ~0.1-0.2 m/s toward +Z vs truth, i.e. ~5 %
+low speed in descent -> CdA ~ +7 % high). A centred finite difference of
+kf_alt was tried and was no better, so kf_vel is kept.
 
 Log units (checked against tools/sim/logfile.py, src/hw/logger.h and
 tools/sim/sensors.py): ax/ay/az are body specific force in m/s^2 (NOT g).
 
 Phases (state names from src/core/flight_state.h):
     COAST    state COAST, kf_vel > 0 (still ascending), skipping the first
-             COAST_SKIP_S seconds (motor tail-off / burnout-detection lag still
-             shows up as thrust, not drag; in the sim the E18W tail-off
-             runs ~0.22 s into COAST, so 0.25 s; on this low flight that
-             leaves ~4-5 m/s, ~50 samples at 500 Hz but only ~10 at 100 Hz).
+             COAST_SKIP_S = 0.25 s (motor tail-off still shows as thrust; the
+             sim E18W tail-off runs ~0.22 s into COAST).
     DESCENT  state DESCENT, kf_vel < 0, before the first FIRE_LANDING (pyro
              bit 1) and before the first chute release (pyro bit 0). In
              CHUTE_TEST mode the chute is released at apogee, so there is no
-             bare-airframe descent phase to fit (it is reported as 0 samples).
-Only samples with |kf_vel| >= 4 m/s are used.
+             bare-airframe descent phase (reported as no samples).
+Only samples with |kf_vel| >= 2 m/s are used.
 
-Per phase: least-squares CdA through the origin of |a|*2m/rho against v^2,
-the median per-sample CdA, sample count, residual-based standard error of the
-LS slope, the IQR of per-sample CdA, and the speed range. Warnings: < 50
-samples, vmax/vmin < 1.3, or a median |a| < 0.5 m/s^2 (drag signal comparable
-to accel noise/bias; the 3-axis norm is then biased HIGH by the noise, since
-E|a| > |E a| -- on this rocket's low flight, ~6 m/s at burnout, drag is only
-~0.05 m/s^2 and the default sim IMU noise (0.12 m/s^2/axis) swamps it).
+Accuracy on this rocket (apogee ~15 m, <= 6 m/s before the landing burn): ONE
+flight with default sensor noise gives COAST sigma ~ +/-300-560 % (useless), DESCENT
+~ +/-40-80 %, JOINT ~ +/-25-45 %; the tool warns when sigma > 25 % of CdA. A higher
+or faster flight, or POOLING several logs (pass several; the POOLED line
+fits one CdA with a per-log accel bias), is needed for a good number.
+Other warnings: < 50 samples, vmax/vmin < 1.3, CdA <= 0.
 
 Plant drag model (tools/sim/plant.py, checked): drag is -0.5*RHO*cda*v*|v|
 along the body Z axis with v the body-frame AIRSPEED (velocity minus wind),
@@ -65,7 +75,6 @@ AXIAL_SIGN = {"COAST": -1.0, "DESCENT": 1.0}
 COAST_SKIP_S = 0.25
 MIN_SAMPLES = 50
 MIN_SPEED_RATIO = 1.3
-MIN_SIGNAL_MPS2 = 0.5
 PLANT_FINDING = ("plant.py drag model: one cda_m2 for ascent and descent, "
                  "along body Z on airspeed (wind incl.), RHO fixed 1.225; no "
                  "leg/crossflow body drag in flight except the small normal force")
@@ -140,22 +149,43 @@ def fit_phase(rows, mass, rho, phase):
     return out
 
 
-def fit_joint(phases, mass, rho):
-    """Both phases at once with ONE CdA and ONE shared accel Z bias:
-    az = s*c*v^2 + b with s = -1 (coast) / +1 (descent). The opposite signs
-    separate the bias from the drag, so it is better conditioned than either
-    phase alone -- but it assumes nose-first and tail-first CdA are equal.
-    Returns (cda, sigma) or None."""
-    xs, ys = [], []
-    for name, f in phases.items():
-        if f["n"] >= 3:
-            xs += [AXIAL_SIGN[name] * x for x in f["v2"]]
-            ys += f["az"]
-    if len(xs) < 3 or not any(x > 0 for x in xs) or not any(x < 0 for x in xs):
+def fit_pooled(phase_sets, mass, rho):
+    """Pool any number of logs (each a {"COAST": fit, "DESCENT": fit} dict):
+    ONE CdA, one accel bias PER LOG, az = s*c*v^2 + b_log (b_log removed by
+    centring each log's samples). With a single log this is the JOINT fit:
+    opposite signs for coast/descent separate bias from drag. Assumes equal
+    nose-first/tail-first CdA. Returns (cda, sigma) or None."""
+    sxx = sxy = 0.0
+    n = nlogs = 0
+    groups = []
+    for phases in phase_sets:
+        xs, ys = [], []
+        for name, f in phases.items():
+            if f["n"] >= 3:
+                xs += [AXIAL_SIGN[name] * x for x in f["v2"]]
+                ys += f["az"]
+        if len(xs) < 3:
+            continue
+        mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+        gx = [x - mx for x in xs]
+        gy = [y - my for y in ys]
+        groups.append((gx, gy))
+        sxx += sum(x * x for x in gx)
+        sxy += sum(x * y for x, y in zip(gx, gy))
+        n += len(xs)
+        nlogs += 1
+    if nlogs == 0 or sxx <= 0:
         return None
+    c = sxy / sxx
+    rss = sum((y - c * x) ** 2 for gx, gy in groups for x, y in zip(gx, gy))
     k = 2.0 * mass / rho
-    c, _, sc = _ols(xs, ys)
-    return k * c, k * sc
+    return k * c, k * math.sqrt(rss / max(n - nlogs - 1, 1) / sxx)
+
+
+def fit_joint(phases, mass, rho):
+    """Both phases of ONE log, one CdA and one shared accel bias (see
+    fit_pooled). Returns (cda, sigma) or None."""
+    return fit_pooled([phases], mass, rho)
 
 
 def fit_log(path, mass, rho):
@@ -165,9 +195,15 @@ def fit_log(path, mass, rho):
     return {name: fit_phase(rs, mass, rho, name) for name, rs in ph.items()}
 
 
+def _warn_sigma(j):
+    if j[0] <= 0 or j[1] > SIGMA_WARN * j[0]:
+        print("        WARNING: +/-1 sigma wider than +/-%.0f %%: "
+              "estimate not trustworthy" % (100 * SIGMA_WARN))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("log")
+    ap.add_argument("log", nargs="+", help="one or more flight logs")
     ap.add_argument("--mass", type=float, default=None,
                     help="kg (default MASS_DESCENT_KG from src/config.h)")
     g = ap.add_mutually_exclusive_group()
@@ -183,25 +219,43 @@ def main(argv=None):
     print("mass %.4f kg, rho %.4f kg/m^3, |kf_vel| >= %.1f m/s, accel in m/s^2" %
           (mass, rho, V_MIN))
     print(PLANT_FINDING)
-    res = fit_log(a.log, mass, rho)
-    for name, f in res.items():
-        if f["n"] == 0:
-            print("%-7s no samples (|kf_vel| >= %.1f m/s)" % (name, V_MIN))
-            continue
-        print("%-7s CdA fit %.5f m^2  median %.5f  n=%d  stderr %.5f  IQR %.5f  "
-              "v %.1f..%.1f m/s" % (name, f["cda"], f["median"], f["n"], f["stderr"],
-                                   f["iqr"], f["vmin"], f["vmax"]))
-        for w in f["warnings"]:
-            print("        WARNING: %s" % w)
+    allres = []
+    for path in a.log:
+        res = fit_log(path, mass, rho)
+        allres.append(res)
+        if len(a.log) > 1:
+            print("--- %s" % path)
+        for name, f in res.items():
+            if f["n"] < 3:
+                print("%-7s no samples (|kf_vel| >= %.1f m/s)" % (name, V_MIN))
+                continue
+            print("%-7s CdA %.5f +/- %.5f m^2 (intercept fit, 1 sigma)  origin fit %.5f  "
+                  "median per-sample %.5f  n=%d  accel bias %+.3f m/s^2  v %.1f..%.1f m/s"
+                  % (name, f["cda"], f["cda_sigma"], f["cda_origin"], f["median"], f["n"],
+                     f["bias"], f["vmin"], f["vmax"]))
+            for w in f["warnings"]:
+                print("        WARNING: %s" % w)
+        j = fit_joint(res, mass, rho)
+        if j:
+            print("JOINT   CdA %.5f +/- %.5f m^2 (both phases, shared accel bias; "
+                  "assumes equal nose-first/tail-first CdA)" % j)
+            _warn_sigma(j)
+    if len(allres) > 1:
+        p = fit_pooled(allres, mass, rho)
+        if p:
+            print("=== POOLED over %d logs: CdA %.5f +/- %.5f m^2 (one CdA, one accel "
+                  "bias per log)" % ((len(allres),) + p))
+            _warn_sigma(p)
+    res = allres[0]
     if a.plot:
         import matplotlib.pyplot as plt
         for name, f in res.items():
-            if f["n"]:
-                plt.scatter(f["v2"], f["y"], s=4, label=name)
+            if f["n"] >= 3:
+                plt.scatter(f["v2"], [f["k"] * d for d in f["ad"]], s=4, label=name)
                 xs = [0, max(f["v2"])]
-                plt.plot(xs, [f["cda"] * x for x in xs])
+                plt.plot(xs, [f["cda"] * x + f["k"] * f["bias"] for x in xs])
         plt.xlabel("v^2 (m^2/s^2)")
-        plt.ylabel("2 m |a| / rho (m^2 * m^2/s^2 / ...)")
+        plt.ylabel("2 m a_drag / rho (m^2 * m^2/s^2)")
         plt.legend()
         plt.show()
     return 0
