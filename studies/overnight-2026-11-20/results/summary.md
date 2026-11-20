@@ -11,3 +11,8 @@
 | T4_m0.75 | 600 | 86.0 % | 15.44 / 15.97 / 15.99 | SUCCESS:516 LEGS_BROKEN:39 LEGS_NOT_DOWN:36 LIFTED_OFF:9 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=None |
 | T4_m1.25 | 600 | 62.8 % | 15.44 / 15.97 / 15.99 | SUCCESS:377 LEGS_BROKEN:223 | fw={"BURN_TABLE_MARGIN_M": "1.25f"} plant={"legs_cut_s": 0.75} wind=None |
 | T4_m1.5 | 600 | 44.7 % | 15.44 / 15.97 / 15.99 | LEGS_BROKEN:332 SUCCESS:268 | fw={"BURN_TABLE_MARGIN_M": "1.5f"} plant={"legs_cut_s": 0.75} wind=None |
+| T8_B_kp0.5 | 300 | 80.0 % | 15.41 / 15.97 / 15.98 | SUCCESS:240 LEGS_BROKEN:54 LEGS_NOT_DOWN:4 LIFTED_OFF:2 | fw={"GAINS_BOOST": {"kp": "0.3f"}} plant={"legs_cut_s": 0.75} wind=None |
+| T8_B_kd0.5 | 300 | 78.7 % | 15.42 / 15.97 / 15.98 | SUCCESS:236 LEGS_BROKEN:58 LEGS_NOT_DOWN:3 LIFTED_OFF:3 | fw={"GAINS_BOOST": {"kd": "0.055f"}} plant={"legs_cut_s": 0.75} wind=None |
+| T8_B_kp0.75 | 300 | 79.7 % | 15.42 / 15.97 / 15.98 | SUCCESS:239 LEGS_BROKEN:55 LEGS_NOT_DOWN:3 LIFTED_OFF:3 | fw={"GAINS_BOOST": {"kp": "0.45f"}} plant={"legs_cut_s": 0.75} wind=None |
+| T8_B_kd0.75 | 300 | 79.0 % | 15.42 / 15.97 / 15.98 | SUCCESS:237 LEGS_BROKEN:57 LEGS_NOT_DOWN:3 LIFTED_OFF:3 | fw={"GAINS_BOOST": {"kd": "0.0825f"}} plant={"legs_cut_s": 0.75} wind=None |
+| T8_B_kp1.5 | 300 | 79.3 % | 15.42 / 15.98 / 15.98 | SUCCESS:238 LEGS_BROKEN:56 LEGS_NOT_DOWN:3 LIFTED_OFF:2 TIPPED_OVER:1 | fw={"GAINS_BOOST": {"kp": "0.9f"}} plant={"legs_cut_s": 0.75} wind=None |
