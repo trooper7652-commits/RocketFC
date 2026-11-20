@@ -35,7 +35,8 @@
 // speaks it. The normal CLI on Serial is unchanged.
 //
 // LIVE (closed-loop bench sim, tools/hil/live/): `live <pad ax ay az> <baro
-// var> <legs 0|1>` switches the channel to framed binary packets
+// var> <pyros>` (pyros: 0 both simulated, 1 live legs, 2 live landing e-match,
+// 3 both live) switches the channel to framed binary packets
 //   0xA5 0x5A <type> <len> <payload...> <crc8 over type,len,payload>
 // PC -> Teensy:  'F' HilLiveFrame (the PC plant's sensors, streamed live)
 //                'C' text command (live ... | live off | status | abort |
@@ -47,7 +48,9 @@
 // The PC steps its plant to each telemetry packet's millis() (with the
 // commands it already holds), takes the new commands, and answers with the
 // sensor frame for that moment, which the next tick uses -- so the real
-// flight code flies the simulated rocket with one tick (2 ms) of extra lag. No frame for kLiveLinkLossMs, a frame
+// flight code flies the simulated rocket with one tick (2 ms) of extra lag.
+// The PC's simulated nozzle follows the angle the gimbal servos were really
+// sent (50 Hz writes, see hil_hooks.h). No frame for kLiveLinkLossMs, a frame
 // flagged IMU-fail, or 0.5 s of identical data (the same frozen-sensor check
 // the flight build runs on the real IMU) make imuOk() false, exactly as a
 // failed IMU would. Pyro gates: see hil_hooks.h.
@@ -59,6 +62,7 @@
 #include "../config.h"
 #include "../core/flight_core.h"
 #include "actuators.h"
+#include "config_store.h"
 #include "hil_hooks.h"
 #include "sensors_real.h"
 
@@ -73,6 +77,7 @@
 extern FlightCore core;  // RocketFC.ino's instance; only state()/mode() are read
 extern CoreOutput co;    // RocketFC.ino's latest core outputs (LIVE telemetry)
 extern Actuators act;    // RocketFC.ino's actuators (LIVE telemetry)
+extern ConfigStore store;  // RocketFC.ino's EEPROM settings (`reboot` saves the chute)
 
 // LIVE packets (little-endian; must match tools/hil/live/link.py).
 struct HilLiveFrame {
@@ -100,11 +105,21 @@ struct HilTelemetry {
   float pX, iX, dX, pY, iY, dY;  // TVC PID terms, rad
   uint16_t staleTicks;    // ticks since the last new frame
   uint16_t periodUs;      // this tick's period (the core's dt), us
+  float gimWrX, gimWrY;   // the angle last sent to the gimbal servos (50 Hz), rad
+  uint16_t servoWrites;   // gimbal servo write counter
+  uint8_t pyroBits;       // see PyroBits
+  uint8_t reserved;
 };
-static_assert(sizeof(HilTelemetry) == 80, "HilTelemetry must match tools/hil/live/link.py");
+static_assert(sizeof(HilTelemetry) == 92, "HilTelemetry must match tools/hil/live/link.py");
+
+enum PyroBits : uint8_t {
+  kPyroLandPin = 1,      // landing e-match gate really driven now (live landing)
+  kPyroLiveLegs = 2,     // live legs opted in
+  kPyroLiveLand = 4,     // live landing e-match opted in
+};
 
 enum LiveBits : uint8_t {
-  kBitLandFire = 1,      // landing e-match fire pulse active (pin NOT driven in LIVE)
+  kBitLandFire = 1,      // landing e-match fire pulse active (pin driven only if live landing)
   kBitLegsCmd = 2,       // leg nichrome commanded on
   kBitLegsPin = 4,       // ... and really powered (live legs)
   kBitChuteRelease = 8,  // core's chute release level
@@ -297,6 +312,15 @@ class Sensors : public RealSensors {
     t.dY = core.control().dTerm(1);
     t.staleTicks = liveStaleTicks_;
     t.periodUs = (uint16_t)(g_hilPeriodUs > 65535u ? 65535u : g_hilPeriodUs);
+    t.gimWrX = g_hilGimWrX;
+    t.gimWrY = g_hilGimWrY;
+    t.servoWrites = g_hilServoWrites;
+    uint8_t p = 0;
+    if (act.pyroActive() && g_hilLiveLand) p |= kPyroLandPin;
+    if (g_hilLiveLegs) p |= kPyroLiveLegs;
+    if (g_hilLiveLand) p |= kPyroLiveLand;
+    t.pyroBits = p;
+    t.reserved = 0;
     sendPacket('T', reinterpret_cast<const uint8_t*>(&t), sizeof(t));
   }
 
@@ -439,9 +463,9 @@ class Sensors : public RealSensors {
       reply("OK hello");
     } else if (!strcmp(cmd, "status")) {
       if (mode_ == Mode::LIVE)
-        reply("OK status mode=LIVE core=%s realImu=%s legs=%s rx=%lu crcErr=%lu txDrop=%lu link=%s",
+        reply("OK status mode=LIVE core=%s realImu=%s pyros=%s rx=%lu crcErr=%lu txDrop=%lu link=%s",
               FlightStateMachine::stateName(st), RealSensors::imuOk() ? "ok" : "FAIL",
-              g_hilLiveLegs ? "LIVE" : "sim", (unsigned long)liveFramesRx_,
+              pyroName(), (unsigned long)liveFramesRx_,
               (unsigned long)liveCrcErrors_, (unsigned long)liveTxDropped_,
               liveLinkLost_ ? "LOST" : "ok");
       else
@@ -450,8 +474,9 @@ class Sensors : public RealSensors {
               FlightStateMachine::stateName(st), RealSensors::imuOk() ? "ok" : "FAIL",
               imuLogOpen_ ? imuLogName_ : "-");
     } else if (!strcmp(cmd, "live")) {
-      // live <pad ax> <pad ay> <pad az> <baro var> <legs 0|1>   (enter LIVE)
-      // live off                                                (leave, IDLE only)
+      // live <pad ax> <pad ay> <pad az> <baro var> <pyros>   (enter LIVE)
+      //   pyros: 0 both simulated, 1 live legs, 2 live landing e-match, 3 both
+      // live off                                              (leave, IDLE only)
       const char* a1 = strtok_r(nullptr, " ", &save);
       if (a1 && !strcmp(a1, "off")) {
         if (mode_ != Mode::LIVE) return fail("live off: not in LIVE");
@@ -459,6 +484,7 @@ class Sensors : public RealSensors {
         reply("OK live off");
         g_hilLive = false;
         g_hilLiveLegs = false;
+        g_hilLiveLand = false;
         mode_ = Mode::PASSTHRU;
         return;
       }
@@ -468,12 +494,13 @@ class Sensors : public RealSensors {
       const char* tok[5] = {a1, nullptr, nullptr, nullptr, nullptr};
       for (int i = 1; i < 5; ++i) tok[i] = strtok_r(nullptr, " ", &save);
       for (int i = 0; i < 5; ++i)
-        if (!tok[i]) return fail("live: needs <pad ax> <pad ay> <pad az> <baro var> <legs 0|1>");
+        if (!tok[i]) return fail("live: needs <pad ax> <pad ay> <pad az> <baro var> <pyros 0-3>");
       // Sent again (framed) once the PC has calibrated on the pad: then only
-      // the pad level / baro variance used by `arm` and the legs choice change.
+      // the pad level / baro variance used by `arm` and the pyro choice change.
       padAccel_ = Vec3{(float)atof(tok[0]), (float)atof(tok[1]), (float)atof(tok[2])};
       baroVar_ = (float)atof(tok[3]);
-      const bool legs = atoi(tok[4]) != 0;
+      const int pyros = atoi(tok[4]);
+      if (pyros < 0 || pyros > 3) return fail("live: pyros must be 0-3");
       const bool wasLive = mode_ == Mode::LIVE;
       if (!wasLive) {  // a fresh session: hold a still pad until the first frame
         a_ = padAccel_;
@@ -491,11 +518,12 @@ class Sensors : public RealSensors {
         liveTxDue_ = false;
         ps_ = 0;
       }
-      g_hilLiveLegs = legs;
+      g_hilLiveLegs = (pyros & 1) != 0;
+      g_hilLiveLand = (pyros & 2) != 0;
       g_hilLive = true;
-      if (!wasLive) SerialUSB1.printf("OK live legs=%s\n", legs ? "LIVE" : "sim");
+      if (!wasLive) SerialUSB1.printf("OK live pyros=%s\n", pyroName());
       mode_ = Mode::LIVE;
-      if (wasLive) reply("OK live legs=%s", legs ? "LIVE" : "sim");
+      if (wasLive) reply("OK live pyros=%s", pyroName());
     } else if (!strcmp(cmd, "load")) {
       // load <frames> <crc32 hex> <mode 0|1> <pad ax> <pad ay> <pad az> <baro var>
       if (st != FlightState::IDLE) return fail("load only when IDLE (disarmed)");
@@ -554,7 +582,17 @@ class Sensors : public RealSensors {
     } else if (!strcmp(cmd, "reboot")) {
       if (co.inFlight || st == FlightState::ARMED)
         return fail("reboot: not while armed or in flight");
-      reply("OK reboot");
+      // Keep the chute latch where it is: save it as the flight code does at
+      // log close, and mark the reset as planned (hil_hooks.h) so the boot
+      // restores it instead of opening it.
+      store.setChuteLast((uint8_t)act.chutePos(), act.chuteDeg());
+      const Actuators::ChutePos cp = act.chutePos();
+      reply("OK reboot (chute stays at %s, %.0f deg)",
+            cp == Actuators::ChutePos::LOCK      ? "LOCK"
+            : cp == Actuators::ChutePos::SET     ? "SET"
+            : cp == Actuators::ChutePos::RELEASE ? "OPEN"
+                                                 : "JOG",
+            act.chuteDeg());
       SerialUSB1.flush();
       delay(50);
       hilReboot();
@@ -564,6 +602,13 @@ class Sensors : public RealSensors {
   }
 
   void fail(const char* why) { reply("ERR %s", why); }
+
+  static const char* pyroName() {
+    if (g_hilLiveLegs && g_hilLiveLand) return "legs+landing";
+    if (g_hilLiveLegs) return "legs";
+    if (g_hilLiveLand) return "landing";
+    return "sim";
+  }
 
   void receiveFrames(uint32_t ms) {
     uint8_t* dst = reinterpret_cast<uint8_t*>(g_hilFrames);

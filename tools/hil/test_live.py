@@ -7,8 +7,12 @@ PC in real time, with its two USB serial ports on TCP sockets. Each case
 starts a fresh host_live on its own ports and flies it with live_run.py, the
 same way the bench would, then checks:
 
-  every case   the twin agrees (live_run.py exit 0) and the host never
-               printed `landing gate ON` (LIVE never drives the e-match)
+  every case   the twin agrees (live_run.py exit 0); the landing e-match
+               gate is driven ONLY in the live-landing cases and the leg
+               gate only in the live-legs cases (simulated channels never
+               drive their pin). Every run uses the Run sequence (Prepare ->
+               Arm -> countdown -> Launch), and the simulated nozzle follows
+               the 50 Hz servo writes (the twin replays the same hold).
   chute        CHUTE_TEST flight, chute out at apogee, soft touchdown
   land         FULL_LANDING, landing motor fired, legs simulated: the leg
                gate is never driven
@@ -25,6 +29,13 @@ same way the bench would, then checks:
   imu-frozen   the same IMU sample for 2 s: IMU_FAIL abort, chute
   op-abort     operator abort 1.5 s after launch: IMU_FAIL abort, chute
   live-legs    land mode with live legs: `legs gate ON` is printed
+  live-landing land mode with the live landing e-match: `landing gate ON`
+               is printed at FIRE_LANDING, the leg gate never
+  live-both    both pyro channels live: both gates
+  randomize    the sim's Monte Carlo spreads (seed 3): the twin agrees
+  reboot       chute mode, then `reboot` after the flight log closes; the
+               restarted host boots the chute latch where it was (SET),
+               not OPEN
 
     python tools/hil/test_live.py
     python tools/hil/test_live.py --only land dud   # some cases
@@ -73,6 +84,15 @@ CASES = [
      {"abort": "IMU_FAIL", "releases_min": 1, "fired": False}),
     ("live-legs", ["--mode", "land", "--live-legs"],
      {"abort": None, "final": "TOUCHDOWN", "fired": True, "legs_gate": True}),
+    ("live-landing", ["--mode", "land", "--live-landing"],
+     {"abort": None, "final": "TOUCHDOWN", "fired": True, "landing_gate": True,
+      "legs_gate": False}),
+    ("live-both", ["--mode", "land", "--live-legs", "--live-landing"],
+     {"abort": None, "final": "TOUCHDOWN", "fired": True, "landing_gate": True,
+      "legs_gate": True}),
+    ("randomize", ["--mode", "land", "--randomize", "--seed", "3"], {}),
+    ("reboot", ["--mode", "chute", "--reboot-after"],
+     {"abort": None, "releases": 1, "chute_kept": "SET (loading)"}),
 ]
 
 
@@ -149,7 +169,36 @@ def run_case(exe, env, idx, name, args, sketch):
         f.write(out)
     with open(host_out) as f:
         host_txt = f.read()
+    if "--reboot-after" in args:
+        host_txt += "\n" + reboot_boot_console(exe, env, sd, port)
     return code, out, host_txt, sd
+
+
+def reboot_boot_console(exe, env, sd, port):
+    """After a HIL `reboot` the PC host has exited (the Teensy would reset).
+    Start it again on the same SD/EEPROM folder, let it boot, and return its
+    boot console -- the chute latch line says where the latch came up."""
+    out = os.path.join(sd, "host_stdout_after_reboot.txt")
+    with open(out, "w") as hf:
+        host = subprocess.Popen([exe, sd, str(port), "15"], stdout=hf, stderr=subprocess.STDOUT,
+                                env=env)
+        time.sleep(0.5)
+        socks = []
+        try:
+            for p in (port, port + 1):
+                socks.append(socket.create_connection(("127.0.0.1", p), timeout=5))
+            time.sleep(2.5)            # boot report
+        finally:
+            for s in socks:
+                s.close()
+        try:
+            host.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            host.kill()
+            host.wait()
+    with open(os.path.join(sd, "host_console.txt"), encoding="utf-8", errors="replace") as f:
+        boot = [ln for ln in f.read().splitlines() if "chute latch:" in ln]
+    return "AFTER REBOOT: " + (boot[0] if boot else "(no chute latch line)")
 
 
 def check(name, want, code, out, host_txt):
@@ -157,11 +206,17 @@ def check(name, want, code, out, host_txt):
     if code != 0:
         probs.append("live_run exit {} ({})".format(
             code, "twin differs" if code == 1 else "link/sequence error"))
-    if "landing gate ON" in host_txt:
-        probs.append("LANDING GATE DRIVEN")
+    land_on = "landing gate ON" in host_txt
+    if land_on != want.get("landing_gate", False):
+        probs.append("LANDING GATE DRIVEN" if land_on else "landing gate never driven")
     legs_on = "legs gate ON" in host_txt
-    if "legs_gate" in want and legs_on != want["legs_gate"]:
+    if legs_on != want.get("legs_gate", False):
         probs.append("legs gate {}".format("driven" if legs_on else "never driven"))
+    if "chute_kept" in want:
+        m = re.search(r"AFTER REBOOT: (.*)", host_txt)
+        line = m.group(1) if m else ""
+        if want["chute_kept"] not in line or "restored last position" not in line:
+            probs.append("after reboot: " + (line or "no boot report"))
     m = re.search(r"^saved (.+)$", out, re.M)
     s = {}
     if m:
@@ -236,12 +291,12 @@ def main():
             make_hil.generate()
 
     print("\n==== closed-loop HIL PC test ({}) ====".format(PROFILE))
-    print("{:<12}{:<6}{:<13}{:>4}{:>8}{:>9}{:>7}{:>8}{:>7}{:>7}{:>6}".format(
+    print("{:<14}{:<6}{:<13}{:>4}{:>8}{:>9}{:>7}{:>8}{:>7}{:>7}{:>6}".format(
         "case", "", "abort", "rel", "apogee", "td m/s", "twin", "pkts", "gap ms", "stale",
         "batch"))
     for name, ok, probs, i in results:
         L = i["link"]
-        print("{:<12}{:<6}{:<13}{:>4}{:>8}{:>9}{:>7}{:>8}{:>7.1f}{:>7}{:>6}".format(
+        print("{:<14}{:<6}{:<13}{:>4}{:>8}{:>9}{:>7}{:>8}{:>7.1f}{:>7}{:>6}".format(
             name, "PASS" if ok else "FAIL", i["abort"], str(i["releases"]),
             "{:.2f}".format(i["apogee"]) if i["apogee"] is not None else "-",
             "{:.2f}".format(i["td"]) if i["td"] is not None else "-", i["twin"],

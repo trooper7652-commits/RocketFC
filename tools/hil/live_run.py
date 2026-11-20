@@ -14,9 +14,17 @@ the PC build, tools/hil/test/host_live.cpp). Sequence: stream a still pad for
 --pad-s, Prepare (pad calibration, `mode`, `chute lock`), `arm` (~4 s), wait
 --countdown-s, Launch, fly until landed. Ctrl-C sends the operator abort.
 
---live-legs really powers the leg nichrome when the flight computer commands
-it (you must type LEGS); otherwise both pyro channels are simulated and no
-pyro gate pin is ever driven. Each run is saved to tools/hil/sessions/.
+The bench runs the real flight code; only the sensors are simulated. The gimbal
+and chute servos move as in flight. The two pyro channels are simulated
+unless opted in, each on its own:
+  --live-legs     the leg nichrome is really powered when commanded (type LEGS)
+  --live-landing  the landing e-match channel really fires at FIRE_LANDING
+                  (type FIRE): an e-match in a holder, or a motor on a stand.
+A live channel also uses its real continuity and pyro-battery reading at
+`arm`, exactly as in flight. --randomize flies the sim's Monte Carlo spreads
+for --seed. --reboot-after waits for the flight log to close and reboots the
+Teensy (the chute servo stays where it is). Each run is saved to
+tools/hil/sessions/.
 Exit code: 0 if the twin agrees, 1 if it differs, 2 on a link/sequence error.
 """
 import argparse
@@ -56,12 +64,17 @@ def main():
     ap.add_argument("--set", nargs="*", default=[], metavar="FIELD=VALUE")
     ap.add_argument("--live-legs", action="store_true",
                     help="really power the leg nichrome (asks you to type LEGS)")
+    ap.add_argument("--live-landing", action="store_true",
+                    help="really fire the landing e-match channel (asks you to type FIRE)")
+    ap.add_argument("--randomize", action="store_true",
+                    help="the sim's Monte Carlo spreads for this seed (scenario.randomize)")
     ap.add_argument("--pad-s", type=float, default=3.0)
     ap.add_argument("--countdown-s", type=float, default=1.0)
     ap.add_argument("--abort-at", type=float, default=None,
                     help="send the operator abort this many s after launch")
     ap.add_argument("--reboot-after", action="store_true",
-                    help="reboot the Teensy when done (ready for the next run)")
+                    help="when done, wait for the flight log to close, then reboot the Teensy "
+                         "(the chute servo stays where it is)")
     ap.add_argument("--no-twin", action="store_true")
     ap.add_argument("--sketch", default=None, help="HIL build tree (default tools/hil/build/RocketFC_HIL)")
     args = ap.parse_args()
@@ -74,10 +87,20 @@ def main():
     parse_set(args.set, scen)
     if args.live_legs:
         scen.live_legs = True
-    if scen.live_legs and not (args.port or "").startswith("socket://"):
+    if args.live_landing:
+        scen.live_landing = True
+    if args.randomize:
+        scen.randomize = True
+    pc_build = (args.port or "").startswith("socket://")
+    if scen.live_legs and not pc_build:
         print("LIVE LEGS: the leg nichrome WILL be powered when the flight computer "
               "commands it (pyro LiPo + band on the bench, clear of anything).")
         if input("Type LEGS to continue: ").strip() != "LEGS":
+            raise SystemExit("not confirmed")
+    if scen.live_landing and not pc_build:
+        print("LIVE LANDING: the landing e-match channel WILL fire at the flight computer's "
+              "FIRE_LANDING (whatever is connected: e-match in a holder, a motor on a stand).")
+        if input("Type FIRE to continue: ").strip() != "FIRE":
             raise SystemExit("not confirmed")
 
     kw = {"sketch_dir": args.sketch} if args.sketch else {}
@@ -94,19 +117,9 @@ def main():
             if r.error:
                 raise runner_mod.RunnerError(r.error)
             if step == "pad" and now - t_step >= args.pad_s:
-                r.prepare()
-                step = "preparing"
-            elif step == "preparing" and r.phase == "prepared" and r.task is None:
-                r.arm()
-                step = "arming"
-            elif step == "arming" and r.phase == "armed" and r.state == "ARMED":
-                step = "countdown"
-                t_step = now
-            elif step == "countdown" and now - t_step >= args.countdown_s:
-                r.launch()
-                step = "flight"
-                t_step = now
-            elif (step == "flight" and args.abort_at is not None and r.fl.launch_t is not None
+                r.run(args.countdown_s)   # Prepare -> Arm -> countdown -> Launch
+                step = "running"
+            elif (step == "running" and args.abort_at is not None and r.fl.launch_t is not None
                   and r.t - r.fl.launch_t >= args.abort_at):
                 r.abort()
                 step = "aborted"
@@ -129,14 +142,23 @@ def main():
             r.close()
         return 2
 
+    flight_stats = dict(r.stats)   # the flight's link numbers (saving pauses the loop)
     res, path = r.finish(save=True, close=not args.reboot_after)
     if args.reboot_after:
-        r.reboot()
+        r.reboot_when_safe()
+        end = time.time() + 15.0
+        try:
+            while not r.rebooted and not r.error and time.time() < end:
+                r.poll()
+        except (ConnectionError, OSError):
+            pass
+        if not r.rebooted:
+            print("ERROR: no reboot ({})".format(r.error or "timed out"), flush=True)
         time.sleep(0.2)
         r.close()
     s = res["summary"]
     print("link: {telemetry} packets, max gap {max_gap_ms:.1f} ms, max stale {max_stale} ticks, "
-          "max batch {max_batch}, crc errors {crc_errors}".format(**r.stats))
+          "max batch {max_batch}, crc errors {crc_errors}".format(**flight_stats))
     o = s.get("landing_outcome") or {}
     print("apogee {:.2f} m | touchdown {} | abort {} | chute releases {} | {}".format(
         s.get("apogee_h") or 0.0,

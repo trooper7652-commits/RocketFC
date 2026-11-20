@@ -80,7 +80,18 @@ class LiveFlight:
 
     def __init__(self, scen, vcfg, snap):
         v = copy.deepcopy(vcfg)
-        v.wind_mps = scen.wind_mps
+        self.dispersions = None
+        if scen.randomize:
+            # The sim's Monte Carlo draw for this seed (same RNG order as
+            # mc_batch.build_jobs / sweep.monte_carlo), wind included.
+            import mc_batch
+            import sweep
+            v, self.dispersions, _, _ = mc_batch.build_jobs(
+                v, list(sweep.DISPERSION_FIELDS), scen.seed, 1, [])[0]
+        else:
+            v.wind_mps = scen.wind_mps
+        if scen.legs_cut_s >= 0:
+            v.legs_cut_s = scen.legs_cut_s
         v.gust_mps = scen.gust_mps if scen.gust_s > 0 else 0.0
         v.gust_time_s = 0.0          # set at launch (scenario times are launch-relative)
         v.gust_dur_s = max(scen.gust_s, 1e-3)
@@ -395,6 +406,8 @@ def summarize(fl, rows, events, mode):
         "touchdown_hspeed_mps": fl.touchdown_hspeed,
         "abort_state": abort_state,
         "launch_t": fl.launch_t,
+        "dispersions": fl.dispersions,
+        "legs_cut_s": fl.v.legs_cut_s,
     }
     if fl.pl.ground is not None:
         s["ground"] = fl.pl.ground_summary()

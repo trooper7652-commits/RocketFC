@@ -20,6 +20,7 @@ runner_process() runs a Runner in its own process for the dashboard
 """
 import datetime
 import json
+import math
 import os
 import queue
 import threading
@@ -61,7 +62,8 @@ class Runner:
         self.hil = self.con = None
         self.dec = link.Decoder()
         self.live = False          # past this session's `OK live`
-        self.ticks = []            # [ms, period_us, seq, bits, state] per telemetry packet
+        self.ticks = []            # [ms, period_us, seq, bits, state, servo writes] per packet
+        self._chute_pos = None     # last chute servo position seen (for the log)
         self.rows = []             # run.simulate()-style rows, from Prepare on
         self.events = []           # {t, ms, code, value} from the console
         self.replies = []          # 'M' replies
@@ -80,6 +82,7 @@ class Runner:
         self.landed_t = None
         self.td_state_t = None     # plant time the Teensy first reported TOUCHDOWN
         self.record = False
+        self.rebooted = False
         self._abort_sent = False
         self._con_seen = 0
         self.stats = {"telemetry": 0, "frames_sent": 0, "max_stale": 0, "max_gap_ms": 0.0,
@@ -130,15 +133,19 @@ class Runner:
                 sent_off = True
                 self.hil.write(link.cmd_packet("live off"))
         self.phase = "pad"
-        self.log("LIVE{}: sim pyros{}, streaming a still pad".format(
+        self.log("LIVE{}: pyros {}, streaming a still pad".format(
             " (restarted an old session)" if stale_session else "",
-            "" if not self.sc.live_legs else " + LIVE LEGS (nichrome really powered)"))
+            link.pyro_label(self.sc.live_legs, self.sc.live_landing)))
+        if self.sc.live_legs:
+            self.log("  LIVE LEGS: the leg nichrome WILL be powered when the flight code commands it")
+        if self.sc.live_landing:
+            self.log("  LIVE LANDING: the landing e-match channel WILL fire at FIRE_LANDING")
 
     _saw_old_telemetry = False
 
     def _live_line(self, pad, var):
         return "live {:.6f} {:.6f} {:.6f} {:.6g} {}".format(
-            pad[0], pad[1], pad[2], var, 1 if self.sc.live_legs else 0)
+            pad[0], pad[1], pad[2], var, link.pyro_mask(self.sc.live_legs, self.sc.live_landing))
 
     # ------------------------------------------------------------- loop
     def poll(self):
@@ -219,9 +226,16 @@ class Runner:
         self.pending.clear()
         fl.advance(t)
         b = tel["bits"]
-        fl.command(tel["gimbal_x"], tel["gimbal_y"], b & link.BIT_LAND_FIRE,
+        # The simulated nozzle follows what the gimbal servos were really sent
+        # (the 50 Hz writes), not the 500 Hz core command (twin.py does the same).
+        fl.command(tel["gim_wr_x"], tel["gim_wr_y"], b & link.BIT_LAND_FIRE,
                    b & link.BIT_CHUTE_RELEASE, b & link.BIT_LEGS_CMD, t)
         self.state = _state_name(tel["state"])
+        cp = link.CHUTE_POS.get(tel["chute_pos"], "?")
+        if cp != self._chute_pos:
+            if self._chute_pos is not None:
+                self.log("chute servo -> {} ({} us)".format(cp, tel["us_chute"]))
+            self._chute_pos = cp
         if self.state == "ARMED" and "arm_tick" not in self.timeline:
             self.timeline["arm_tick"] = k
         if self._abort_sent and "abort_ms" not in self.timeline and b & link.BIT_IMU_BAD:
@@ -239,13 +253,16 @@ class Runner:
                 out[key] = tel[key]
             r = fl.row(out)
             r.update({"us_chute": tel["us_chute"],
-                      "chute_pos": link.CHUTE_POS.get(tel["chute_pos"], "?"),
+                      "chute_pos": cp,
+                      "gimbal_x_wr": tel["gim_wr_x"], "gimbal_y_wr": tel["gim_wr_y"],
                       "legs_pin": bool(b & link.BIT_LEGS_PIN),
+                      "land_pin": bool(tel["pyro_bits"] & link.PYRO_LAND_PIN),
                       "imu_bad": bool(b & link.BIT_IMU_BAD),
                       "tvc_active": bool(b & link.BIT_TVC_ACTIVE),
                       "stale": tel["stale"], "seq": tel["seq"]})
             self.rows.append(r)
-        self.ticks.append([tel["ms"], tel["period_us"], tel["seq"], b, tel["state"]])
+        self.ticks.append([tel["ms"], tel["period_us"], tel["seq"], b, tel["state"],
+                           tel["servo_writes"]])
         self.stats["telemetry"] += 1
         if fl.cal is not None:  # the pad's first ticks have no frame yet
             self.stats["max_stale"] = max(self.stats["max_stale"], tel["stale"])
@@ -349,16 +366,104 @@ class Runner:
         if self.fl.launch_t is None:
             self.pending.add("launch")
 
+    def run(self, countdown_s=10.0):
+        """The whole pad sequence: Prepare (if needed) -> Arm (if needed) ->
+        countdown -> Launch. Abort stops it at any point."""
+        self._busy()
+        if self.phase not in ("pad", "prepared", "armed"):
+            raise RunnerError("run: only from the pad")
+        self.task = self._run(countdown_s)
+
+    def _run(self, countdown_s):
+        if self.phase == "pad":
+            yield from self._prepare()
+        if self.phase == "prepared":
+            yield from self._arm()
+        while self.state != "ARMED":   # the ARMED telemetry follows the console line
+            yield
+        self.log("countdown {:g} s (Abort stops it)".format(countdown_s))
+        end = time.time() + countdown_s
+        shown = None
+        while True:
+            left = end - time.time()
+            if left <= 0:
+                break
+            if self.state != "ARMED":
+                raise RunnerError("countdown stopped: the Teensy is {}".format(self.state))
+            sec = int(math.ceil(left))
+            if sec != shown and (sec <= 5 or sec % 5 == 0):
+                self.log("T-{}".format(sec))
+            shown = sec
+            yield
+        self.launch()
+
+    def servo_check(self):
+        """Pad only (IDLE): the CLI's gimbal sweep, then the chute servo
+        SET -> LOCK, so you can see and hear all three servos move."""
+        self._busy()
+        if self.state != "IDLE":
+            raise RunnerError("servo check: only disarmed on the pad (Teensy is {})".format(self.state))
+        self.task = self._servo_check()
+
+    def _servo_check(self):
+        self._new_console()
+        self.log("servo check: gimbal sweep (axis A, then B, ~5 s), then chute SET -> LOCK")
+        self.con.send("servotest")
+        yield from self._wait_console(("sweep done",), 20.0, fails=("only allowed",))
+        self.con.send("chute set")
+        yield from self._wait_console(("chute latch at SET",), 3.0, fails=("only allowed",))
+        end = time.time() + 1.5
+        while time.time() < end:
+            yield
+        self.con.send("chute lock")
+        yield from self._wait_console(("chute latch LOCKED",), 3.0, fails=("only allowed",))
+        self.log("servo check done. No movement? Check the flight battery / UBEC and the "
+                 "servo leads, not the sim.")
+
+    def console(self, text):
+        """Any line to the RocketFC CLI (its replies appear in console.lines)."""
+        text = text.strip()
+        if text:
+            self.con.send(text)
+
     def abort(self):
-        """Operator abort: the HIL shim fails the IMU, so a core in flight
-        aborts to the chute (on the pad: disarm on the console)."""
+        """Before launch: stop the run sequence (and disarm if armed). After
+        launch: operator abort -- the HIL shim fails the IMU, so the core
+        aborts to the chute, as it would on a real IMU failure."""
+        if self.fl.launch_t is None:
+            self.pending.discard("launch")
+            self.task = None
+            if self.state == "ARMED":
+                self.con.send("disarm")
+                self.log("abort on the pad: run stopped, disarmed")
+            else:
+                self.log("abort on the pad: run stopped")
+            return
         self.hil.write(link.cmd_packet("abort"))
         self._abort_sent = True
         self.log("abort sent")
 
     def reboot(self):
         self.hil.write(link.cmd_packet("reboot"))
-        self.log("reboot sent")
+        self.log("reboot sent (the chute servo stays where it is)")
+
+    def reboot_when_safe(self, timeout=10.0):
+        """After a flight: wait for the Teensy to close its SD flight log
+        (4 s after TOUCHDOWN), then `reboot` -- ready for the next run with
+        the chute servo left where it is. Keep calling poll() meanwhile."""
+        self.task = self._reboot_when_safe(timeout)
+
+    def _reboot_when_safe(self, timeout):
+        end = time.time() + timeout
+        while time.time() < end:
+            if any("flight log closed" in ln for ln in self.con.lines[-40:]):
+                break
+            yield
+        if self.state in ("ARMED",) or (self.last_tel and self.last_tel["bits"] & link.BIT_IN_FLIGHT):
+            raise RunnerError("not rebooting: the Teensy is still {} -- reboot or power-cycle it "
+                              "yourself when it's safe".format(self.state))
+        self.reboot()
+        self.rebooted = True
 
     def _check_end(self):
         fl = self.fl
@@ -480,15 +585,63 @@ def run_twin(session_dir):
 # ------------------------------------------------- dashboard process
 LIVE_KEYS = ("t", "state", "h_true", "v_true", "x_true", "y_true", "quat_true", "quat_est",
              "kf_alt", "kf_vel", "tilt_deg", "gimbal_x_cmd", "gimbal_y_cmd", "gimbal_x_act",
-             "gimbal_y_act", "chute_frac", "legs_frac", "thrust_n", "chute_release",
-             "chute_detected", "legs_burn", "fire_landing", "chute_pos", "imu_bad")
+             "gimbal_y_act", "gimbal_x_wr", "gimbal_y_wr", "chute_frac", "legs_frac",
+             "thrust_n", "chute_release", "chute_detected", "legs_burn", "fire_landing",
+             "chute_pos", "imu_bad")
 
 
-def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKETCH_DIR):
-    """Dashboard side: ("prepare"|"arm"|"launch"|"abort"|"reboot"|"stop") in,
-    ("log", text) / ("status", dict) / ("rows", [row...]) / ("finished",
-    session_dir) / ("twin", (session_dir, text, ok)) / ("error", text) /
-    ("closed", None) out."""
+def _chute_deg_fn(sketch_dir):
+    """Chute servo pulse (us) -> angle, from the build's config.h."""
+    import burn_table
+    cfg = os.path.join(sketch_dir, "src", "config.h")
+    try:
+        u0 = burn_table.config_value("CHUTE_SERVO_US_AT_0_DEG", cfg)
+        u180 = burn_table.config_value("CHUTE_SERVO_US_AT_180_DEG", cfg)
+    except (KeyError, OSError):
+        u0, u180 = 500.0, 2500.0
+    return lambda us: (us - u0) * 180.0 / (u180 - u0)
+
+
+def live_status(r, chute_deg, flight_stats=None):
+    """The dashboard's live status: link, phase, servos, pyros."""
+    tel = r.last_tel or {}
+    b = tel.get("bits", 0)
+    pb = tel.get("pyro_bits", 0)
+    return {
+        "phase": r.phase, "state": r.state, "t": r.t, "hz": r.rate_hz,
+        "launch_t": r.fl.launch_t, "origin": r.origin(),
+        "kf_alt": tel.get("kf_alt"), "h_true": r.fl.pl.state.pos.z,
+        "tilt": tel.get("tilt_deg"), "chute": link.CHUTE_POS.get(tel.get("chute_pos")),
+        "stats": flight_stats or dict(r.stats), "error": r.error, "busy": r.task is not None,
+        # servos: what was really sent (angle and pulse)
+        "gim_max_deg": math.degrees(r.snap["gimbalMaxRad"]),
+        "wr_x_deg": math.degrees(tel.get("gim_wr_x", 0.0)),
+        "wr_y_deg": math.degrees(tel.get("gim_wr_y", 0.0)),
+        "us_a": tel.get("us_a"), "us_b": tel.get("us_b"), "us_chute": tel.get("us_chute"),
+        "chute_deg": chute_deg(tel["us_chute"]) if tel.get("us_chute") else None,
+        # pyros: commanded by the flight code / really powered / opted in
+        "land_cmd": bool(b & link.BIT_LAND_FIRE), "land_pin": bool(pb & link.PYRO_LAND_PIN),
+        "legs_cmd": bool(b & link.BIT_LEGS_CMD), "legs_pin": bool(b & link.BIT_LEGS_PIN),
+        "live_legs": r.sc.live_legs, "live_landing": r.sc.live_landing,
+        "legs": r.sc.live_legs,
+    }
+
+
+def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKETCH_DIR,
+                   opts=None):
+    """The dashboard's bench loop, in its own process.
+
+    In:  "run" | "prepare" | "arm" | "launch" | "abort" | "servo_check" |
+         "reboot" | "stop" | ("console", text)
+    Out: ("log", text) / ("console", line) / ("event", {name, t, value}) /
+         ("status", dict) / ("rows", [row...]) / ("finished", session_dir) /
+         ("rebooting", None) / ("error", text) / ("closed", None)
+    opts: {"countdown_s": 10.0, "auto_reboot": True} -- after the flight is
+    saved, wait for the SD log to close, then reboot the Teensy (the chute
+    servo stays put) and report "rebooting" so the dashboard reconnects.
+    """
+    opts = dict({"countdown_s": 10.0, "auto_reboot": False}, **(opts or {}))
+
     def log(m):
         out_q.put(("log", m))
 
@@ -502,7 +655,10 @@ def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKET
             r.close()
         out_q.put(("closed", None))
         return
+    chute_deg = _chute_deg_fn(sketch_dir)
     sent = 0
+    con_sent = 0
+    ev_sent = 0
     last = 0.0
     finished = False
     flight_stats = None
@@ -518,12 +674,29 @@ def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKET
                 if cmd == "stop":
                     break
                 try:
-                    if cmd == "reboot":
+                    if isinstance(cmd, tuple) and cmd[0] == "console":
+                        r.console(cmd[1])
+                    elif cmd == "reboot":
                         r.reboot()
+                        out_q.put(("rebooting", None))
                         break
-                    getattr(r, cmd)()
+                    elif cmd == "run":
+                        r.run(opts["countdown_s"])
+                    else:
+                        getattr(r, cmd)()
                 except RunnerError as e:
                     log("ERROR: " + str(e))
+            # everything the Teensy's console printed, and its flight events
+            lines = r.con.lines
+            while con_sent < len(lines):
+                out_q.put(("console", lines[con_sent]))
+                con_sent += 1
+            while ev_sent < len(r.events):
+                e = r.events[ev_sent]
+                ev_sent += 1
+                rel = (e["t"] - r.fl.launch_t) if r.fl.launch_t is not None else None
+                out_q.put(("event", {"name": getattr(e["code"], "name", str(e["code"])),
+                                     "t": rel, "value": e["value"]}))
             now = time.perf_counter()
             if now - last >= 0.05:
                 last = now
@@ -531,14 +704,7 @@ def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKET
                 if new:
                     sent += 5 * len(new)
                     out_q.put(("rows", [{k: x.get(k) for k in LIVE_KEYS} for x in new]))
-                tel = r.last_tel or {}
-                out_q.put(("status", {
-                    "phase": r.phase, "state": r.state, "t": r.t, "hz": r.rate_hz,
-                    "launch_t": r.fl.launch_t, "origin": r.origin(),
-                    "kf_alt": tel.get("kf_alt"), "h_true": r.fl.pl.state.pos.z,
-                    "tilt": tel.get("tilt_deg"), "chute": link.CHUTE_POS.get(tel.get("chute_pos")),
-                    "stats": flight_stats or dict(r.stats), "legs": r.sc.live_legs,
-                    "error": r.error}))
+                out_q.put(("status", live_status(r, chute_deg, flight_stats)))
             if r.flight_over and not finished:
                 # Save in a thread: writing the session takes ~0.4 s, and the
                 # loop must keep answering the Teensy meanwhile (else its IMU
@@ -550,6 +716,12 @@ def runner_process(cmd_q, out_q, hil, console, scen_dict, sketch_dir=flight.SKET
                     r.sessions_dir, _session_copy(r.session_data()), r.result(), r.origin(),
                     out_q, log))
                 saver.start()
+                if opts["auto_reboot"]:
+                    log("auto reboot once the Teensy has closed its flight log ...")
+                    r.reboot_when_safe()
+            if finished and r.rebooted:
+                out_q.put(("rebooting", None))
+                break
     except Exception as e:
         import traceback
         out_q.put(("error", "runner crashed: {}\n{}".format(e, traceback.format_exc())))

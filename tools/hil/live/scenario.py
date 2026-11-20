@@ -9,7 +9,13 @@ import json
 @dataclasses.dataclass
 class Scenario:
     mode: str = "chute"                 # "chute" (CHUTE_TEST) or "land" (FULL_LANDING)
-    seed: int = 1                       # sensor noise + field slope
+    seed: int = 1                       # sensor noise + field slope (+ the random spreads)
+    randomize: bool = False             # the sim's Monte Carlo spreads (sweep.DISPERSION_FIELDS:
+                                        # descent mass, inertia, drag, CG, gimbal pivot, servo
+                                        # speed/lag, ignition delay; wind -4..+4 m/s) drawn from
+                                        # the seed as tools/sim/mc_batch.py does; replaces wind_mps
+    # -- legs --
+    legs_cut_s: float = -1.0            # nichrome on -> band parts (s); < 0 = profile (0.75 s)
     # -- wind --
     wind_mps: float = 0.0               # steady, along +x
     gust_mps: float = 0.0
@@ -36,6 +42,7 @@ class Scenario:
     baro_dropout_s: float = 0.0
     # -- hardware --
     live_legs: bool = False             # really power the leg nichrome (bench, opt-in)
+    live_landing: bool = False          # really fire the landing e-match channel (opt-in)
     max_flight_s: float = 40.0          # stop this long after launch regardless
 
     def window(self, name, t_rel):
@@ -47,8 +54,12 @@ class Scenario:
     def faults(self):
         """Short human list of what's injected (for titles and reports)."""
         out = []
-        if self.wind_mps:
+        if self.randomize:
+            out.append("randomized (seed {})".format(self.seed))
+        elif self.wind_mps:
             out.append("wind {:g} m/s".format(self.wind_mps))
+        if self.legs_cut_s >= 0:
+            out.append("band cut {:g} s".format(self.legs_cut_s))
         if self.gust_mps and self.gust_s > 0:
             out.append("gust {:g} m/s @ {:g} s".format(self.gust_mps, self.gust_at_s))
         if self.dud_landing_igniter:
@@ -69,6 +80,8 @@ class Scenario:
                     getattr(self, name + "_at_s") + getattr(self, name + "_s")))
         if self.live_legs:
             out.append("LIVE LEGS")
+        if self.live_landing:
+            out.append("LIVE LANDING E-MATCH")
         return out or ["nominal"]
 
     def to_dict(self):

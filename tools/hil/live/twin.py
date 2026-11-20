@@ -67,8 +67,17 @@ def fly(session, scen, dll=None, profile=None):
     launch_tick = tl.get("launch_tick")
     abort_ms = tl.get("abort_ms")
     record_from = cal_tick if cal_tick is not None else 0
+    # The gimbal servos get a new angle only at the 50 Hz servo writes (the
+    # loop writes co.gimbal AFTER sending that tick's telemetry), so a write
+    # counted between ticks k-1 and k carries the core's tick k-1 output.
+    # Sessions without the counter (older ones) fall back to the 500 Hz output.
+    held = (0.0, 0.0)
+    prev_out = (0.0, 0.0)
+    prev_writes = ticks[0][5] if ticks and len(ticks[0]) > 5 else None
     try:
-        for k, (ms, period_us, seq, _bits, _state) in enumerate(ticks):
+        for k, tick in enumerate(ticks):
+            ms, period_us, seq = tick[0], tick[1], tick[2]
+            writes = tick[5] if len(tick) > 5 else None
             t = (ms - ms0) / 1000.0
             if k == cal_tick:
                 fl.finish_cal()
@@ -113,7 +122,13 @@ def fly(session, scen, dll=None, profile=None):
             for ev in fc.pop_events():
                 events.append({"t": (ev["ms"] - ms0) / 1000.0, "ms": ev["ms"],
                                "code": ev["code"], "value": ev["value"]})
-            fl.command(out["gimbal_x"], out["gimbal_y"], out["fire_landing"],
+            if writes is None:
+                held = (out["gimbal_x"], out["gimbal_y"])
+            elif writes != prev_writes:
+                held = prev_out
+                prev_writes = writes
+            prev_out = (out["gimbal_x"], out["gimbal_y"])
+            fl.command(held[0], held[1], out["fire_landing"],
                        out["chute_release"], out["legs_burn"], t)
             if k >= record_from:
                 o = dict(out, state=out["state"].name, quat=out["quat"])

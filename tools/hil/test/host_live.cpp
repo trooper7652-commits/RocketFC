@@ -94,6 +94,7 @@ int main(int argc, char** argv) {
   const int port = atoi(argv[2]);
   const double maxS = argc > 3 ? atof(argv[3]) : 0.0;
   g_conLog = fopen((g_sdRoot + "/host_console.txt").c_str(), "wb");
+  EEPROM.attach(g_sdRoot + "/eeprom.bin");  // survives `reboot` (a fresh host process)
 
   if (!net_init()) { ::printf("host: socket init failed\n"); return 1; }
   const net_sock lc = net_listen(port), lh = net_listen(port + 1);

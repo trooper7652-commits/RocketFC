@@ -21,8 +21,8 @@ SYNC = b"\xA5\x5A"
 PJRC_VID = 0x16C0
 
 FRAME = struct.Struct("<HBB7f")                  # HilLiveFrame, 32 bytes
-TELEM = struct.Struct("<IHBBffHHHBBfff4f6fHH")   # HilTelemetry, 80 bytes
-assert FRAME.size == 32 and TELEM.size == 80
+TELEM = struct.Struct("<IHBBffHHHBBfff4f6fHHffHBB")   # HilTelemetry, 92 bytes
+assert FRAME.size == 32 and TELEM.size == 92
 
 FLAG_BARO = 1
 FLAG_IMU_FAIL = 2
@@ -35,6 +35,21 @@ BIT_CHUTE_DETECTED = 16
 BIT_IN_FLIGHT = 32
 BIT_TVC_ACTIVE = 64
 BIT_IMU_BAD = 128
+
+# pyro_bits (HilTelemetry.pyroBits)
+PYRO_LAND_PIN = 1    # landing e-match gate really driven now (live landing)
+PYRO_LIVE_LEGS = 2   # live legs opted in
+PYRO_LIVE_LAND = 4   # live landing e-match opted in
+
+
+def pyro_mask(live_legs, live_landing):
+    """The `live` command's pyro argument: 0 sim, 1 legs, 2 landing, 3 both."""
+    return (1 if live_legs else 0) | (2 if live_landing else 0)
+
+
+def pyro_label(live_legs, live_landing):
+    return {0: "sim", 1: "LIVE LEGS", 2: "LIVE LANDING", 3: "LIVE LEGS + LANDING"}[
+        pyro_mask(live_legs, live_landing)]
 
 CHUTE_POS = {0: "LOCK", 1: "OPEN", 2: "JOG", 3: "SET"}
 
@@ -77,14 +92,16 @@ def cmd_packet(text):
 def parse_telem(payload):
     (ms, seq, state, abort, gx, gy, us_a, us_b, us_chute, chute_pos, bits,
      kf_alt, kf_vel, tilt, qw, qx, qy, qz, p_x, i_x, d_x, p_y, i_y, d_y,
-     stale, period_us) = TELEM.unpack(payload)
+     stale, period_us, wr_x, wr_y, writes, pyro_bits, _r) = TELEM.unpack(payload)
     return {"ms": ms, "seq": seq, "state": state, "abort": abort,
             "gimbal_x": gx, "gimbal_y": gy, "us_a": us_a, "us_b": us_b,
             "us_chute": us_chute, "chute_pos": chute_pos, "bits": bits,
             "kf_alt": kf_alt, "kf_vel": kf_vel, "tilt_deg": tilt,
             "quat": (qw, qx, qy, qz),
             "p_x": p_x, "i_x": i_x, "d_x": d_x, "p_y": p_y, "i_y": i_y, "d_y": d_y,
-            "stale": stale, "period_us": period_us}
+            "stale": stale, "period_us": period_us,
+            "gim_wr_x": wr_x, "gim_wr_y": wr_y, "servo_writes": writes,
+            "pyro_bits": pyro_bits}
 
 
 class Decoder:
