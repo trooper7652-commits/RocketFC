@@ -37,9 +37,9 @@ import vehicle  # noqa: E402
 
 PRESETS = {
     "nominal": {"wind": 0.0, "seed": 1},
-    # gust: (m/s, start in s after launch, length s); 2.9 s is just past the
-    # E18W apogee (detected ~2.86 s after launch, fire ~3.4 s)
-    "abort": {"wind": 4.0, "seed": 1, "gust": (12.0, 2.9, 0.5)},
+    # gust: (m/s, start in s after launch, length s); 2.3 s is just after the
+    # E18W burnout at 1.477 kg (burnout ~1.9 s, apogee ~2.7 s, fire ~3.1 s)
+    "abort": {"wind": 4.0, "seed": 1, "gust": (12.0, 2.3, 0.5)},
 }
 TRACES_DIR = os.path.join(hil_trace.HIL_DIR, "traces")
 ARM_T = 2.6   # sim time the harness arms at (run.simulate's default)

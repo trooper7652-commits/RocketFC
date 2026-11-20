@@ -42,8 +42,8 @@ class VehicleConfig:
     # ---- Mass & geometry ---------------------------------------------------
     # [MEASURE] Defaults mirror src/config.h so the sim starts from what the
     # flight computer itself already assumes; see default_vehicle_config().
-    mass_pad_kg: float = 1.400         # on the pad, everything loaded (kg)
-    mass_descent_kg: float = 1.3793    # after ascent burnout, landing motor still loaded (kg)
+    mass_pad_kg: float = 1.477         # on the pad, everything loaded (kg): 1.343 dry + 2 E18W + adapters
+    mass_descent_kg: float = 1.4563    # after ascent burnout, landing motor still loaded (kg)
 
     length_m: float = 1.20             # [ESTIMATE] overall airframe length (m):
                                        #   nose tip to tail. Measure directly.

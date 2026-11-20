@@ -326,11 +326,12 @@ The landing motor is a fixed-impulse solid motor — it cannot throttle.
 
 - **Motors: AeroTech E18W for both ascent and landing** (RMS-24/40 reloads
   in 24→29 mm adapters, both flown *plugged*, `tools/motors/AeroTech_E18W.eng`,
-  the thrustcurve.org cert curve). At the 1.4 kg liftoff mass the apogee is
-  ~18 m, inside the 100 ft limit, and the low-thrust landing motor is
-  forgiving: 79.5 % upright landings in the closed-loop sim with mass and
-  ignition delay measured (motor-chute-study-2026-11-04). The older F10/F15
-  pair flew to ~73 m.
+  the thrustcurve.org cert curve). At the measured liftoff mass, 1.477 kg
+  (1.343 kg dry + both motors and adapters, 2026-11-20), the apogee is
+  ~15.5 m, inside the 100 ft limit, and the low-thrust landing motor is
+  forgiving: ~79 % upright landings in the closed-loop sim with mass and
+  ignition delay measured (600-flight check; motor-chute-study-2026-11-04
+  had 79.5 % at the 1.4 kg guess). The older F10/F15 pair flew to ~73 m.
 - With the mass and ignition delay only guessed, the same sim drops to ~28 %:
   weigh the rocket.
 - **±10% motor-to-motor thrust variation → ~9–15 m/s touchdown error** if
