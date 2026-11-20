@@ -61,3 +61,22 @@
 | T6_d0.90_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | LEGS_NOT_DOWN:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.9} wind=None |
 | T6_d1.00_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 1.0} wind=None |
 | T6_dud_w400 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"DUD_WINDOW_MS": "400.0f"} plant={"legs_cut_s": 0.75} wind=None |
+| T6g_d0.62 | 300 | 99.3 % | 15.42 / 15.98 / 15.98 | SUCCESS:298 LEGS_BROKEN:2 | fw={"STUDY_DUD_GUARD": "1"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.62} wind=None |
+| T6g_d0.80 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"STUDY_DUD_GUARD": "1"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.8} wind=None |
+| T4_m0 | 600 | 42.5 % | 15.44 / 15.97 / 15.99 | LEGS_NOT_DOWN:320 SUCCESS:255 LIFTED_OFF:25 | fw={"BURN_TABLE_MARGIN_M": "0.0f"} plant={"legs_cut_s": 0.75} wind=None |
+| T4_m0.75_fresh | 2000 | 85.2 % | 15.47 / 15.96 / 16.00 | SUCCESS:1703 LEGS_BROKEN:149 LEGS_NOT_DOWN:110 LIFTED_OFF:38 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=None |
+| T6g_d0.84 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"STUDY_DUD_GUARD": "1"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.84} wind=None |
+| T4_m0.75_w0 | 300 | 84.7 % | 15.42 / 15.98 / 15.98 | SUCCESS:254 LEGS_BROKEN:32 LEGS_NOT_DOWN:13 LIFTED_OFF:1 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=0.0 |
+| T5_base_w5 | 600 | 86.2 % | 15.43 / 15.97 / 15.99 | SUCCESS:517 LEGS_NOT_DOWN:34 TIPPED_OVER:21 LEGS_BROKEN:16 LIFTED_OFF:12 | fw={} plant={"legs_cut_s": 0.75} wind=5.0 |
+| T6g_d0.90 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"STUDY_DUD_GUARD": "1"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.9} wind=None |
+| T4_m0.75_w2 | 300 | 85.0 % | 15.42 / 15.97 / 15.98 | SUCCESS:255 LEGS_BROKEN:23 LEGS_NOT_DOWN:15 LIFTED_OFF:7 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=2.0 |
+| T6g_d1.00 | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"STUDY_DUD_GUARD": "1"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 1.0} wind=None |
+| T4_m0.75_w4 | 300 | 82.7 % | 15.42 / 15.97 / 15.98 | SUCCESS:248 LEGS_NOT_DOWN:41 LIFTED_OFF:6 LEGS_BROKEN:3 TIPPED_OVER:2 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=4.0 |
+| T6g_dud | 300 | 0.0 % | 15.42 / 15.98 / 15.98 | NO_POWERED_LANDING:300 | fw={"STUDY_DUD_GUARD": "1"} plant={"legs_cut_s": 0.75} wind=None |
+| T5_base_w6 | 600 | 74.8 % | 15.43 / 15.96 / 15.98 | SUCCESS:449 LEGS_NOT_DOWN:102 TIPPED_OVER:17 NO_POWERED_LANDING:16 LIFTED_OFF:13 LEGS_BROKEN:3 | fw={} plant={"legs_cut_s": 0.75} wind=6.0 |
+| T4_m0.75_w5 | 300 | 73.3 % | 15.41 / 15.97 / 15.98 | SUCCESS:220 LEGS_NOT_DOWN:63 TIPPED_OVER:9 LIFTED_OFF:8 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=5.0 |
+| T8g_kp0.75_kd0.35 | 300 | 83.3 % | 15.42 / 15.98 / 15.98 | SUCCESS:250 LEGS_BROKEN:35 LEGS_NOT_DOWN:8 TIPPED_OVER:4 LIFTED_OFF:3 | fw={"GAINS_LANDING": {"kp": "0.6f", "kd": "0.0455f"}} plant={"legs_cut_s": 0.75} wind=None |
+| T4_m0.75_w6 | 300 | 58.7 % | 15.41 / 15.97 / 15.98 | SUCCESS:176 LEGS_NOT_DOWN:98 LIFTED_OFF:11 NO_POWERED_LANDING:8 TIPPED_OVER:7 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=6.0 |
+| T5_mw5_w5 | 600 | 86.2 % | 15.43 / 15.97 / 15.99 | SUCCESS:517 LEGS_NOT_DOWN:34 TIPPED_OVER:21 LEGS_BROKEN:16 LIFTED_OFF:12 | fw={"MISSED_WINDOW_ALT_M": "5.0f"} plant={"legs_cut_s": 0.75} wind=5.0 |
+| T8g_kp0.75_kd0.5 | 300 | 81.0 % | 15.42 / 15.98 / 15.98 | SUCCESS:243 LEGS_BROKEN:48 LEGS_NOT_DOWN:6 LIFTED_OFF:2 TIPPED_OVER:1 | fw={"GAINS_LANDING": {"kp": "0.6f", "kd": "0.065f"}} plant={"legs_cut_s": 0.75} wind=None |
+| T4_m0.75_w7 | 300 | 21.0 % | 15.41 / 15.96 / 15.97 | NO_POWERED_LANDING:154 LEGS_NOT_DOWN:71 SUCCESS:63 TIPPED_OVER:6 LIFTED_OFF:6 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75} wind=7.0 |
