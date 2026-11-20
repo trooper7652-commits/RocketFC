@@ -96,3 +96,4 @@
 | T6m_d0.58 | 300 | 7.7 % | 15.42 / 15.98 / 15.98 | LEGS_BROKEN:277 SUCCESS:23 | fw={"BURN_TABLE_MARGIN_M": "0.75f"} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.58} wind=None |
 | T8g_kp1.5_kd0.35 | 300 | 74.7 % | 15.42 / 15.98 / 15.98 | SUCCESS:224 LIFTED_OFF:32 LEGS_BROKEN:22 LEGS_NOT_DOWN:14 TIPPED_OVER:8 | fw={"GAINS_LANDING": {"kp": "1.2f", "kd": "0.0455f"}} plant={"legs_cut_s": 0.75} wind=None |
 | T4_m0.875_w7 | 300 | 28.3 % | 15.41 / 15.96 / 15.97 | NO_POWERED_LANDING:144 SUCCESS:85 LEGS_NOT_DOWN:63 TIPPED_OVER:4 LIFTED_OFF:4 | fw={"BURN_TABLE_MARGIN_M": "0.875f"} plant={"legs_cut_s": 0.75} wind=7.0 |
+| T6_d0.60_w200 | 300 | 39.0 % | 15.42 / 15.98 / 15.98 | LEGS_BROKEN:183 SUCCESS:117 | fw={} plant={"legs_cut_s": 0.75, "ignition_delay_s": 0.6} wind=None |
