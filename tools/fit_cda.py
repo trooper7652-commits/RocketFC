@@ -154,16 +154,19 @@ def fit_pooled(phase_sets, mass, rho):
     ONE CdA, one accel bias PER LOG, az = s*c*v^2 + b_log (b_log removed by
     centring each log's samples). With a single log this is the JOINT fit:
     opposite signs for coast/descent separate bias from drag. Assumes equal
-    nose-first/tail-first CdA. Returns (cda, sigma) or None."""
+    nose-first/tail-first CdA. Returns (cda, sigma), or None unless both a
+    coast and a descent phase are present somewhere."""
     sxx = sxy = 0.0
     n = nlogs = 0
     groups = []
+    signs = set()
     for phases in phase_sets:
         xs, ys = [], []
         for name, f in phases.items():
             if f["n"] >= 3:
                 xs += [AXIAL_SIGN[name] * x for x in f["v2"]]
                 ys += f["az"]
+                signs.add(AXIAL_SIGN[name])
         if len(xs) < 3:
             continue
         mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
@@ -174,7 +177,7 @@ def fit_pooled(phase_sets, mass, rho):
         sxy += sum(x * y for x, y in zip(gx, gy))
         n += len(xs)
         nlogs += 1
-    if nlogs == 0 or sxx <= 0:
+    if nlogs == 0 or sxx <= 0 or len(signs) < 2:
         return None
     c = sxy / sxx
     rss = sum((y - c * x) ** 2 for gx, gy in groups for x, y in zip(gx, gy))
