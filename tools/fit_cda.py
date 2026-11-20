@@ -233,7 +233,7 @@ def main(argv=None):
                 print("%-7s no samples (|kf_vel| >= %.1f m/s)" % (name, V_MIN))
                 continue
             print("%-7s CdA %.5f +/- %.5f m^2 (intercept fit, 1 sigma)  origin fit %.5f  "
-                  "median per-sample %.5f  n=%d  accel bias %+.3f m/s^2  v %.1f..%.1f m/s"
+                  "median per-sample %.5f  n=%d  drag-axis offset %+.3f m/s^2  v %.1f..%.1f m/s"
                   % (name, f["cda"], f["cda_sigma"], f["cda_origin"], f["median"], f["n"],
                      f["bias"], f["vmin"], f["vmax"]))
             for w in f["warnings"]:

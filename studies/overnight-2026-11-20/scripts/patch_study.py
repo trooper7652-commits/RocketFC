@@ -39,8 +39,9 @@ constexpr float STUDY_WP_D_M = 0.0f;
 // IGNITE_CONFIRM_G, above TOUCHDOWN_ALT_M) hold the TVC (landing gains) until
 // burnout / touchdown. The chute release is unchanged. 1 = on.
 constexpr int   STUDY_DUD_GUARD = 0;
-constexpr float STUDY_DUD_GUARD_WIN_MS = 250.0f;  // thrust latch only within this long after the DUD abort
-constexpr float STUDY_DUD_CONFIRM_MS = 20.0f;     // accel must stay above IGNITE_CONFIRM_G this long
+constexpr float STUDY_DUD_GUARD_WIN_MS = 400.0f;  // thrust latch only within this long after the DUD abort
+constexpr float STUDY_DUD_RISE_G = 1.0f;          // ...and only on a jump of this much in |accel| (g)
+constexpr float STUDY_DUD_RISE_MS = 30.0f;        // ...within this long (rejects the slower canopy ramp)
 // T7a: D2 predicted-tilt interlock (software-landing study S4a): also allow
 // the fire when tilt >= TILT_IGNITE_MAX_DEG if the tilt predicted at thrust
 // onset (tilt + filtered tilt rate * IGNITION_DELAY_MS) is below it and the
@@ -140,9 +141,8 @@ sub(fsm, """      enter(FlightState::TOUCHDOWN, in.ms);
         abortReason_ == AbortReason::DUD_IGNITER && !dudBurnedOut_) {
       if (!dudThrust_ &&
           (float)(in.ms - dudAbortMs_) <= cfg::STUDY_DUD_GUARD_WIN_MS &&
-          dbDudOn_.check(in.accelNormG > cfg::IGNITE_CONFIRM_G &&
-                             in.kfAlt > cfg::TOUCHDOWN_ALT_M,
-                         in.dtMs, cfg::STUDY_DUD_CONFIRM_MS)) {
+          in.accelNormG > cfg::IGNITE_CONFIRM_G &&
+          in.kfAlt > cfg::TOUCHDOWN_ALT_M && dudRise(in)) {
         dudThrust_ = true;
         dbDud_.reset();
       }
@@ -161,11 +161,34 @@ sub(fsm, """      enter(FlightState::TOUCHDOWN, in.ms);
 
   void updateAbort(""")
 
+sub(fsm, "    trackMaxAlt(in);\n    stepChute(in);\n",
+    "    trackMaxAlt(in);\n    stepChute(in);\n    if (cfg::STUDY_DUD_GUARD != 0) dudPush(in.accelNormG);  // STUDY\n")
+sub(fsm, "  void updateAbort(const FsmInput& in) {\n",
+    """  // STUDY T6: ring of per-tick |accel| (g), filled every tick. 32 slots cover
+  // RISE_MS at the sim's 2 ms fast tick (500 Hz = cfg::FAST_HZ; the FSM is
+  // called from the fast loop). Longer RISE_MS or a slower tick is clamped.
+  void dudPush(float g) {
+    dudRing_[dudHead_] = g;
+    dudHead_ = (dudHead_ + 1) % 32;
+    if (dudCnt_ < 1000000) ++dudCnt_;
+  }
+  bool dudRise(const FsmInput& in) const {
+    int n = (int)(cfg::STUDY_DUD_RISE_MS / in.dtMs + 0.5f);
+    if (n < 1) n = 1;
+    if (n > 31) n = 31;
+    if (dudCnt_ <= n) return false;
+    const float ago = dudRing_[(dudHead_ - 1 - n + 64) % 32];
+    return in.accelNormG - ago >= cfg::STUDY_DUD_RISE_G;
+  }
+
+  void updateAbort(const FsmInput& in) {
+""")
 sub(fsm, "    abortReason_ = r;\n", "    abortReason_ = r;\n    dudAbortMs_ = in.ms;  // STUDY (only used for DUD_IGNITER)\n")
 sub(fsm, "  ChuteDeploy chute_;\n",
     "  ChuteDeploy chute_;\n"
     "  // STUDY members (T6 dud guard, T7a D2)\n"
-    "  Debounce dbDud_, dbDudOn_;\n"
+    "  Debounce dbDud_;\n"
+    "  float dudRing_[32] = {0}; int dudHead_ = 0, dudCnt_ = 0;\n"
     "  uint32_t dudAbortMs_ = 0;\n"
     "  bool dudThrust_ = false, dudBurnedOut_ = false;\n"
     "  float d2Prev_ = 0.0f, d2Rate_ = 0.0f;\n"

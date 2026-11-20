@@ -21,9 +21,15 @@ only runs when the table is evaluated. `interlocks` is the D2-modified one when 
 
 ## T6 dud guard (flight_state.h, updateDescentChute)
 Only when `abortReason_ == DUD_IGNITER` and state is DESCENT_CHUTE. The ABORT -> DESCENT_CHUTE path and the chute
-release are untouched. Thrust seen = `accelNormG > IGNITE_CONFIRM_G && kfAlt > TOUCHDOWN_ALT_M` (latched). While
-latched: `out.tvcActive = out.useLandingGains = true` until `accelNormG < BURNOUT_ACCEL_G` for BURNOUT_MS (new
-`dbDud_` Debounce; then latched off for good) or touchdown (the existing touchdown check leaves the state).
+release are untouched. Thrust latch (set once): within `STUDY_DUD_GUARD_WIN_MS` (400) of the abort, `accelNormG >
+IGNITE_CONFIRM_G`, `kfAlt > TOUCHDOWN_ALT_M`, AND a RISE test: `accelNormG - accelNormG(RISE_MS ago) >= RISE_G`
+(30 ms, 1.0 g; per-tick ring buffer of 32 slots filled every tick, 2 ms ticks = 500 Hz fast loop). Reason: the
+canopy opening ramp also passes 1.3 g about 140 ms after the release (it fooled a plain threshold and a 250 ms
+window), but it rises over ~120 ms; a motor onset jumps ~1.5 g in ~40 ms. No debounce is used.
+While latched: `out.tvcActive = out.useLandingGains = true` until `accelNormG < BURNOUT_ACCEL_G` for BURNOUT_MS (new
+`dbDud_`; then latched off for good) or touchdown (the existing touchdown check leaves the state).
+Verified (seed 101..103 n=100): STUDY_DUD=1 (never lights) guard-on == guard-off on 300/300 flights; late lights at
+plant delay 0.84 / 0.90 / 1.00 re-enable TVC in 64 / 94 / 41 of 100 flights (fewer at 1.00: the light comes late, often below 3 m).
 flight_core.h needed no change: its control path already runs on `fo.tvcActive` / `fo.useLandingGains`
 (DRIFT lean included). No events are pushed (kept out of the log on purpose, so sim handlers see nothing new).
 Caveats: ChuteDeploy's canopy detector can read the late thrust as a canopy and stop re-cycling the latch

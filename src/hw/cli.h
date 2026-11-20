@@ -282,7 +282,10 @@ class Cli {
     ChuteServo last = dep.servoCmd();
     uint32_t next = t0;
     bool first = true, done = false;
-    while (!done && millis() - t0 < 3000) {
+    // Timeout: the whole wiggle plus 1 s of slack, from the same dwells.
+    const uint32_t limitMs = (uint32_t)(cfg::CHUTE_WIG_FIRST_MS +
+        cfg::CHUTE_WIG_CYCLES * (cfg::CHUTE_WIG_DOWN_MS + cfg::CHUTE_WIG_UP_MS)) + 1000u;
+    while (!done && millis() - t0 < limitMs) {
       if (ctx_.wdogFeed) ctx_.wdogFeed();
       const uint32_t now = millis();
       if (!first && (int32_t)(now - next) < 0) continue;
