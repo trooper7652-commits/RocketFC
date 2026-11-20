@@ -3,7 +3,7 @@ heartbeat: 2026-11-20T08:32:00Z
 run: 1
 
 # Jobs
-- T0 baseline (holdout 2000, dev 600, wind sweep 0/2/4/5/6/7 screen): todo
+- T0 baseline (holdout 2000, dev 600, wind sweep 0/2/4/5/6/7 screen): doing (dev, w0, w2 done)
 - task 1 chute wiggle: todo
 - task 2 fit_cda.py: todo
 - task 4 burn-table margin: todo
