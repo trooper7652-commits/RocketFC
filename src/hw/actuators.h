@@ -134,21 +134,30 @@ class Actuators {
     if (chuteStowed_) return;
     if (cmd == ChuteServo::OPEN || cmd == ChuteServo::WIG_HIGH) {
       if (cfg::REQUIRE_ARM_SWITCH && !armSwitchOn()) return;
-      if (cmd == ChuteServo::OPEN) {
-        if (chutePos_ != ChutePos::RELEASE) chuteRelease();
-      } else {
-        chuteWiggle(cfg::CHUTE_WIG_HIGH_DEG);
-      }
+      writeChuteCmd(cmd);
       if (chuteFirstReleaseMs_ == 0) chuteFirstReleaseMs_ = ms ? ms : 1;
     } else if (inFlight) {
-      if (cmd == ChuteServo::WIG_LOW) chuteWiggle(cfg::CHUTE_WIG_LOW_DEG);
-      else if (chutePos_ != ChutePos::LOCK) chuteLock();
+      writeChuteCmd(cmd);
     }
     if (chuteFirstReleaseMs_ != 0 &&
         (touchedDown ||
          (float)(ms - chuteFirstReleaseMs_) >= cfg::CHUTE_STOW_AFTER_MS)) {
       chuteSet();
       chuteStowed_ = true;
+    }
+  }
+  // The one ChuteServo -> servo mapping (flight routing above, and the bench
+  // `chute wiggle`). No gating here: the caller decides whether to move.
+  void writeChuteCmd(ChuteServo cmd) {
+    switch (cmd) {
+      case ChuteServo::OPEN:
+        if (chutePos_ != ChutePos::RELEASE) chuteRelease();
+        break;
+      case ChuteServo::WIG_HIGH: chuteWiggle(cfg::CHUTE_WIG_HIGH_DEG); break;
+      case ChuteServo::WIG_LOW: chuteWiggle(cfg::CHUTE_WIG_LOW_DEG); break;
+      case ChuteServo::LOCK:
+        if (chutePos_ != ChutePos::LOCK) chuteLock();
+        break;
     }
   }
   // New flight (called at arm): forget the last flight's release and stow.

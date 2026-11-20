@@ -11,6 +11,7 @@
 #include <Arduino.h>
 
 #include "../config.h"
+#include "../core/chute_deploy.h"
 #include "../core/flight_core.h"
 #include "actuators.h"
 #include "config_store.h"
@@ -264,6 +265,49 @@ class Cli {
                   cfg::CHUTE_BOOT_RESTORE ? "ON" : "off");
   }
 
+  // The in-flight release sequence (ChuteDeploy's wiggle), once, on the ground:
+  // same state machine, same servo mapping (Actuators::writeChuteCmd). Stops
+  // at the last stroke's OPEN; the 1.5 s confirm waits / slow re-cycles are
+  // skipped. Blocking, with the watchdog fed.
+  void chuteWiggleBench() {
+    Actuators& act = ctx_.act;
+    Serial.printf(
+        "wiggle: the in-flight release sequence (%d strokes, ends OPEN) -- "
+        "stand clear, a loaded spring fires.\n",
+        cfg::CHUTE_WIG_CYCLES);
+    ChuteDeploy dep;
+    const uint32_t t0 = millis();
+    dep.update(t0, 2.0f, 0.0f, 100.0f);  // init the LPF
+    dep.start(t0);
+    ChuteServo last = dep.servoCmd();
+    uint32_t next = t0;
+    bool first = true, done = false;
+    while (!done && millis() - t0 < 3000) {
+      if (ctx_.wdogFeed) ctx_.wdogFeed();
+      const uint32_t now = millis();
+      if (!first && (int32_t)(now - next) < 0) continue;
+      next = now + 2;
+      if (!first) dep.update(now, 2.0f, 0.0f, 100.0f);
+      if (first || dep.servoCmd() != last) {
+        last = dep.servoCmd();
+        act.writeChuteCmd(last);
+        const char* nm = last == ChuteServo::OPEN       ? "OPEN"
+                         : last == ChuteServo::WIG_HIGH ? "WIG_HIGH"
+                         : last == ChuteServo::WIG_LOW  ? "WIG_LOW"
+                                                        : "LOCK";
+        Serial.printf("  +%lu ms  %s  %.0f deg (%.0f us)\n",
+                      (unsigned long)(now - t0), nm, act.chuteDeg(),
+                      act.chuteUs());
+      }
+      first = false;
+      done = dep.releases() == 1 + cfg::CHUTE_WIG_CYCLES &&
+             dep.servoCmd() == ChuteServo::OPEN;
+    }
+    saveChuteLast();
+    if (!done) Serial.println("wiggle: TIMED OUT before the last stroke.");
+    Serial.println("done. `chute set`, load, then `chute lock` before arming.");
+  }
+
   void chuteCmd(const char* sub, const char* arg, const char* arg2) {
     Actuators& act = ctx_.act;
     if (sub && !strcmp(sub, "lock")) {
@@ -339,10 +383,12 @@ class Cli {
       act.chuteRelease();
       saveChuteLast();
       Serial.println("released. `chute set`, load, then `chute lock` before arming.");
+    } else if (sub && !strcmp(sub, "wiggle")) {
+      chuteWiggleBench();
     } else {
       printChute();
       Serial.println(
-          "usage: chute lock|set|open|cycle|defaults | deg <n> | us <n> | "
+          "usage: chute lock|set|open|cycle|wiggle|defaults | deg <n> | us <n> | "
           "save lock|set|open [deg]");
     }
   }
@@ -418,6 +464,7 @@ class Cli {
         "  chute save lock|set|open [deg]  save that angle (default: current)\n"
         "  chute defaults    LOCK/SET/OPEN angles back to config.h defaults\n"
         "  chute cycle       one in-flight re-cycle: LOCK dwell -> RELEASE\n"
+        "  chute wiggle      the in-flight wiggle release sequence, once\n"
         "  pyrotest land     test-fire the landing e-match (two-step confirm)\n"
         "  pyrotest legs     test-burn the legs nichrome (two-step confirm)\n"
         "  stop              all pyro outputs off now\n"
