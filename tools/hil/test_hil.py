@@ -9,7 +9,7 @@ and checks the SD files it writes with compare.py:
   nominal    events/gimbal/loop match the reference; the landing gate fires;
              the known injected ignition delay is measured back (+-15 ms)
   abort      the tilt-abort trace: chute released, landing gate never on
-  op-abort   `abort` sent on the HIL port mid-COAST: IMU_FAIL abort, chute
+  op-abort   `abort` sent on the HIL port mid-COAST (5.4 s after go): IMU_FAIL abort, chute
              released, landing gate never on
 
     python tools/hil/test_hil.py
@@ -129,7 +129,9 @@ def main():
         out = "compare + chute released + landing gate never on: {}".format("PASS" if ok else "FAIL")
     results.append(("abort", ok, out))
 
-    ok, out = run_case(exe, env, "op_abort", nominal, abort_at=7.5)
+    # 5.4 s after go = mid-COAST on the E18W trace (launch +3.0, burnout ~4.9,
+    # apogee ~5.85, landing fire +6.54 s: aborts are not taken in the burn)
+    ok, out = run_case(exe, env, "op_abort", nominal, abort_at=5.4)
     if ok:
         import logfile  # tools/sim, on sys.path via hil_trace
         log = logfile.read_log(out[0])

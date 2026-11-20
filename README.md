@@ -16,7 +16,7 @@ accelerometer/gyro and a **GY-63 (MS5611)** barometer.
 - Full flight state machine with debounced transitions, backup timers, and
   layered aborts
 - Landing-burn ignition timed by a precomputed `h_ignite(velocity)` table
-  generated from the Estes F15 thrust curve
+  generated from the AeroTech E18W thrust curve
 - Spring-ejected parachute on a servo latch, with accelerometer
   confirmation and automatic re-cycling of a stuck latch
 - Two pyro channels with continuity sensing and multiple safety
@@ -41,7 +41,7 @@ src/core/             flight LOGIC, pure C++, shared with the PC test harness
   flight_core.h       wires the above together (single entry point)
 src/hw/               Teensy-only drivers: sensors, actuators, logger, CLI...
 tools/
-  burn_table.py       F15 thrust curve -> burn_table.h  (rerun after measuring!)
+  burn_table.py       E18W thrust curve -> burn_table.h  (rerun after measuring!)
   synth_flight.py     generates synthetic test flights
   replay/             PC test harness (g++/MSYS2): make test
   plot_flight.py      post-flight log plots (matplotlib)
@@ -163,8 +163,8 @@ important ones:
 |---|---|
 | `MASS_PAD_KG`, `MASS_DESCENT_KG` | kitchen scale, fully loaded / after ascent burnout |
 | `ASCENT_BURN_MS` | your ascent motor's datasheet or static test |
-| `IGNITION_DELAY_MS` | **static-test the F15 igniter chain**: time from fire command to first thrust. This number directly moves the ignition altitude. |
-| `CDA_M2` | estimate from a drop test or flight log velocity decay |
+| `IGNITION_DELAY_MS` | **static-test the landing-motor igniter chain** (620 ms measured 2026-10-25): time from fire command to first thrust. This number directly moves the ignition altitude. |
+| `CDA_M2` | estimate now in OpenRocket (`Cd × π(d/2)²`); measure from the first flight log: in the unpowered fall the accelerometer reads only drag, `CdA = 2·m·a / (ρ·v²)` |
 | Servo trims, `US_PER_GIMBAL_DEG`, signs | bench: CLI `trim`, `servotest`, direction test below |
 | chute LOCK / SET / OPEN angles (defaults 40° / 120° / 180°) | bench: CLI `chute deg <n>` to fine-tune each position, then `chute save lock` / `chute save set` / `chute save open` (saved in EEPROM; `CHUTE_*_DEG_DEFAULT` are only first-boot defaults) |
 | `CHUTE_SERVO_US_AT_0_DEG`, `_AT_180_DEG` | servo datasheet: pulse width at 0° and 180° (default 500 / 2500 µs) |
@@ -178,6 +178,12 @@ Then regenerate the burn table with your measured values:
 python tools/burn_table.py     # rewrites src/core/burn_table.h
 cd tools/replay && make test   # confirm the logic still passes
 ```
+
+The table (and the simulator) always assume the spent ascent casing is pushed
+out of the tail when the landing motor lights. Its mass comes from the ascent
+motor's .eng file (total − propellant, + the 10 g adapter for a 24 mm motor):
+pass your ascent motor with `--ascent-eng tools/motors/<motor>.eng`
+(default: AeroTech E18W, 46.3 g).
 
 **Servo direction test (do this or the rocket flies into the ground):**
 power up on the bench, run `cal`, then tilt the nose toward body +X.
@@ -246,6 +252,7 @@ as the abort recovery.
 |---|---|
 | `help` / `status` | command list / one-shot health & sensor readout |
 | `stream` | toggle 10 Hz live telemetry |
+| `buzzer off` / `buzzer on` | silence / restore the beeper (LED keeps going). Not saved: a reboot or `arm` turns it back on, so a flight is never silent |
 | `cal` | gyro bias + level calibration (keep still ~4 s) |
 | `zero` | baro ground reference + noise measurement |
 | `arm` / `disarm` | pre-arm checks, then ARMED (launch detect live!) |
@@ -315,16 +322,17 @@ as the abort recovery.
 
 ## 9. Reality check: what dominates landing success
 
-The F15 is a fixed-impulse solid motor — it cannot throttle. The physics
-(from `tools/burn_table.py` with a 0.95 kg descent mass):
+The landing motor is a fixed-impulse solid motor — it cannot throttle.
 
-- Only apogees roughly **15–80 m** arrive at the ignition window with an
-  energy the F15 can cancel. Size the ascent motor accordingly.
-- **Ascent motor: AeroTech F10** (29 mm single-use, 7 s burn, flown *plugged*,
-  `tools/motors/AeroTech_F10.eng`). Its ~73 m apogee matches the F15's energy,
-  and because it pushes almost all the way to apogee the fin-less airframe
-  never coasts long enough to tip over in wind. The closed-loop sim study
-  (2026-10-24) found short, hard-burning motors abort 94–100 % of flights.
+- **Motors: AeroTech E18W for both ascent and landing** (RMS-24/40 reloads
+  in 24→29 mm adapters, both flown *plugged*, `tools/motors/AeroTech_E18W.eng`,
+  the thrustcurve.org cert curve). At the 1.4 kg liftoff mass the apogee is
+  ~18 m, inside the 100 ft limit, and the low-thrust landing motor is
+  forgiving: 79.5 % upright landings in the closed-loop sim with mass and
+  ignition delay measured (motor-chute-study-2026-11-04). The older F10/F15
+  pair flew to ~73 m.
+- With the mass and ignition delay only guessed, the same sim drops to ~28 %:
+  weigh the rocket.
 - **±10% motor-to-motor thrust variation → ~9–15 m/s touchdown error** if
   uncompensated. This — not the software — is the hard part. Mitigate with:
   legs that absorb residual velocity, fresh motors from the same pack,

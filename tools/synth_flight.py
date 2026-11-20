@@ -12,11 +12,11 @@ decision can be checked against the physics.
 
 Scenarios (all written to tools/replay/cases/):
   nominal_chute  CHUTE_TEST mode, clean flight
-  nominal_land   FULL_LANDING mode, clean flight with F15 landing burn
+  nominal_land   FULL_LANDING mode, clean flight with the landing burn
   dud_igniter    FULL_LANDING, fire command but the motor never lights
   high_tilt      CHUTE_TEST, tilt runs away during boost -> abort
   baro_glitch    CHUTE_TEST, barometer spikes the KF must reject
-  stuck_chute    CHUTE_TEST, latch sticks: canopy only after one re-cycle
+  stuck_chute    CHUTE_TEST, latch sticks: canopy only after the fast wiggle
 
 Pure stdlib:  python tools/synth_flight.py
 """
@@ -38,11 +38,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CASES = os.path.join(HERE, "replay", "cases")
 
 # Read from src/config.h, the same values the burn table is generated from.
-MASS_DESCENT = bt.config_value("MASS_DESCENT_KG")       # kg, after ascent burnout (F15 loaded)
+MASS_DESCENT = bt.config_value("MASS_DESCENT_KG")       # kg, after ascent burnout (landing motor loaded)
 CDA = bt.config_value("CDA_M2")                         # m^2
 IGN_DELAY = bt.config_value("IGNITION_DELAY_MS") / 1000.0  # s
-ASCENT_ENG = os.path.join(HERE, "motors", "AeroTech_F10.eng")
-LANDING_ENG = os.path.join(HERE, "motors", "Estes_F15.eng")
+DUD_WINDOW = bt.config_value("DUD_WINDOW_MS") / 1000.0     # s
+ASCENT_ENG = os.path.join(HERE, "motors", "AeroTech_E18W.eng")
+LANDING_ENG = os.path.join(HERE, "motors", "AeroTech_E18W.eng")
 CDA_CHUTE = 0.45        # m^2 -> ~5.5 m/s terminal
 PAD_S = 3.0             # stillness before ignition
 ARM_T = 2.6             # harness arms here (meta)
@@ -140,15 +141,16 @@ def simulate(scenario):
     tilt_runaway = scenario.get("tilt_runaway", False)
     glitch = scenario.get("baro_glitch", False)
     # Canopy opens this long after true apogee in chute mode. The default is a
-    # clean first release; stuck_chute pushes it past the first confirm window
-    # + one re-cycle, as if the latch only came free on the second release.
+    # clean first release; stuck_chute pushes it past the fast wiggle, as if
+    # the latch only came free on the last wiggle stroke.
     chute_delay = scenario.get("chute_delay_s", 0.6)
 
     def tilt_deg_fn(t):
         if t < PAD_S:
             return 0.0
         if tilt_runaway:
-            return min(40.0, 25.0 * max(0.0, t - (PAD_S + 1.0)))
+            # starts 0.5 s after launch: 30 deg (+ debounce) well inside the 2.1 s E18W boost
+            return min(40.0, 25.0 * max(0.0, t - (PAD_S + 0.5)))
         ft = t - PAD_S
         return 2.0 * math.exp(-0.15 * ft) * math.sin(2 * math.pi * 0.8 * ft)
 
@@ -225,7 +227,7 @@ def simulate(scenario):
             if mode == "chute" and chute_open_t is None and t > apogee_t + chute_delay:
                 chute_open_t = t
             if dud and land_fire_cmd_t is not None and chute_open_t is None \
-                    and t > land_fire_cmd_t + IGN_DELAY + 0.7 + 0.4:
+                    and t > land_fire_cmd_t + IGN_DELAY + DUD_WINDOW + 0.4:
                 chute_open_t = t      # FSM dud-abort fires the chute
         if tilt_runaway and chute_open_t is None and ascent_burnout_t is not None \
                 and t > ascent_burnout_t + 0.5:
@@ -295,10 +297,10 @@ SCENARIOS = {
                           "DESCENT", "LANDING_BURN", "ABORT", "DESCENT_CHUTE",
                           "TOUCHDOWN"],
         "max_kf_alt_err": 3.0, "expect_abort": "DUD_IGNITER",
-        # With the F10 ascent the dud is caught ~2.2 s above the ground, so the
-        # scripted canopy opens ~0.5 s before contact and really slows the
-        # rocket: it must be confirmed, before contact (the impact never counts).
-        "expect_chute_detected": True,
+        # The dud is caught ~6 m up, so the latch is released before contact
+        # (checked), but the scripted canopy has no time to fill: not confirmed
+        # (and the impact never counts as a canopy).
+        "expect_chute_detected": False,
     },
     "high_tilt": {
         "mode": "chute", "tilt_runaway": True,
@@ -313,11 +315,11 @@ SCENARIOS = {
         "max_kf_alt_err": 5.0, "expect_abort": None,
     },
     "stuck_chute": {
-        "mode": "chute", "chute_delay_s": 2.6,
+        "mode": "chute", "chute_delay_s": 1.1,
         "expect_states": ["IDLE", "ARMED", "BOOST", "COAST", "APOGEE",
                           "DESCENT_CHUTE", "TOUCHDOWN"],
         "max_kf_alt_err": 3.0, "expect_abort": None,
-        "expect_chute_releases": 2,
+        "expect_chute_releases": 3,     # 1 + CHUTE_WIG_CYCLES
     },
 }
 
@@ -332,7 +334,7 @@ def main():
             "arm_t": ARM_T,
             "expect_states": sc["expect_states"],
             "expect_abort": sc["expect_abort"],
-            "expect_chute_releases": sc.get("expect_chute_releases", 1),
+            "expect_chute_releases": sc.get("expect_chute_releases"),  # None: 1 .. 1+wiggles
             "expect_chute_detected": sc.get("expect_chute_detected", True),
             "max_kf_alt_err": sc["max_kf_alt_err"],
             "boost_end_t": None,

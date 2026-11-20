@@ -1,0 +1,11 @@
+
+== holdout 701-710 x 200 (2000 flights), R = 80, re-pass, servo 375 deg/s
+  ran ld_W_r375_today_R80_s0_repass_n200_701-702-703-704-705-706-707-708-709-710 | 2000 flights, 0 errors, 513.9 s
+  ran ld_W_r375_70-150_k2_R80_s0_repass_n200_701-702-703-704-705-706-707-708-709-710 | 2000 flights, 0 errors, 508.2 s
+stuck 0: today 2.55 m/s, 100 % | 70-150 k2 2.55 m/s, 100 % (95 % CI 99.8-100.0 %), paired +0/−0
+  ran ld_W_r375_today_R80_s1_repass_n200_701-702-703-704-705-706-707-708-709-710 | 2000 flights, 0 errors, 434.1 s
+  ran ld_W_r375_70-150_k2_R80_s1_repass_n200_701-702-703-704-705-706-707-708-709-710 | 2000 flights, 0 errors, 451.0 s
+stuck 1: today 18.61 m/s, 0 % | 70-150 k2 2.55 m/s, 100 % (95 % CI 99.8-100.0 %), paired +2000/−0
+  ran ld_W_r375_today_R80_s2_repass_n200_701-702-703-704-705-706-707-708-709-710 | 2000 flights, 0 errors, 431.8 s
+  ran ld_W_r375_70-150_k2_R80_s2_repass_n200_701-702-703-704-705-706-707-708-709-710 | 2000 flights, 0 errors, 404.8 s
+stuck 2: today 18.61 m/s, 0 % | 70-150 k2 5.10 m/s, 0 % (95 % CI 0.0-0.2 %), paired +0/−0

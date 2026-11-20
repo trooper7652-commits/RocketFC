@@ -16,6 +16,7 @@
 // Build:  g++ -O2 -std=c++17 -Wall -o replay main.cpp   (see Makefile)
 // Run:    ./replay cases/nominal_chute.csv cases/nominal_land.csv ...
 //
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -102,6 +103,8 @@ struct ChuteRun {
   int releases = 0;
   bool detected = false, unconfirmed = false, everLockedAfter = false;
   bool endReleased = false;
+  ChuteServo endCmd = ChuteServo::LOCK;
+  std::vector<ChuteServo> cmds;  // servo command each time it changed
 };
 static ChuteRun runChute(
     const std::function<float(float)>& accelG, float seconds,
@@ -114,7 +117,10 @@ static ChuteRun runChute(
     if (t >= 0.0f && !cd.started()) cd.start(ms);
     cd.update(ms, dtMs, accelG(t), altM(t));
     if (cd.started() && !cd.servoRelease()) r.everLockedAfter = true;
+    if (cd.started() && (r.cmds.empty() || r.cmds.back() != cd.servoCmd()))
+      r.cmds.push_back(cd.servoCmd());
   }
+  r.endCmd = cd.servoCmd();
   r.releases = cd.releases();
   r.detected = cd.detected();
   r.unconfirmed = cd.unconfirmed();
@@ -211,26 +217,82 @@ static void unitChecks() {
     const ChuteRun a = runChute(
         [](float t) { return t < 0.3f ? 0.02f : t < 0.5f ? 2.5f : 1.0f; },
         6.0f);
-    CHECK(a.detected && a.releases == 1 && !a.everLockedAfter && a.endReleased,
-          "chute: clean deploy -> detected on the 1st release, never re-locked "
-          "(releases=%d)", a.releases);
+    // (The blind wiggle may already have made its next stroke: a healthy
+    // latch is detected within the wiggle, no slow re-cycle.)
+    const int K = cfg::CHUTE_WIG_CYCLES;
+    CHECK(a.detected && a.releases <= 1 + K && a.endReleased &&
+              a.endCmd == ChuteServo::OPEN,
+          "chute: clean deploy -> detected within the wiggle, ends OPEN "
+          "(releases=%d, max %d)", a.releases, 1 + K);
 
-    // Stuck latch, never comes free: every re-cycle is used, latch ends open.
+    // Healthy latch released near apogee: no opening spike, the g builds up
+    // slowly as the rocket picks up speed under the filling canopy (the sim:
+    // 0.4 g at 0.34 s, 0.75 g at 0.62 s). Must be confirmed during the wiggle,
+    // not lost because a wiggle stroke re-took the baseline on the way up.
+    const ChuteRun g = runChute(
+        [](float t) { return t < 0.0f ? 0.02f : std::fmin(0.95f, 0.02f + 1.15f * t); },
+        6.0f);
+    CHECK(g.detected && g.releases <= 1 + K && g.endCmd == ChuteServo::OPEN,
+          "chute: slow g build-up after an apogee release -> detected within the "
+          "wiggle (releases=%d, max %d)", g.releases, 1 + K);
+
+    // Stuck latch, never comes free: every wiggle and re-cycle is used, latch
+    // ends open.
     const ChuteRun b = runChute([](float) { return 0.02f; }, 20.0f);
     CHECK(!b.detected && b.unconfirmed &&
-              b.releases == cfg::CHUTE_MAX_RELEASES && b.everLockedAfter &&
-              b.endReleased,
+              b.releases == cfg::CHUTE_MAX_RELEASES + K && b.everLockedAfter &&
+              b.endReleased && b.endCmd == ChuteServo::OPEN,
           "chute: stuck latch -> %d releases (want %d), unconfirmed, held open",
-          b.releases, cfg::CHUTE_MAX_RELEASES);
+          b.releases, cfg::CHUTE_MAX_RELEASES + K);
+    // ...and the wiggle comes first: WIG_HIGH, WIG_LOW (x K), then OPEN.
+    if (K >= 1) {
+      std::vector<ChuteServo> want;
+      for (int i = 0; i < K; ++i) {
+        want.push_back(ChuteServo::WIG_HIGH);
+        want.push_back(ChuteServo::WIG_LOW);
+      }
+      want.push_back(ChuteServo::OPEN);
+      want.push_back(ChuteServo::LOCK);
+      const bool seqOk = b.cmds.size() >= want.size() &&
+                         std::equal(want.begin(), want.end(), b.cmds.begin());
+      CHECK(seqOk, "chute: wiggle order HIGH/LOW x%d, then OPEN, then slow "
+                   "re-cycles (%d commands)", K, (int)b.cmds.size());
+    }
 
-    // Latch frees on the first re-cycle: canopy shortly after release #2.
-    const float t2 = (cfg::CHUTE_CONFIRM_MS + cfg::CHUTE_RECYCLE_LOCK_MS) /
-                         1000.0f + 0.3f;
+    // Times since the first release: the wiggle ends (last stroke to OPEN),
+    // then the canopy check starts.
+    const float wigEnd = (K > 0 ? cfg::CHUTE_WIG_FIRST_MS + K * cfg::CHUTE_WIG_DOWN_MS +
+                                      (K - 1) * cfg::CHUTE_WIG_UP_MS
+                                : 0.0f) / 1000.0f;
+
+    // Latch frees on the 2nd wiggle stroke: detected, no further release.
+    if (K >= 1) {
+      const float tw = (cfg::CHUTE_WIG_FIRST_MS + cfg::CHUTE_WIG_DOWN_MS) /
+                           1000.0f + 0.05f;
+      const ChuteRun w = runChute(
+          [tw](float t) { return t < tw ? 0.02f : 1.0f; }, 6.0f);
+      CHECK(w.detected && w.releases == 2 && w.endCmd == ChuteServo::OPEN,
+            "chute: frees on the 2nd wiggle stroke -> detected, releases=%d "
+            "(want 2), ends OPEN", w.releases);
+
+      // Canopy while the wiggle is swung back to WIG_LOW: straight to OPEN.
+      // (rises so that detection lands 10 ms into the first WIG_LOW)
+      const float tl = (cfg::CHUTE_WIG_FIRST_MS + 10.0f - cfg::CHUTE_DETECT_MS) / 1000.0f;
+      const ChuteRun x = runChute(
+          [tl](float t) { return t < tl ? 0.02f : 1.0f; }, 6.0f);
+      CHECK(x.detected && x.releases == 1 && x.endCmd == ChuteServo::OPEN,
+            "chute: canopy during a wiggle down-stroke -> straight to OPEN "
+            "(releases=%d)", x.releases);
+    }
+
+    // Latch frees on the first slow re-cycle: canopy shortly after it.
+    const float t2 = wigEnd + (cfg::CHUTE_CONFIRM_MS + cfg::CHUTE_RECYCLE_LOCK_MS) /
+                                  1000.0f + 0.3f;
     const ChuteRun c = runChute(
         [t2](float t) { return t < t2 ? 0.02f : 1.0f; }, 10.0f);
-    CHECK(c.detected && c.releases == 2 && c.endReleased,
-          "chute: frees on the 1st re-cycle -> detected, releases=%d (want 2)",
-          c.releases);
+    CHECK(c.detected && c.releases == K + 2 && c.endReleased,
+          "chute: frees on the 1st slow re-cycle -> detected, releases=%d (want %d)",
+          c.releases, K + 2);
 
     // Post-abort drag build-up (0.3 g rising 0.12 g/s toward 1 g at terminal
     // velocity, never a canopy) must NOT be mistaken for one -- the baseline
@@ -243,10 +305,10 @@ static void unitChecks() {
           d.releases);
 
     // Opening while the servo is swung back to LOCK: straight back to RELEASE.
-    const float tl = cfg::CHUTE_CONFIRM_MS / 1000.0f + 0.1f;
+    const float tl = wigEnd + cfg::CHUTE_CONFIRM_MS / 1000.0f + 0.1f;
     const ChuteRun e = runChute(
         [tl](float t) { return t < tl ? 0.02f : 1.0f; }, 6.0f);
-    CHECK(e.detected && e.releases == 1 && e.endReleased,
+    CHECK(e.detected && e.releases == 1 + K && e.endReleased,
           "chute: canopy during the LOCK dwell -> back to RELEASE (releases=%d)",
           e.releases);
 
@@ -328,7 +390,8 @@ static void runCase(const std::string& path) {
   const double maxKfErr = metaNum(meta, "max_kf_alt_err", 3.0);
   const std::string expectAbort = metaStr(meta, "expect_abort");
   const auto expectStates = metaStrArr(meta, "expect_states");
-  const int expectReleases = (int)metaNum(meta, "expect_chute_releases", 1);
+  // -1 (not given): any count a healthy latch can give, 1 .. 1 + wiggles.
+  const int expectReleases = (int)metaNum(meta, "expect_chute_releases", -1);
   const bool expectDetect = metaStr(meta, "expect_chute_detected") != "false";
   double fw0 = 0, fw1 = 0;
   const bool hasFireWindow = metaPair(meta, "fire_window", fw0, fw1);
@@ -369,7 +432,7 @@ static void runCase(const std::string& path) {
   double fireT = -1, abortT = -1, tdT = -1, launchT = -1;
   double chuteT = -1, chuteDetT = -1;
   int chuteReleases = 0;
-  double legsOnT = -1, legsOffT = -1;
+  double legsOnT = -1, legsOffT = -1, confirmT = -1;
   bool legsEver = false, legsGap = false;
   AbortReason abortReason = AbortReason::NONE;
   float maxErr = 0;
@@ -414,6 +477,7 @@ static void runCase(const std::string& path) {
       }
       if (ev.code == FlightEvent::CHUTE_DETECTED) chuteDetT = row.t;
       if (ev.code == FlightEvent::LEGS_BURN_ON) legsOnT = row.t;
+      if (ev.code == FlightEvent::IGNITION_CONFIRMED) confirmT = row.t;
       if (ev.code == FlightEvent::LEGS_BURN_OFF) legsOffT = row.t;
     }
     legsEver |= co.legsBurn;
@@ -450,11 +514,19 @@ static void runCase(const std::string& path) {
   for (const auto& s : expectStates) wantChute |= s == "DESCENT_CHUTE";
   if (wantChute) {
     // A confirm must come from the canopy itself, never from the ground impact.
-    CHECK(chuteReleases == expectReleases && (chuteDetT > 0) == expectDetect &&
+    // The latch must be released before contact: on any abort the chute
+    // has to come out (whether it can still fill doesn't matter).
+    const bool countOk =
+        expectReleases > 0
+            ? chuteReleases == expectReleases
+            : chuteReleases >= 1 && chuteReleases <= 1 + cfg::CHUTE_WIG_CYCLES;
+    CHECK(countOk && chuteT > 0 && chuteT < tdTrue &&
+              (chuteDetT > 0) == expectDetect &&
               (chuteDetT < 0 || chuteDetT < tdTrue) && co.chuteRelease,
-          "chute released at %.2f s, %d release%s (want %d), canopy %s at "
-          "%.2f s (want %s, before contact), latch held open",
-          chuteT, chuteReleases, chuteReleases == 1 ? "" : "s", expectReleases,
+          "chute released at %.2f s (contact %.2f s), %d release%s (want %s), "
+          "canopy %s at %.2f s (want %s, before contact), latch held open",
+          chuteT, tdTrue, chuteReleases, chuteReleases == 1 ? "" : "s",
+          expectReleases > 0 ? std::to_string(expectReleases).c_str() : "1..1+wiggles",
           chuteDetT > 0 ? "confirmed" : "NOT confirmed", chuteDetT,
           expectDetect ? "confirmed" : "not confirmed");
   } else {
@@ -466,12 +538,13 @@ static void runCase(const std::string& path) {
   // Legs: only on a real landing burn (fire command and no abort).
   const bool wantLegs = hasFireWindow && abortT < 0;
   if (wantLegs) {
-    const double delay = cfg::LEGS_DELAY_MS / 1000.0;
-    CHECK(legsOnT >= fireT + delay - 0.001 && legsOnT <= fireT + delay + 0.1 &&
+    // On at fire + LEGS_DELAY_MS, but never before the ignition confirm.
+    const double want = std::max(fireT + cfg::LEGS_DELAY_MS / 1000.0, confirmT);
+    CHECK(confirmT > 0 && legsOnT >= want - 0.001 && legsOnT <= want + 0.1 &&
               legsOffT == tdT && !legsGap && !co.legsBurn,
-          "legs nichrome on at %.2f s (fire + %.2f s), off at %.2f s "
-          "(touchdown %.2f s), continuous, off at the end",
-          legsOnT, legsOnT - fireT, legsOffT, tdT);
+          "legs nichrome on at %.2f s (fire + %.2f s, confirm at %.2f s), off at "
+          "%.2f s (touchdown %.2f s), continuous, off at the end",
+          legsOnT, legsOnT - fireT, confirmT, legsOffT, tdT);
   } else {
     CHECK(legsOnT < 0 && !legsEver, "legs never fired (on at %.2f s)",
           legsOnT);

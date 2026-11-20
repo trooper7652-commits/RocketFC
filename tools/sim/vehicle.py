@@ -21,8 +21,8 @@ import os
 
 SIM_DIR = os.path.dirname(os.path.abspath(__file__))
 MOTORS_DIR = os.path.join(os.path.dirname(SIM_DIR), "motors")
-DEFAULT_ENG = os.path.join(MOTORS_DIR, "Estes_F15.eng")      # landing motor
-ASCENT_ENG = os.path.join(MOTORS_DIR, "AeroTech_F10.eng")    # ascent motor (flown plugged)
+DEFAULT_ENG = os.path.join(MOTORS_DIR, "AeroTech_E18W.eng")  # landing motor (flown plugged)
+ASCENT_ENG = os.path.join(MOTORS_DIR, "AeroTech_E18W.eng")   # ascent motor (flown plugged)
 
 
 def estimate_inertia_kgm2(mass_kg, length_m):
@@ -42,8 +42,8 @@ class VehicleConfig:
     # ---- Mass & geometry ---------------------------------------------------
     # [MEASURE] Defaults mirror src/config.h so the sim starts from what the
     # flight computer itself already assumes; see default_vehicle_config().
-    mass_pad_kg: float = 0.991         # on the pad, everything loaded (kg)
-    mass_descent_kg: float = 0.951     # after ascent burnout, F15 still loaded (kg)
+    mass_pad_kg: float = 1.400         # on the pad, everything loaded (kg)
+    mass_descent_kg: float = 1.3793    # after ascent burnout, landing motor still loaded (kg)
 
     length_m: float = 1.20             # [ESTIMATE] overall airframe length (m):
                                        #   nose tip to tail. Measure directly.
@@ -110,7 +110,7 @@ class VehicleConfig:
     ground_mu: float = 0.6             # [ESTIMATE] foot-on-grass friction coefficient
     ground_slope_max_deg: float = 3.0  # random field slope per flight, 0..this (deg)
     crossflow_cd: float = 1.0          # [ESTIMATE] side drag of the standing body in wind
-    crash_speed_mps: float = 3.0       # [MEASURE: drop test] vertical contact speed above
+    crash_speed_mps: float = 3.0       # owner's limit (2026-11-19): vertical contact speed above
                                        #   which legs/airframe break (3 m/s = 46 cm drop)
     settle_s: float = 2.0              # must stand still this long after burnout
 
@@ -146,16 +146,19 @@ class VehicleConfig:
                                        #   treat aero-instability results qualitatively
 
     # ---- Motors --------------------------------------------------------------
-    ascent_eng_path: str = ASCENT_ENG    # RASP .eng file, ascent motor (AeroTech F10)
-    landing_eng_path: str = DEFAULT_ENG  # RASP .eng file, landing (F15) motor
+    ascent_eng_path: str = ASCENT_ENG    # RASP .eng file, ascent motor (AeroTech E18W)
+    landing_eng_path: str = DEFAULT_ENG  # RASP .eng file, landing motor (AeroTech E18W)
     ignition_delay_s: float = 0.62       # e-match -> thrust (s), measured 2026-10-25
     # Plant-side motor mismatch for robustness studies (defaults = no change):
     # the flight software keeps assuming the nominal .eng curve.
     landing_thrust_scale: float = 1.0    # multiplies landing thrust (impulse scales too)
     landing_time_scale: float = 1.0      # stretches the landing burn, impulse kept
-    # Casing-eject study: the landing motor's exhaust pushes the spent ascent
-    # casing out of the tail at landing thrust onset. 0 = it stays aboard.
-    ascent_casing_eject_kg: float = 0.0
+    # The landing motor's exhaust ALWAYS pushes the spent ascent casing out of
+    # the tail at landing thrust onset (the real design; burn_table.h assumes
+    # it too). -1 = auto: burn_table.casing_kg(ascent_eng_path), i.e. the
+    # .eng's total - propellant mass (+10 g adapter under 26 mm): F10 43 g,
+    # E18W 46.3 g. A positive value overrides; 0 = stays aboard (comparisons only).
+    ascent_casing_eject_kg: float = -1.0
     ascent_casing_cg_from_nose_m: float = 0.0  # 0 = tail minus half the ascent .eng length
     ascent_casing_kick_ns: float = 0.0   # net impulse change from the eject, over the first 0.15 s
 

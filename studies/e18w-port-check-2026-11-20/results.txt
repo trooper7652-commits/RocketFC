@@ -1,0 +1,20 @@
+== landing, holdout 701-710 x 200, measured spreads, band 0.75 s
+A_hold     success 1591/2000 =  79.5 %  aborts   0  false DUD 0  apogee med 18.2 p99 18.8 max 18.8 m
+B_hold     success 1591/2000 =  79.5 %  aborts   0  false DUD 0  apogee med 18.2 p99 18.8 max 18.8 m  vs A_hold: +0/-0 p=1.00
+== landing, ignition delay +-15 %
+A_hold15   success  604/2000 =  30.2 %  aborts   0  false DUD 0  apogee med 18.2 p99 18.8 max 18.8 m
+B_hold15   success  604/2000 =  30.2 %  aborts   0  false DUD 0  apogee med 18.2 p99 18.8 max 18.8 m  vs A_hold15: +0/-0 p=1.00
+== dud landing igniter, dev 600
+A_dud      DUD_IGNITER 0/600  chute released before impact 0/600  (median nan s before impact)
+B_dud      DUD_IGNITER 600/600  chute released before impact 600/600  (median 0.43 s before impact)
+== chute mode, stuck latch (count-based latch), dev 600
+A_chute_s0 canopy freed before impact 600/600  freed 0.00 s after 1st release (med)  impact med 6.97 m/s  releases med 1
+B_chute_s0 canopy freed before impact 600/600  freed 0.00 s after 1st release (med)  impact med 6.97 m/s  releases med 2
+A_chute_s1 canopy freed before impact 0/600  freed nan s after 1st release (med)  impact med 18.60 m/s  releases med 2
+B_chute_s1 canopy freed before impact 600/600  freed 0.34 s after 1st release (med)  impact med 6.97 m/s  releases med 2
+A_chute_s2 canopy freed before impact 0/600  freed nan s after 1st release (med)  impact med 18.60 m/s  releases med 2
+B_chute_s2 canopy freed before impact 600/600  freed 0.64 s after 1st release (med)  impact med 6.99 m/s  releases med 3
+== chute mode, servo-travel latch (repass, R 80 deg, 375 deg/s), copy B firmware, dev 600
+C_latch_s0 canopy freed before impact 600/600  freed 0.11 s after 1st release (med)  impact med 6.97 m/s  releases med 2
+C_latch_s1 canopy freed before impact 600/600  freed 0.41 s after 1st release (med)  impact med 6.98 m/s  releases med 3
+C_latch_s2 canopy freed before impact 600/600  freed 0.71 s after 1st release (med)  impact med 7.01 m/s  releases med 3

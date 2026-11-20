@@ -1,0 +1,12 @@
+  ran ld_Ch_good_current | 2000 flights, 0 errors, 131.4 s
+
+== holdout 701-710 (2000 flights), good motors
+current: 1591/2000 = 79.5 % (95 % CI 77.7-81.3)
+  ran ld_Ch_good_alt1 | 2000 flights, 0 errors, 126.9 s
+alt1: 1591/2000 = 79.5 % (CI 77.7-81.3), paired +0/−0 p=1.00, legs later med 0 / max 0 ms, false DUD aborts 0
+  ran ld_Ch_dud_alt1 | 600 flights, 0 errors, 29.4 s
+   dud holdout (600): false confirms 0
+  ran ld_Ch_good_alt3 | 2000 flights, 0 errors, 125.8 s
+alt3: 1591/2000 = 79.5 % (CI 77.7-81.3), paired +0/−0 p=1.00, legs later med 0 / max 0 ms, false DUD aborts 0
+  ran ld_Ch_dud_alt3 | 600 flights, 0 errors, 31.4 s
+   dud holdout (600): false confirms 0

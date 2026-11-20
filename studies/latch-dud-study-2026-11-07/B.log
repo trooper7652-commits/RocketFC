@@ -1,0 +1,71 @@
+  ran ld_B_r375_current_s0_b30 | 600 flights, 0 errors, 28.6 s
+  ran ld_B_r375_current_s1_b30 | 600 flights, 0 errors, 25.7 s
+  ran ld_B_r375_current_s1_b135 | 600 flights, 0 errors, 25.7 s
+  ran ld_B_r375_current_s2_b30 | 600 flights, 0 errors, 28.6 s
+  ran ld_B_r375_current_s2_b135 | 600 flights, 0 errors, 26.0 s
+  ran ld_B_r375_conf900_s0_b30 | 600 flights, 0 errors, 31.6 s
+  ran ld_B_r375_conf900_s1_b30 | 600 flights, 0 errors, 26.9 s
+  ran ld_B_r375_conf900_s1_b135 | 600 flights, 0 errors, 26.7 s
+  ran ld_B_r375_conf900_s2_b30 | 600 flights, 0 errors, 24.8 s
+  ran ld_B_r375_conf900_s2_b135 | 600 flights, 0 errors, 25.5 s
+  ran ld_B_r375_conf600_s0_b30 | 600 flights, 0 errors, 30.1 s
+  ran ld_B_r375_conf600_s1_b30 | 600 flights, 0 errors, 25.3 s
+  ran ld_B_r375_conf600_s1_b135 | 600 flights, 0 errors, 24.9 s
+  ran ld_B_r375_conf600_s2_b30 | 600 flights, 0 errors, 24.9 s
+  ran ld_B_r375_conf600_s2_b135 | 600 flights, 0 errors, 24.9 s
+  ran ld_B_r375_full1_s0_b30 | 600 flights, 0 errors, 29.8 s
+  ran ld_B_r375_full1_s1_b30 | 600 flights, 0 errors, 25.2 s
+  ran ld_B_r375_full1_s1_b135 | 600 flights, 0 errors, 25.1 s
+  ran ld_B_r375_full1_s2_b30 | 600 flights, 0 errors, 25.1 s
+  ran ld_B_r375_full1_s2_b135 | 600 flights, 0 errors, 25.0 s
+  ran ld_B_r375_full2_s0_b30 | 600 flights, 0 errors, 30.4 s
+  ran ld_B_r375_full2_s1_b30 | 600 flights, 0 errors, 25.3 s
+  ran ld_B_r375_full2_s1_b135 | 600 flights, 0 errors, 25.8 s
+  ran ld_B_r375_full2_s2_b30 | 600 flights, 0 errors, 25.5 s
+  ran ld_B_r375_full2_s2_b135 | 600 flights, 0 errors, 24.9 s
+  ran ld_B_r375_full3_s0_b30 | 600 flights, 0 errors, 30.0 s
+  ran ld_B_r375_full3_s1_b30 | 600 flights, 0 errors, 25.2 s
+  ran ld_B_r375_full3_s1_b135 | 600 flights, 0 errors, 25.3 s
+  ran ld_B_r375_full3_s2_b30 | 600 flights, 0 errors, 25.2 s
+  ran ld_B_r375_full3_s2_b135 | 600 flights, 0 errors, 25.0 s
+  ran ld_B_r375_wig2_s0_b30 | 600 flights, 0 errors, 29.8 s
+  ran ld_B_r375_wig2_s1_b30 | 600 flights, 0 errors, 27.4 s
+  ran ld_B_r375_wig2_s1_b135 | 600 flights, 0 errors, 25.1 s
+  ran ld_B_r375_wig2_s2_b30 | 600 flights, 0 errors, 29.5 s
+  ran ld_B_r375_wig2_s2_b135 | 600 flights, 0 errors, 26.3 s
+  ran ld_B_r375_wig3_s0_b30 | 600 flights, 0 errors, 30.3 s
+  ran ld_B_r375_wig3_s1_b30 | 600 flights, 0 errors, 27.4 s
+  ran ld_B_r375_wig3_s1_b135 | 600 flights, 0 errors, 25.1 s
+  ran ld_B_r375_wig3_s2_b30 | 600 flights, 0 errors, 25.7 s
+  ran ld_B_r375_wig3_s2_b135 | 600 flights, 0 errors, 24.9 s
+  ran ld_B_r375_wig4_s0_b30 | 600 flights, 0 errors, 30.3 s
+  ran ld_B_r375_wig4_s1_b30 | 600 flights, 0 errors, 28.2 s
+  ran ld_B_r375_wig4_s1_b135 | 600 flights, 0 errors, 25.3 s
+  ran ld_B_r375_wig4_s2_b30 | 600 flights, 0 errors, 25.4 s
+  ran ld_B_r375_wig4_s2_b135 | 600 flights, 0 errors, 25.2 s
+  ran ld_B_r375_full2+conf900_s0_b30 | 600 flights, 0 errors, 30.3 s
+  ran ld_B_r375_full2+conf900_s1_b30 | 600 flights, 0 errors, 25.6 s
+  ran ld_B_r375_full2+conf900_s1_b135 | 600 flights, 0 errors, 25.6 s
+  ran ld_B_r375_full2+conf900_s2_b30 | 600 flights, 0 errors, 24.9 s
+  ran ld_B_r375_full2+conf900_s2_b135 | 600 flights, 0 errors, 25.0 s
+  ran ld_B_r375_wig3+conf900_s0_b30 | 600 flights, 0 errors, 29.9 s
+  ran ld_B_r375_wig3+conf900_s1_b30 | 600 flights, 0 errors, 27.4 s
+  ran ld_B_r375_wig3+conf900_s1_b135 | 600 flights, 0 errors, 24.9 s
+  ran ld_B_r375_wig3+conf900_s2_b30 | 600 flights, 0 errors, 25.7 s
+  ran ld_B_r375_wig3+conf900_s2_b135 | 600 flights, 0 errors, 25.2 s
+
+== Step B: retry schemes, latch servo 375 deg/s, chute mode (impact med / p90, share ≤ 3 m/s)
+Retry counted: b30 = any 30 deg shake frees a sticky pin; b135 = needs a full swing back to LOCK.
+| scheme | stuck 0 | unconfirmed (stuck 0) | stuck 1, b30 | stuck 1, b135 | stuck 2, b30 | stuck 2, b135 |
+|---|---|---|---|---|---|---|
+| current | 2.55 / 2.56 m/s, 100 % ≤ 3 | 0.0 % | 18.60 / 18.82 m/s, 0 % ≤ 3 | 18.60 / 18.82 m/s, 0 % ≤ 3 | 18.60 / 18.82 m/s, 0 % ≤ 3 | 18.60 / 18.82 m/s, 0 % ≤ 3 |
+| conf900 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| conf600 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 18.50 / 18.63 m/s, 0 % ≤ 3 (+0/−0) | 18.50 / 18.63 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| full1 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| full2 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| full3 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| wig2 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 2.56 / 2.57 m/s, 100 % ≤ 3 (+600/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 3.16 / 3.39 m/s, 17 % ≤ 3 (+102/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| wig3 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 2.56 / 2.57 m/s, 100 % ≤ 3 (+600/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 3.16 / 3.39 m/s, 17 % ≤ 3 (+102/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| wig4 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 2.56 / 2.57 m/s, 100 % ≤ 3 (+600/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 3.16 / 3.39 m/s, 17 % ≤ 3 (+102/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| full2+conf900 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 13.34 / 14.46 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |
+| wig3+conf900 | 2.55 / 2.56 m/s, 100 % ≤ 3 (+0/−0) | 0.0 % | 2.56 / 2.57 m/s, 100 % ≤ 3 (+600/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) | 3.16 / 3.39 m/s, 17 % ≤ 3 (+102/−0, p<0.01) | 18.60 / 18.82 m/s, 0 % ≤ 3 (+0/−0) |

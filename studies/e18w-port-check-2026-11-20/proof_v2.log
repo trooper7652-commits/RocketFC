@@ -1,0 +1,16 @@
+skip A_hold
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_hold.json: 2000 flights, 0 errors, 78.4 s
+skip A_hold15
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_hold15.json: 2000 flights, 0 errors, 87.5 s
+skip A_dud
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_dud.json: 600 flights, 0 errors, 19.5 s
+skip A_chute_s0
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_chute_s0.json: 600 flights, 0 errors, 20.6 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/C_latch_s0.json: 600 flights, 0 errors, 20.0 s
+skip A_chute_s1
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_chute_s1.json: 600 flights, 0 errors, 19.7 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/C_latch_s1.json: 600 flights, 0 errors, 20.1 s
+skip A_chute_s2
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_chute_s2.json: 600 flights, 0 errors, 20.5 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/C_latch_s2.json: 600 flights, 0 errors, 20.8 s
+PROOF DONE

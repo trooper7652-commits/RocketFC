@@ -1,0 +1,22 @@
+
+== C(a) dud window: dud igniter (impact) | good motors, ignition delay +-15 % (cost)
+| DUD_WINDOW_MS | dud: impact med / p90 | canopy freed before impact | freed at (med) | good motors: success | false DUD aborts |
+|---|---|---|---|---|---|
+  ran ld_Ca_dud_w0 | 600 flights, 0 errors, 25.2 s
+  ran ld_Ca_good_w0 | 600 flights, 0 errors, 30.3 s
+| 0 | 13.3 / 13.7 m/s | 100 % | 8.9 m | 0/600 | 415 |
+  ran ld_Ca_dud_w100 | 600 flights, 0 errors, 25.0 s
+  ran ld_Ca_good_w100 | 600 flights, 0 errors, 32.9 s
+| 100 | 17.1 / 17.3 m/s | 100 % | 7.5 m | 164/600 | 96 |
+  ran ld_Ca_dud_w200 | 600 flights, 0 errors, 25.3 s
+  ran ld_Ca_good_w200 | 600 flights, 0 errors, 35.5 s
+| 200 | 18.5 / 18.7 m/s | 100 % | 6.0 m | 164/600 | 0 |
+  ran ld_Ca_dud_w300 | 600 flights, 0 errors, 24.8 s
+  ran ld_Ca_good_w300 | 600 flights, 0 errors, 240.0 s
+| 300 | 18.6 / 18.8 m/s | 100 % | 4.4 m | 164/600 | 0 |
+  ran ld_Ca_dud_w500 | 600 flights, 0 errors, 19.6 s
+  ran ld_Ca_good_w500 | 600 flights, 0 errors, 28.4 s
+| 500 | 18.6 / 18.8 m/s | 100 % | 1.0 m | 164/600 | 0 |
+  ran ld_Ca_dud_w700 | 600 flights, 0 errors, 26.3 s
+  ran ld_Ca_good_w700 | 600 flights, 0 errors, 35.3 s
+| 700 | 18.6 / 18.8 m/s | 0 % | nan m | 164/600 | 0 |

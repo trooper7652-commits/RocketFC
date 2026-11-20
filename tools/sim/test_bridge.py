@@ -15,6 +15,7 @@ missing, same as `make test` does for the C++ harness)
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 
@@ -24,6 +25,8 @@ import core  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS_DIR = os.path.dirname(HERE)
 CASES_DIR = os.path.join(TOOLS_DIR, "replay", "cases")
+with open(os.path.join(TOOLS_DIR, "..", "src", "config.h"), encoding="utf-8") as _f:
+    WIG_CYCLES = int(re.search(r"int\s+CHUTE_WIG_CYCLES\s*=\s*(\d+)", _f.read()).group(1))
 
 failures = 0
 
@@ -65,7 +68,7 @@ def run_case(dll, path):
     expect_abort = meta.get("expect_abort")
     expect_states = meta.get("expect_states", [])
     fire_window = meta.get("fire_window")
-    expect_releases = meta.get("expect_chute_releases", 1)
+    expect_releases = meta.get("expect_chute_releases")  # None: 1 .. 1 + wiggles
     expect_detect = meta.get("expect_chute_detected", True)
 
     print("\n== case {} ({} rows, mode {}) ==".format(scenario, len(rows), mode))
@@ -113,6 +116,7 @@ def run_case(dll, path):
         chute_releases = 0
         legs_on_t = -1.0
         legs_off_t = -1.0
+        confirm_t = -1.0
         legs_ever = False
         legs_gap = False
         out = None
@@ -158,6 +162,8 @@ def run_case(dll, path):
                     chute_det_t = t
                 elif ev["code"] == core.FlightEvent.LEGS_BURN_ON:
                     legs_on_t = t
+                elif ev["code"] == core.FlightEvent.IGNITION_CONFIRMED:
+                    confirm_t = t
                 elif ev["code"] == core.FlightEvent.LEGS_BURN_OFF:
                     legs_off_t = t
             legs_ever |= out["legs_burn"]
@@ -189,12 +195,16 @@ def run_case(dll, path):
 
     latch_open = bool(out and out["chute_release"])
     if "DESCENT_CHUTE" in expect_states:
-        check(chute_releases == expect_releases and
+        # The latch must be released before contact (the owner's rule: on any
+        # abort the chute has to come out, whether it can still fill or not).
+        count_ok = (chute_releases == expect_releases if expect_releases
+                    else 1 <= chute_releases <= 1 + WIG_CYCLES)
+        check(count_ok and 0 < chute_t < td_true and
               (chute_det_t > 0) == expect_detect and latch_open,
-              "chute released at {:.2f} s, {} release{} (want {}), canopy {} at "
-              "{:.2f} s (want {}), latch held open".format(
-                  chute_t, chute_releases, "" if chute_releases == 1 else "s",
-                  expect_releases,
+              "chute released at {:.2f} s (contact {:.2f} s), {} release{} (want {}), "
+              "canopy {} at {:.2f} s (want {}), latch held open".format(
+                  chute_t, td_true, chute_releases, "" if chute_releases == 1 else "s",
+                  expect_releases or "1..1+wiggles",
                   "confirmed" if chute_det_t > 0 else "NOT confirmed",
                   chute_det_t,
                   "confirmed" if expect_detect else "not confirmed"))
@@ -205,12 +215,14 @@ def run_case(dll, path):
 
     # Legs: only on a real landing burn (fire command and no abort).
     if fire_window and abort_t < 0:
+        # On at fire + LEGS_DELAY_MS, but never before the ignition confirm.
         delay = core.FlightCore.config_snapshot(dll)["legsDelayMs"] / 1000.0
-        check(fire_t + delay - 0.001 <= legs_on_t <= fire_t + delay + 0.1 and
+        want_on = max(fire_t + delay, confirm_t)
+        check(confirm_t > 0 and want_on - 0.001 <= legs_on_t <= want_on + 0.1 and
               legs_off_t == td_t and not legs_gap and not out["legs_burn"],
-              "legs nichrome on at {:.2f} s (fire + {:.2f} s), off at {:.2f} s "
-              "(touchdown {:.2f} s), continuous, off at the end".format(
-                  legs_on_t, legs_on_t - fire_t, legs_off_t, td_t))
+              "legs nichrome on at {:.2f} s (fire + {:.2f} s, confirm at {:.2f} s), "
+              "off at {:.2f} s (touchdown {:.2f} s), continuous, off at the end".format(
+                  legs_on_t, legs_on_t - fire_t, confirm_t, legs_off_t, td_t))
     else:
         check(legs_on_t < 0 and not legs_ever,
               "legs never fired (on at {:.2f} s)".format(legs_on_t))

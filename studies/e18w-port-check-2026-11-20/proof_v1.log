@@ -1,0 +1,16 @@
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/A_hold.json: 2000 flights, 0 errors, 288.1 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_hold.json: 2000 flights, 0 errors, 233.3 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/A_hold15.json: 2000 flights, 0 errors, 212.9 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_hold15.json: 2000 flights, 0 errors, 87.0 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/A_dud.json: 600 flights, 0 errors, 20.2 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_dud.json: 600 flights, 0 errors, 19.3 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/A_chute_s0.json: 600 flights, 0 errors, 20.3 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_chute_s0.json: 600 flights, 0 errors, 20.5 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/C_latch_s0.json: 600 flights, 0 errors, 20.8 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/A_chute_s1.json: 600 flights, 0 errors, 19.1 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_chute_s1.json: 600 flights, 0 errors, 20.0 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/C_latch_s1.json: 600 flights, 0 errors, 19.8 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/A_chute_s2.json: 600 flights, 0 errors, 18.6 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/B_chute_s2.json: 600 flights, 0 errors, 19.3 s
+wrote C:/Users/troop/AppData/Local/Temp/claude/3e9e20f0e564c4e3/f180f36a-d407-44ff-b013-b2ec3e4fd03d/scratchpad/proof/results/C_latch_s2.json: 600 flights, 0 errors, 20.2 s
+PROOF DONE

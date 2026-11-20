@@ -168,6 +168,7 @@ class COutput(ctypes.Structure):
         ("dTermY", ctypes.c_float),
         ("usA", ctypes.c_float),
         ("usB", ctypes.c_float),
+        ("chuteServo", ctypes.c_int32),
     ]
 
 
@@ -352,7 +353,7 @@ class FlightCore:
             "in_flight": bool(o.inFlight), "log_fast": bool(o.logFast),
             "p_x": o.pTermX, "i_x": o.iTermX, "d_x": o.dTermX,
             "p_y": o.pTermY, "i_y": o.iTermY, "d_y": o.dTermY,
-            "us_a": o.usA, "us_b": o.usB,
+            "us_a": o.usA, "us_b": o.usB, "chute_servo": o.chuteServo,
         }
 
     def pop_events(self):

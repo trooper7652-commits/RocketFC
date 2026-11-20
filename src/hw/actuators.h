@@ -13,8 +13,9 @@
 // and chute, then `chute lock`). begin() puts it at the boot position the
 // sketch chooses (the last position commanded on the ground, or OPEN -- see
 // CHUTE_BOOT_RESTORE); arming is refused until it's at LOCK. In flight, the
-// flight logic's chuteRelease level moves it to RELEASE (and back to LOCK
-// briefly when re-cycling a stuck latch); after the release it returns to SET
+// flight logic's chuteServo command moves it to RELEASE (and through the
+// CHUTE_WIG_* wiggle targets, or back to LOCK briefly, when retrying a stuck
+// latch); after the release it returns to SET
 // at touchdown or CHUTE_STOW_AFTER_MS, whichever comes first. On the ground
 // the flight logic never moves it.
 //
@@ -33,6 +34,7 @@
 #include <Servo.h>
 
 #include "../config.h"
+#include "../core/chute_deploy.h"  // ChuteServo
 
 class Actuators {
  public:
@@ -40,8 +42,10 @@ class Actuators {
   static constexpr int CHUTE_JOG_MIN_US = 500;
   static constexpr int CHUTE_JOG_MAX_US = 2500;
 
-  // Same values as ConfigStore::CHUTE_LOCK / _RELEASE / _JOG / _SET.
-  enum class ChutePos : uint8_t { LOCK = 0, RELEASE = 1, JOG = 2, SET = 3 };
+  // Same values as ConfigStore::CHUTE_LOCK / _RELEASE / _JOG / _SET. WIGGLE
+  // (a CHUTE_WIG_* target, flight only) is never saved: the latch is stowed
+  // at SET before the post-flight save, and boot maps it to OPEN anyway.
+  enum class ChutePos : uint8_t { LOCK = 0, RELEASE = 1, JOG = 2, SET = 3, WIGGLE = 4 };
 
   // Degrees <-> pulse for the chute servo (0..180 deg, inside the jog range).
   static float chuteDegToUs(float deg) {
@@ -116,23 +120,29 @@ class Actuators {
   float trimB() const { return trimB_; }
 
   // ---- parachute latch servo ----
-  // Flight routing, called every fast tick with the core's chuteRelease level.
-  // RELEASE is honored whenever commanded (the core only commands it in
-  // flight; the arm switch is the same second layer as for the pyro). LOCK is
-  // only applied in flight -- that's the re-cycle swing -- so on the ground a
-  // position set from the CLI is left alone.
+  // Flight routing, called every fast tick with the core's chuteServo command.
+  // OPEN and WIG_HIGH (the releasing positions) are honored whenever commanded
+  // (the core only commands them in flight; the arm switch is the same second
+  // layer as for the pyro). LOCK and WIG_LOW are only applied in flight --
+  // that's the re-cycle / wiggle swing -- so on the ground a position set from
+  // the CLI is left alone.
   // Stow: once a flight release has happened, the latch returns to SET at
   // touchdown or CHUTE_STOW_AFTER_MS after the first release (whichever is
   // first) and ignores the flight logic until the next arm
   // (resetChuteFlight()).
-  void applyChute(bool releaseCmd, bool inFlight, bool touchedDown, uint32_t ms) {
+  void applyChute(ChuteServo cmd, bool inFlight, bool touchedDown, uint32_t ms) {
     if (chuteStowed_) return;
-    if (releaseCmd) {
+    if (cmd == ChuteServo::OPEN || cmd == ChuteServo::WIG_HIGH) {
       if (cfg::REQUIRE_ARM_SWITCH && !armSwitchOn()) return;
-      if (chutePos_ != ChutePos::RELEASE) chuteRelease();
+      if (cmd == ChuteServo::OPEN) {
+        if (chutePos_ != ChutePos::RELEASE) chuteRelease();
+      } else {
+        chuteWiggle(cfg::CHUTE_WIG_HIGH_DEG);
+      }
       if (chuteFirstReleaseMs_ == 0) chuteFirstReleaseMs_ = ms ? ms : 1;
-    } else if (inFlight && chutePos_ != ChutePos::LOCK) {
-      chuteLock();
+    } else if (inFlight) {
+      if (cmd == ChuteServo::WIG_LOW) chuteWiggle(cfg::CHUTE_WIG_LOW_DEG);
+      else if (chutePos_ != ChutePos::LOCK) chuteLock();
     }
     if (chuteFirstReleaseMs_ != 0 &&
         (touchedDown ||
@@ -150,6 +160,10 @@ class Actuators {
   void chuteLock() { chuteWrite(lockUs_, ChutePos::LOCK); }
   void chuteSet() { chuteWrite(setUs_, ChutePos::SET); }  // ground loading position
   void chuteRelease() { chuteWrite(releaseUs_, ChutePos::RELEASE); }
+  void chuteWiggle(float deg) {  // flight: a CHUTE_WIG_* target, written once
+    const float us = chuteDegToUs(deg);
+    if (chutePos_ != ChutePos::WIGGLE || chuteUs_ != us) chuteWrite(us, ChutePos::WIGGLE);
+  }
   void chuteJogUs(int us) {  // bench tests only: find the LOCK/SET/OPEN values
     chuteWrite((float)constrain(us, CHUTE_JOG_MIN_US, CHUTE_JOG_MAX_US),
                ChutePos::JOG);

@@ -183,7 +183,9 @@ class Plant:
 
         # Casing eject (casing-eject study): the mass drop is in
         # mass_and_thrust(); _eject_casing() moves the CG and trims the inertia.
-        self._eject_kg = getattr(vcfg, "ascent_casing_eject_kg", 0.0)
+        self._eject_kg = getattr(vcfg, "ascent_casing_eject_kg", -1.0)
+        if self._eject_kg < 0:  # auto: the ascent motor's spent casing (+ adapter)
+            self._eject_kg = bt.casing_kg(vcfg.ascent_eng_path)
         self._ejected = False
         self._inertia_cut = 0.0
         self._kick_k = 0.0

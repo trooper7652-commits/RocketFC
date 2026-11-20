@@ -291,6 +291,10 @@ static void runProcedures(uint32_t ms) {
         }
         core.requestArm(ms);
         act.resetChuteFlight();
+        if (cliCtx.buzzerMuted) {  // never fly silent: ARMED beeps + locate beacon
+          cliCtx.buzzerMuted = false;
+          Serial.println("buzzer back on (armed).");
+        }
         touchdownMs = 0;
         logClosedAfterTd = false;
         Serial.printf(
@@ -341,7 +345,11 @@ static void logTick(uint32_t ms) {
   f.gimXDeg = co.gimbalX * cfg::RAD2DEG;
   f.gimYDeg = co.gimbalY * cfg::RAD2DEG;
   f.usA = act.lastUsA(); f.usB = act.lastUsB();
-  f.pyroFlags = (act.chuteReleased() ? 1 : 0) | (act.pyroActive() ? 2 : 0) |
+  // bit0: latch at a releasing position (OPEN, or the WIG_HIGH wiggle stroke)
+  const bool latchOut = act.chuteReleased() ||
+                        (act.chutePos() == Actuators::ChutePos::WIGGLE &&
+                         co.chuteServo == ChuteServo::WIG_HIGH);
+  f.pyroFlags = (latchOut ? 1 : 0) | (act.pyroActive() ? 2 : 0) |
                 (act.legsActive() ? 4 : 0);
   f.cont = (co.chuteDetected ? 1 : 0) | (cliCtx.contLandCached ? 2 : 0) |
            (cliCtx.contLegsCached ? 4 : 0);
@@ -422,10 +430,10 @@ void loop() {
     // burn only) until touchdown is detected.
     act.applyLegs(co.legsBurn, ms);
 
-    // Chute latch: follows the core's release level (incl. re-cycles of a
-    // stuck latch). Only ever released by the core in flight. After a
+    // Chute latch: follows the core's servo command (incl. the wiggle and
+    // re-cycles of a stuck latch). Only ever released by the core in flight. After a
     // release it returns to SET at touchdown or CHUTE_STOW_AFTER_MS.
-    act.applyChute(co.chuteRelease, co.inFlight,
+    act.applyChute(co.chuteServo, co.inFlight,
                    co.state == FlightState::TOUCHDOWN, ms);
   }
 
@@ -434,6 +442,7 @@ void loop() {
   act.pyroTick(ms);
   serialCli.poll(ms);
   runProcedures(ms);
+  statusInd.setMuted(cliCtx.buzzerMuted);
   statusInd.tick(ms, co.state, core.mode());
 
   // --- 50 Hz: servos ---

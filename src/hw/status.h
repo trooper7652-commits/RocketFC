@@ -33,6 +33,11 @@ class StatusIndicator {
 
   void setFaultCode(uint8_t code) { faultCode_ = code; }  // 0 = healthy
 
+  // CLI `buzzer off`: silence the beeper (the LED keeps going). Not saved;
+  // RocketFC.ino un-mutes on every arm, so a flight is never silent.
+  void setMuted(bool m) { muted_ = m; }
+  bool muted() const { return muted_; }
+
   void tick(uint32_t ms, FlightState state, cfg::FlightMode mode) {
     bool buzz = false, led = false;
     switch (state) {
@@ -62,7 +67,7 @@ class StatusIndicator {
         led = true;
         break;
     }
-    applyBuzzer(buzz);
+    applyBuzzer(buzz && !muted_);
     digitalWrite(cfg::PIN_LED, led ? HIGH : LOW);
   }
 
@@ -86,5 +91,6 @@ class StatusIndicator {
 
   uint8_t faultCode_ = 0;
   bool buzzing_ = false;
+  bool muted_ = false;
   uint16_t freq_ = 1200;
 };

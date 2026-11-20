@@ -92,8 +92,9 @@ def _sub_once(text, old, new, what):
 
 
 def patch_actuators(path):
-    """Hook the landing gate, the flight leg gate and the pyro sense volts
-    (tools/hil/firmware/hil_hooks.h). Outside LIVE mode they pass through."""
+    """Hook the landing gate, the flight leg gate, the pyro sense volts and
+    the gimbal servo writes (tools/hil/firmware/hil_hooks.h). Outside LIVE
+    mode, and on a pyro channel opted in as live, they pass through."""
     with open(path, encoding="utf-8") as f:
         t = f.read().replace("\r\n", "\n")
     t = _sub_once(t, '#include "../config.h"\n',
@@ -107,7 +108,7 @@ def patch_actuators(path):
     t = _sub_once(t, "    if (cfg::REQUIRE_ARM_SWITCH && !armSwitchOn()) return false;\n"
                      "    return gateOn(ms);",
                   "    if (cfg::REQUIRE_ARM_SWITCH && !armSwitchOn()) return false;\n"
-                  "    return g_hilLive ? hilTimedFire(ms) : gateOn(ms);  // HIL: LIVE never drives the gate",
+                  "    return hilSimLand() ? hilTimedFire(ms) : gateOn(ms);  // HIL: real gate only if live",
                   "the landing fire")
     t = _sub_once(t, "  bool gateOn(uint32_t ms) {\n",
                   "  bool hilTimedFire(uint32_t ms) {  // HIL LIVE: time the pulse, pin stays LOW\n"
@@ -117,11 +118,20 @@ def patch_actuators(path):
                   "  }\n"
                   "  bool gateOn(uint32_t ms) {\n",
                   "gateOn")
-    for fn in ("contVolts", "legsContVolts"):
+    for fn, sim in (("contVolts", "hilSimLand"), ("legsContVolts", "hilSimLegs")):
         t = _sub_once(t, "  float {}() const {{\n".format(fn),
                       "  float {}() const {{\n"
-                      "    if (hilSimPyros()) return kHilSimPyroVolts;  // HIL: simulated pyros\n".format(fn),
+                      "    if ({}()) return kHilSimPyroVolts;  // HIL: simulated channel\n".format(fn, sim),
                       fn)
+    t = _sub_once(t, "cfg::SERVO_B_SIGN);\n"
+                     "    servoA_.writeMicroseconds((int)lastUsA_);\n"
+                     "    servoB_.writeMicroseconds((int)lastUsB_);\n  }\n",
+                  "cfg::SERVO_B_SIGN);\n"
+                  "    servoA_.writeMicroseconds((int)lastUsA_);\n"
+                  "    servoB_.writeMicroseconds((int)lastUsB_);\n"
+                  "    hilGimbalWritten(gimXRad, gimYRad, lastUsA_, lastUsB_, trimA_, trimB_);  // HIL\n"
+                  "  }\n",
+                  "the gimbal servo write")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write(t)
 
@@ -176,6 +186,10 @@ def generate(profile=None):
                     "    const uint32_t period = usFast;\n"
                     "    g_hilPeriodUs = period;  // HIL: LIVE telemetry reports the core's dt\n",
                     "the fast-tick period in RocketFC.ino")
+    ino = _sub_once(ino, "  const bool powerOn = resetWasPowerOn(srsr);\n",
+                    "  const bool hilPlanned = hilPlannedReboot();  // HIL: bench `reboot` keeps the chute\n"
+                    "  const bool powerOn = resetWasPowerOn(srsr) || hilPlanned;\n",
+                    "the boot reset-cause check in RocketFC.ino")
     with open(os.path.join(SKETCH_DIR, SKETCH_NAME + ".ino"), "w", encoding="utf-8",
               newline="\n") as f:
         f.write(ino)
