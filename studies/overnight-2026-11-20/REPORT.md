@@ -7,12 +7,16 @@ The setup is today's `main` at the measured 1.477 kg (pad) / 1.4563 kg (descent)
 
 The CSVs (one row per flight) and `results/summary.md` are in `results/`; the scripts are in `scripts/`. Pairs are matched by (seed, i). p is a two-sided sign test on landings rescued (+) vs lost (−).
 
-**Apogee:** in all 230 jobs the median was 15.3–15.5 m and the max 16.0 m. Nothing came near the 30.48 m (100 ft) limit.
+**Apogee:** in all 234 jobs the median was 15.3–15.5 m and the max 16.0 m (median / p99 / max per setup in `results/summary.md`). Nothing came near the 30.48 m (100 ft) limit.
 
 ## Recommended next steps
 1. **Measure the landing igniter's delay spread.** Fire 10+ e-matches on the static stand and record the time from fire command to thrust. Ignition-delay error is the main reason landings fail (task 6):
-   - with every other spread present, the landing works only when the true delay is within about −15…+30 ms of `IGNITION_DELAY_MS` (620 ms);
-   - 20 ms early gives 37 % success, 30 ms early gives 8 %, and 620 ms exact gives 99 %.
+   - with the true delay fixed and every other spread present, success is 99.3 % at 620 ms and 98.7 % at 640 ms;
+   - 20 ms early (600 ms) gives 39 %, 40 ms early gives 0 % (all LEGS_BROKEN);
+   - 40 ms late (660 ms) gives 32 %, 60 ms late gives 0 % (LEGS_NOT_DOWN);
+   - so the usable band is roughly 605–655 ms.
+
+   Today's assumed ±5 % (±31 ms) spread alone explains most of the 22 % failures.
 
    No firmware setting fixes a spread wider than that.
 2. **Port the "window passed" abort (task 5): `patches/task5_window_passed_abort.patch`, with `WINDOW_PASSED_D_M = 0.5f`.** It follows the owner's chute-ASAP rule:
@@ -21,18 +25,27 @@ The CSVs (one row per flight) and `results/summary.md` are in `results/`; the sc
    - the patch file was checked flight for flight against the study switch.
 3. **Port the wind-matched ascent together with margin 0.75 (tasks 7b + 4), after two bench checks.** Apply `patches/task7_wind_matched_ascent.patch` (set `WIND_MATCH_ASCENT = 1`) and `patches/task4_burn_table_margin_0.75.patch`.
    - Holdout: 78.2 → 84.7 % (p = 8e-10). Fresh seeds: 76.7 → 84.8 % (p = 4e-14).
-   - It holds 84–86 % from 0 to 6 m/s, 79 % at 7 m/s (today 32 %) and 65 % at 8 m/s (today 6 %). That moves the wind limit from about 6 m/s to about 8.
+   - It holds 84–86 % from 0 to 6 m/s, 79 % at 7 m/s (today 32 %) and 65 % at 8 m/s (today 6 %).
+   - Never-used seeds 901–910 (run after the design): 77.7 → 82.8 % (+297 / −194, p = 4e-6).
    - It is not worse at any wind tested. The dips at 4 and 5 m/s (−1.4 / −1.0 pts on 600 flights) are not significant.
-   - The two patches applied together reproduce the study copy flight for flight.
+   - The two patches applied together reproduce the study copy flight for flight (300 / 300 at 6 m/s).
+   - **Port it only together with the task 5 patch.** The ascent change creates a few new missed-window aborts at the default wind where today has none: 3 / 2,000 on the holdout, 8 / 2,000 fresh, 11 / 2,000 on seeds 901–910.
+     - Without task 5, their chute opens at about 3.7 m and they hit at 13.8–14.2 m/s.
+     - With task 5, it opens at 13.3–13.6 m and they hit at about 7.2 m/s.
    - **Bench checks first:**
-     - Trim the gimbal zero to within ±0.2°. A 0.5° error costs 5–8 pts at 5 m/s (p < 0.02).
-     - Measure the servo speed. A servo slowed to 240 °/s with 16 ms lag costs 5 pts (p = 0.04).
+     - **Gimbal zero.** Trim it to within ±0.2°. With a 0.5° error at 5 m/s, the change is *worse* than today's code: 85.7 → 77.7 % (p = 1e-4) and 86.7 → 82.0 % (p = 0.01), i.e. −4.7…−8.0 pts.
+     - **Servo speed.** The sim assumes 400 °/s and 8 ms lag (`vehicle.py`). At 240 °/s and 16 ms the change is worse than today: 69.2 → 63.8 % (p = 0.04).
+     - **Rule:** if the measured servo is slower than about 400 °/s / 8 ms, don't port. Re-run the study with the measured values first.
+   - **Why this passes robustness when task 8's gains didn't:** task 8 lost 6–22 pts in wind and with a slow servo, with no upside in wind. Here the loss is 5–8 pts under a trimmable gimbal error (and 5 pts with a slow servo), against a 10–60 pt gain at 6–8 m/s.
    - Neither half alone passes. The ascent alone is not significant on the holdout (p = 0.42) and loses 8 pts at 4 m/s. The margin alone loses 11–17 pts at 5–7 m/s.
 4. **Margin 0.75 alone (task 4): only if the ascent change is not ported, and only for flights in ≤ 4 m/s.** `patches/task4_burn_table_margin_0.75.patch`.
    - It gains about 8 points in the default −4…+4 m/s wind (holdout and fresh seeds, both significant).
    - It loses 11–17 points in steady 5–7 m/s wind.
    - Port it only if you fly in ≤ 4 m/s.
-5. **All three patches together** (`task4`, `task5`, `task7`, in any order) apply cleanly to today's `src/`. With `WIND_MATCH_ASCENT = 1` and `WINDOW_PASSED_D_M = 0.5f`, the holdout (2,000) and 0 / 5 / 7 m/s (300 each) are identical to the WMA + 0.75 study runs. That is 84.7 % on the holdout.
+5. **All three patches together** (`task4`, `task5`, `task7`) apply cleanly to today's `src/`, in sequence. With `WIND_MATCH_ASCENT = 1` and `WINDOW_PASSED_D_M = 0.5f`:
+   - the landing outcomes are identical to the WMA + 0.75 study run on all 2,000 holdout flights (84.7 %);
+   - the 3 missed-window flights release at 13.3–13.6 m instead of 3.7 m (task 5), and their contact drops from about 14 to about 7 m/s;
+   - 0 / 5 / 7 m/s (300 each) are identical row for row.
 6. **No change** for the dud window (task 6), the D2 interlock, `DRIFT_GAIN`, `DRIFT_MAX_TILT_DEG` (task 7) and the TVC gains (task 8).
 
 ## T0: baseline at 1.477 kg
@@ -72,7 +85,7 @@ The CSVs (one row per flight) and `results/summary.md` are in `results/`; the sc
 ## Task 2: `tools/fit_cda.py` (shipped)
 - **Method:**
   - The fit uses the signed body-axial accel (`az`, m/s² in the log; +Z is the nose) and fits `a = c·v² + b` per phase. The intercept absorbs the accel bias, and CdA = 2mc/ρ ± 1σ.
-  - The phases are COAST (ascending, after a 0.25 s motor tail-off skip) and DESCENT (falling, up to the first chute or landing-fire bit), using |kf_vel| ≥ 2 m/s.
+  - The phases are COAST (ascending, after a 0.25 s motor tail-off skip) and DESCENT (falling, up to the first chute or landing-fire bit), using |kf_vel| ≥ 2 m/s (the plan said 4; lowered on purpose, because the v² weighting handles slow samples and this flight rarely exceeds 6 m/s).
   - A JOINT fit (coast + descent, one CdA, one bias) separates bias from drag through the opposite drag signs. A POOLED fit (several logs, one bias per log) combines flights.
   - `--mass` defaults to `MASS_DESCENT_KG`; `--rho` defaults to 1.225, or use `--alt-m` / `--temp-c`.
   - The tool warns on n < 50, a narrow speed range, or 1σ > 25 %.
@@ -112,7 +125,7 @@ The CSVs (one row per flight) and `results/summary.md` are in `results/`; the sc
 - **Variants**, in the scratch copy, off by default:
   - (a) `MISSED_WINDOW_ALT_M` 5 / 6 / 8;
   - (b) "window passed": abort when `kfAlt < hIgnite(vDown) + margin − D` while the interlocks fail, D = 0.5 / 1 / 2 m.
-- **Missed windows are rare:** 0 at the default wind and at 5 m/s, and 16 / 600 at 6 m/s (seeds 101–103). The other descent aborts there are TILT.
+- **Missed windows are rare:** 0 at the default wind and at 5 m/s, and 9 / 600 at 6 m/s today (seeds 101–103; 16 / 600 with the earlier rules, which turn 7 TILT aborts into missed-window aborts). At 7 m/s the 281 flights are 280 TILT + 1 MISSED_WINDOW today.
 
 | Variant | Landings: holdout / w5 / w6 (paired) | Chute release height on missed-window flights, w6 (base 3.73 m) |
 |---|---|---|
@@ -167,7 +180,7 @@ Wind sweep, 300 each, paired with T0 at the same wind:
 |---|---|---|---|---|---|---|
 | T0 | 74.7 | 79.7 | 86.3 | 86.0 | 75.3 | 31.7 % |
 | (a) D2 interlock | ±0 | ±0 | ±0 | ±0 | ±0 | ±0 |
-| (b) wind-matched ascent | **79.7** (p=0.003) | 81.0 | 80.7 (p=0.003) | 81.3 (n.s.) | **83.3** (p=0.02) | **83.3** (+172/−17, p=2e-33) |
+| (b) wind-matched ascent | **79.7** (p=0.003) | 81.0 | 80.7 (**−5.6**, p=0.003) | 81.3 (n.s.) | **83.3** (p=0.02) | **83.3** (+172/−17, p=2e-33) |
 | (c) DRIFT_GAIN 1 / 3 / 4 | ≈0 | ≈0 | ≈0 | ≈0 | ≈0 | ≈0 (all p > 0.2) |
 | (d) DRIFT_MAX_TILT 3° | ≈0 | ≈0 | ≈0 | ≈0 | ≈0 | ≈0 |
 | (d) DRIFT_MAX_TILT 8° | +0.3 | 0 | +1.7 | −1.0 | **−4.0** (p=0.004) | −2.0 |
@@ -189,7 +202,11 @@ Wind sweep, 300 each, paired with T0 at the same wind:
 | WMA + 0.75 | **84.3** (p=0.001) | **85.7** (p=0.03) | 84.0 (n.s.) | 84.0 (n.s.) | **84.7** (p=4e-5) | **79.3** (p=2e-39) | **64.7** (p=1e-50) |
 
   - Dev at 4 / 5 m/s: 86.7 → 85.3 % (p = 0.35) and 86.2 → 85.2 % (p = 0.42).
-  - Holdout: 78.2 → 84.7 % (+281 / −153, p = 8e-10). Fresh: 76.7 → 84.8 % (+315 / −152, p = 4e-14).
+  - **How it was found:** designed after the single variants failed. The holdout had been seen for each half, and the 0–2 m/s check uses the screen seeds it was designed on. So fresh seeds and never-used seeds 901–910 are the clean confirmations.
+  - Holdout: 78.2 → 84.7 % (+281 / −153, p = 8e-10).
+  - Fresh: 76.7 → 84.8 % (+315 / −152, p = 4e-14).
+  - Seeds 901–910: 77.7 → 82.8 % (+297 / −194, p = 4e-6).
+  - **New low aborts:** missed-window aborts at the default wind are 3 / 8 / 11 per 2,000 (holdout / fresh / 901–910), against 0 today. Their chute opens at 3.7 m unless task 5 is ported too.
   - Against margin 0.75 alone at the default wind: holdout 86.2 → 84.7 % (p = 0.008), fresh 85.2 → 84.8 % (p = 0.6). It gives up about 1 pt at the default wind and gains 10–60 pts at 6–8 m/s.
   - **Robustness**, paired against T0 under the same condition:
     - inertia −30 %: 78.0 → 85.3 %; inertia +30 %: 78.7 → 83.2 %;
@@ -198,7 +215,7 @@ Wind sweep, 300 each, paired with T0 at the same wind:
   - **Caveats:**
     - The wind estimate uses an estimated `CN_alpha·A_ref` (`WMA_CNA_AREF_M2`) and the commanded gimbal angle, so it should be checked against a real flight log.
     - The sim's crossflow model is itself an estimate.
-  - **Recommendation:** port the pair after trimming the gimbal zero to ±0.2° and measuring the servo speed.
+  - **Recommendation:** port the pair, together with task 5, after trimming the gimbal zero to ±0.2° and confirming the servo is at least 400 °/s / 8 ms.
 
 ## Task 8: TVC gains (report only)
 - **Boost gains:** kp, kd ×0.5…2 and ki ×0 / 2 change nothing (≤ 2 flights per 300). The boost is short and the vehicle is stiff.
@@ -211,6 +228,10 @@ Wind sweep, 300 each, paired with T0 at the same wind:
 | F1 kd 0.065 | 78.2→83.0 (p=9e-15) | 76.7→82.2 (p=6e-20) | 86.2→**79.8** (p=6e-6) | 78.0→80.8 | 78.7→83.7 | 69.2→**47.0** (p=1e-26) |
 | F2 kp 0.6, kd 0.0455 | 78.2→83.2 (p=1e-11) | 76.7→82.4 (p=7e-15) | 86.2→**75.7** (p=3e-11) | 78.0→82.3 | 78.7→83.7 | 69.2→**57.5** (p=6e-11) |
 
-- **Max tilt and saturation** (screen): median max tilt 7.0° (base) vs 8.8° (F1). Gimbal-saturation share 2.3 % vs 6.6 %. Sideways contact is unchanged (0.16 vs 0.21 m/s).
+- **Max tilt and saturation** (screen, 300 each):
+  - median max tilt: 7.0° (base) / 8.8° (F1) / 10.6° (F2);
+  - gimbal-saturation share of powered time, mean: 2.3 % / 6.6 % / 8.4 %;
+  - sideways contact, median: 0.16 / 0.21 / 0.30 m/s (slightly higher, still small);
+  - tilt aborts: 0 in every task-8 run.
 - **Recommendation: no change.** Both win in calm and mild wind but fail the robustness gate, badly with a slower servo.
 - **Caveat:** inertia and the servo model are estimates, so gains need bench and flight checks anyway. The lower kd mostly shifts the burn timing (fewer LEGS_BROKEN, more LEGS_NOT_DOWN), much like the task 4 margin.
